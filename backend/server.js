@@ -1,4 +1,4 @@
-// server.js - Fixed with proper initialization handling
+// server.js - Enhanced with Universal Semantic RAG using Gemini Embeddings
 import express from "express";
 import fetch from "node-fetch";
 import dotenv from "dotenv";
@@ -7,6 +7,7 @@ import { fileURLToPath } from "url";
 import cors from "cors";
 import fs from "fs";
 
+// Load environment variables
 dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
@@ -16,7 +17,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
-// Middleware
+// Middleware - CORS MUST come FIRST
 app.use(cors({
   origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -28,19 +29,36 @@ app.options('*', cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname, "../frontend")));
 
-// Universal Semantic RAG System
+// Universal Semantic RAG System - No Question-Specific Logic
 class SemanticRAG {
     constructor() {
         this.knowledgeBase = this.loadKnowledgeBase();
         this.chunks = [];
         this.embeddings = [];
         this.isInitialized = false;
-        this.initializationError = null;
         this.embeddingsCachePath = path.join(__dirname, 'embeddings-cache.json');
         console.log("🔧 Initializing Universal Semantic RAG System...");
+        this.initializeRAG();
     }
     
-    async initialize() {
+    loadKnowledgeBase() {
+        try {
+            const knowledgeBasePath = path.join(__dirname, 'hr-knowledge.json');
+            if (fs.existsSync(knowledgeBasePath)) {
+                const data = fs.readFileSync(knowledgeBasePath, 'utf8');
+                console.log("✅ HR Knowledge Base loaded successfully");
+                return JSON.parse(data);
+            } else {
+                console.warn("⚠️ hr-knowledge.json not found, using empty knowledge base");
+                return { full_content: {} };
+            }
+        } catch (error) {
+            console.error("❌ Failed to load knowledge base:", error);
+            return { full_content: {} };
+        }
+    }
+    
+    async initializeRAG() {
         try {
             this.chunks = this.extractChunks(this.knowledgeBase.full_content);
             console.log(`📚 Extracted ${this.chunks.length} text chunks`);
@@ -62,25 +80,7 @@ class SemanticRAG {
             console.log("✅ Universal Semantic RAG System Ready!");
         } catch (error) {
             console.error("❌ Failed to initialize RAG:", error);
-            this.initializationError = error.message;
             this.isInitialized = false;
-        }
-    }
-    
-    loadKnowledgeBase() {
-        try {
-            const knowledgeBasePath = path.join(__dirname, 'hr-knowledge.json');
-            if (fs.existsSync(knowledgeBasePath)) {
-                const data = fs.readFileSync(knowledgeBasePath, 'utf8');
-                console.log("✅ HR Knowledge Base loaded successfully");
-                return JSON.parse(data);
-            } else {
-                console.warn("⚠️ hr-knowledge.json not found, using empty knowledge base");
-                return { full_content: {} };
-            }
-        } catch (error) {
-            console.error("❌ Failed to load knowledge base:", error);
-            return { full_content: {} };
         }
     }
     
@@ -121,11 +121,15 @@ class SemanticRAG {
         }
     }
     
+    /**
+     * UNIVERSAL CHUNK EXTRACTION - Works for ANY data structure
+     */
     extractChunks(obj, path = '', chunks = [], parentContext = '') {
         for (const [key, value] of Object.entries(obj)) {
             const currentPath = path ? `${path}.${key}` : key;
             const contextLabel = this.getContextLabel(key, currentPath);
             
+            // Handle ALL objects with nested data structures
             if (this.hasNestedStructure(value)) {
                 const structuredChunk = this.createStructuredChunk(key, value, currentPath, contextLabel);
                 if (structuredChunk) {
@@ -133,6 +137,7 @@ class SemanticRAG {
                 }
             }
             
+            // Extract strings (lowered threshold for better coverage)
             if (typeof value === 'string' && value.length > 15) {
                 chunks.push({
                     text: value,
@@ -141,7 +146,9 @@ class SemanticRAG {
                     parentContext: parentContext
                 });
             } 
+            // Handle arrays
             else if (Array.isArray(value)) {
+                // Create aggregate chunk for arrays with multiple items
                 if (value.length > 0) {
                     const arrayText = this.formatArrayAsText(key, value, currentPath);
                     if (arrayText && arrayText.length > 50) {
@@ -155,6 +162,7 @@ class SemanticRAG {
                     }
                 }
                 
+                // Also extract individual items
                 value.forEach((item, index) => {
                     if (typeof item === 'string' && item.length > 10) {
                         chunks.push({
@@ -168,6 +176,7 @@ class SemanticRAG {
                     }
                 });
             } 
+            // Recursively handle nested objects
             else if (typeof value === 'object' && value !== null) {
                 this.extractChunks(value, currentPath, chunks, contextLabel);
             }
@@ -176,14 +185,19 @@ class SemanticRAG {
         return chunks;
     }
     
+    /**
+     * UNIVERSAL: Check if object has nested structure worth preserving
+     */
     hasNestedStructure(value) {
         if (typeof value !== 'object' || value === null || Array.isArray(value)) {
             return false;
         }
         
+        // Check if object has multiple properties with complex data
         const keys = Object.keys(value);
         if (keys.length < 2) return false;
         
+        // Check if it has arrays or nested objects
         const hasComplexData = keys.some(key => {
             const val = value[key];
             return Array.isArray(val) || (typeof val === 'object' && val !== null);
@@ -192,11 +206,15 @@ class SemanticRAG {
         return hasComplexData;
     }
     
+    /**
+     * UNIVERSAL: Create comprehensive chunks for ANY structured data
+     */
     createStructuredChunk(key, value, path, context) {
         try {
             let formattedText = `${this.formatKeyAsTitle(key)}\n\n`;
             formattedText += this.formatStructuredObject(value, 0);
             
+            // Only create chunk if it has substantial content
             if (formattedText.length > 100) {
                 return {
                     text: formattedText,
@@ -214,6 +232,9 @@ class SemanticRAG {
         }
     }
     
+    /**
+     * UNIVERSAL: Format ANY structured object recursively
+     */
     formatStructuredObject(obj, indent = 0) {
         let text = '';
         const indentation = '  '.repeat(indent);
@@ -244,6 +265,9 @@ class SemanticRAG {
         return text;
     }
     
+    /**
+     * UNIVERSAL: Convert ANY key format to readable title
+     */
     formatKeyAsTitle(key) {
         return key
             .replace(/_/g, ' ')
@@ -254,12 +278,16 @@ class SemanticRAG {
             .trim();
     }
     
+    /**
+     * UNIVERSAL: Format ANY array into readable text
+     */
     formatArrayAsText(key, array, path) {
         if (array.length === 0) return null;
         
         const title = this.formatKeyAsTitle(key);
         let formattedText = `${title}:\n\n`;
         
+        // Simple string arrays
         if (array.every(item => typeof item === 'string')) {
             array.forEach((item, idx) => {
                 formattedText += `${idx + 1}. ${item}\n`;
@@ -267,8 +295,10 @@ class SemanticRAG {
             return formattedText;
         }
         
+        // Object arrays - format based on content
         if (array.every(item => typeof item === 'object' && item !== null)) {
             array.forEach((item, idx) => {
+                // Find the most important properties to display
                 const displayProps = this.getDisplayProperties(item);
                 
                 if (displayProps.length > 0) {
@@ -280,6 +310,7 @@ class SemanticRAG {
                     }).join(' | ');
                     formattedText += '\n';
                     
+                    // Add additional details
                     const otherProps = Object.keys(item).filter(k => 
                         !displayProps.some(p => Object.keys(p)[0] === k)
                     );
@@ -297,6 +328,7 @@ class SemanticRAG {
             return formattedText;
         }
         
+        // Mixed arrays
         array.forEach((item, idx) => {
             formattedText += `${idx + 1}. ${String(item)}\n`;
         });
@@ -304,6 +336,9 @@ class SemanticRAG {
         return formattedText;
     }
     
+    /**
+     * UNIVERSAL: Identify important properties in ANY object
+     */
     getDisplayProperties(obj) {
         const priorityKeys = [
             'name', 'title', 'stage_name', 'phase', 'step', 
@@ -312,12 +347,14 @@ class SemanticRAG {
         
         const props = [];
         
+        // First, look for priority keys
         for (const key of priorityKeys) {
             if (obj[key] && typeof obj[key] === 'string') {
                 props.push({ [key]: obj[key] });
             }
         }
         
+        // If no priority keys found, use first 2 string properties
         if (props.length === 0) {
             const stringKeys = Object.keys(obj).filter(k => typeof obj[k] === 'string');
             stringKeys.slice(0, 2).forEach(k => {
@@ -328,9 +365,14 @@ class SemanticRAG {
         return props;
     }
     
+    /**
+     * UNIVERSAL: Generate context labels from path structure
+     */
     getContextLabel(key, path) {
+        // Extract meaningful context from path
         const pathParts = path.split('.');
         
+        // Use the most specific/relevant part of the path
         const relevantParts = pathParts.filter(part => 
             !part.includes('[') && 
             part.length > 0 &&
@@ -338,6 +380,7 @@ class SemanticRAG {
         );
         
         if (relevantParts.length > 0) {
+            // Use the last two parts for better context
             const contextParts = relevantParts.slice(-2);
             return contextParts.map(p => this.formatKeyAsTitle(p)).join(' - ');
         }
@@ -419,12 +462,17 @@ class SemanticRAG {
         return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
     }
     
+    /**
+     * UNIVERSAL SEARCH - Works for ANY question
+     */
     async search(question, topK = 15) {
         if (!this.isInitialized) {
-            throw new Error("RAG system not initialized");
+            console.warn("⚠️ RAG system not initialized");
+            return [];
         }
         
         if (this.chunks.length === 0) {
+            console.warn("⚠️ No chunks available");
             return [];
         }
         
@@ -432,17 +480,20 @@ class SemanticRAG {
         
         const questionEmbedding = await this.getEmbedding(question);
         
+        // Calculate similarity with universal boosting
         const results = this.chunks.map((chunk, index) => {
             let score = this.cosineSimilarity(questionEmbedding, this.embeddings[index]);
             
+            // Universal boosting - NO question-specific logic
             if (chunk.isStructured) {
-                score *= 1.2;
+                score *= 1.2; // Structured data is generally more comprehensive
             }
             
             if (chunk.isAggregate) {
-                score *= 1.15;
+                score *= 1.15; // Aggregate chunks have more context
             }
             
+            // Generic keyword matching boost
             score *= this.getUniversalBoost(question, chunk);
             
             return { ...chunk, score };
@@ -461,6 +512,9 @@ class SemanticRAG {
         return topResults;
     }
     
+    /**
+     * UNIVERSAL BOOST - Works for ANY question without hardcoded keywords
+     */
     getUniversalBoost(question, chunk) {
         const lowerQuestion = question.toLowerCase();
         const lowerChunkText = chunk.text.toLowerCase();
@@ -468,6 +522,7 @@ class SemanticRAG {
         
         let boost = 1.0;
         
+        // Extract important words from question (ignore common words)
         const stopWords = ['the', 'is', 'at', 'which', 'on', 'a', 'an', 'and', 'or', 'but', 
                           'in', 'with', 'to', 'for', 'of', 'as', 'by', 'what', 'how', 'when',
                           'where', 'who', 'why', 'are', 'do', 'does', 'did', 'can', 'could'];
@@ -476,20 +531,28 @@ class SemanticRAG {
             .split(/\s+/)
             .filter(w => w.length > 3 && !stopWords.includes(w));
         
+        // Count matches in text
         const textMatches = questionWords.filter(word => lowerChunkText.includes(word)).length;
+        
+        // Count matches in context
         const contextMatches = questionWords.filter(word => lowerContext.includes(word)).length;
         
+        // Apply proportional boost based on matches
         if (textMatches > 0) {
-            boost *= (1 + (textMatches * 0.1));
+            boost *= (1 + (textMatches * 0.1)); // 10% boost per matching word
         }
         
         if (contextMatches > 0) {
-            boost *= (1 + (contextMatches * 0.15));
+            boost *= (1 + (contextMatches * 0.15)); // 15% boost per context match
         }
         
+        // Cap maximum boost to prevent over-weighting
         return Math.min(boost, 2.0);
     }
     
+    /**
+     * UNIVERSAL CONTEXT GENERATION
+     */
     async getContext(question, topK = 15) {
         const results = await this.search(question, topK);
         
@@ -497,6 +560,7 @@ class SemanticRAG {
             return "No relevant information found in the knowledge base. Please contact HR for assistance.";
         }
         
+        // Group by context for organization
         const grouped = {};
         results.forEach(result => {
             const ctx = result.context || 'General';
@@ -504,10 +568,12 @@ class SemanticRAG {
             grouped[ctx].push(result);
         });
         
+        // Format with sections
         const contextParts = [];
         for (const [context, chunks] of Object.entries(grouped)) {
             contextParts.push(`### ${context}\n`);
             
+            // Prioritize structured and aggregate chunks
             const structured = chunks.filter(c => c.isStructured || c.isAggregate);
             const regular = chunks.filter(c => !c.isStructured && !c.isAggregate);
             
@@ -526,35 +592,11 @@ class SemanticRAG {
 // Initialize RAG system
 const ragSystem = new SemanticRAG();
 
-// IMPORTANT: Wait for RAG to initialize before starting server
-let serverReady = false;
-
-ragSystem.initialize().then(() => {
-    serverReady = true;
-    console.log("🎉 Server fully ready to handle requests!");
-}).catch(error => {
-    console.error("❌ Critical: RAG initialization failed:", error);
-    console.log("⚠️ Server will run without RAG support");
-    serverReady = true; // Allow server to run without RAG
-});
-
-// Middleware to check if server is ready
-app.use((req, res, next) => {
-    if (!serverReady && (req.path === '/ask' || req.path === '/rag/search')) {
-        return res.status(503).json({ 
-            error: "Server is still initializing. Please wait a moment.",
-            retry_after: 5
-        });
-    }
-    next();
-});
-
 // Routes
 app.get("/", (req, res) => {
     res.json({ 
         status: "✅ ChatJisi backend running",
         rag: ragSystem.isInitialized ? "✅ Universal RAG Active" : "⚠️ Initializing...",
-        server_ready: serverReady,
         approach: "Universal semantic search for ANY question",
         chunks: ragSystem.chunks.length,
         endpoints: ["/ask", "/rag/search", "/rag/status"]
@@ -569,7 +611,6 @@ app.get("/rag/status", (req, res) => {
         chunks: ragSystem.chunks.length,
         embeddings: ragSystem.embeddings.length,
         approach: "No hardcoded logic - works for ANY question",
-        error: ragSystem.initializationError,
         timestamp: new Date().toISOString()
     });
 });
@@ -584,10 +625,9 @@ app.post("/rag/search", async (req, res) => {
         
         if (!ragSystem.isInitialized) {
             return res.status(503).json({ 
-                error: "RAG system is still initializing",
-                context: "Please wait a moment and try again",
-                success: false,
-                retry_after: 5
+                error: "RAG initializing",
+                context: "Try again in a moment",
+                success: false
             });
         }
         
@@ -605,7 +645,7 @@ app.post("/rag/search", async (req, res) => {
     } catch (error) {
         console.error("❌ RAG error:", error);
         res.status(500).json({ 
-            error: error.message || "RAG system error",
+            error: "RAG system error",
             success: false
         });
     }
@@ -619,19 +659,17 @@ app.post("/ask", async (req, res) => {
     }
 
     if (!GEMINI_API_KEY) {
-        return res.status(500).json({ error: "API key not configured" });
+        return res.status(500).json({ error: "API key not set" });
     }
 
     try {
         let finalPrompt = prompt;
-        let ragUsed = false;
         
         if (use_rag && ragSystem.isInitialized) {
-            try {
-                console.log("🔍 Using Universal RAG...");
-                const ragContext = await ragSystem.getContext(prompt);
-                
-                finalPrompt = `You are Jisi, an AI HR Assistant for CDO Foodsphere, Inc.
+            console.log("🔍 Using Universal RAG...");
+            const ragContext = await ragSystem.getContext(prompt);
+            
+            finalPrompt = `You are Jisi, an AI HR Assistant for CDO Foodsphere, Inc.
 
 ## CONTEXT FROM KNOWLEDGE BASE:
 ${ragContext}
@@ -643,17 +681,12 @@ ${prompt}
 Answer based ONLY on the context above. If information is missing, say so and suggest contacting HR.
 
 Your response:`;
-                
-                console.log(`📝 Prompt: ${finalPrompt.length} chars`);
-                ragUsed = true;
-            } catch (ragError) {
-                console.warn("⚠️ RAG failed, falling back to direct prompt:", ragError.message);
-                // Continue with original prompt
-            }
+            
+            console.log(`📝 Prompt: ${finalPrompt.length} chars`);
         }
 
         const response = await fetch(
-            "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent",
+            "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent",
             {
                 method: "POST",
                 headers: {
@@ -669,11 +702,7 @@ Your response:`;
         const data = await response.json();
 
         if (!response.ok) {
-            console.error("Gemini API error:", data);
-            return res.status(response.status).json({ 
-                error: data.error?.message || "API error",
-                details: data
-            });
+            return res.status(response.status).json({ error: data.error?.message || "API error" });
         }
 
         const answer = data?.candidates?.[0]?.content?.parts?.[0]?.text || 
@@ -681,25 +710,21 @@ Your response:`;
 
         res.json({ 
             answer,
-            rag_used: ragUsed,
+            rag_used: use_rag && ragSystem.isInitialized,
             success: true
         });
         
     } catch (error) {
         console.error("❌ Error:", error);
         res.status(500).json({ 
-            error: error.message || "Failed to connect to API",
+            error: "Failed to connect to API",
             success: false
         });
     }
 });
 
-// Start server
 app.listen(PORT, () => {
-    console.log(`✅ Server running on port ${PORT}`);
+    console.log(`✅ Server on port ${PORT}`);
     console.log(`🌐 http://localhost:${PORT}`);
     console.log(`🎯 Universal RAG - Works for ANY question!`);
-    if (!serverReady) {
-        console.log(`⏳ Waiting for RAG initialization to complete...`);
-    }
 });
