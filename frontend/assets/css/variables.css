@@ -1,0 +1,28 @@
+/* CSS Variables */
+:root {
+  /* Colors */
+  --primary-color: #4e5af7;
+  --primary-hover: #6c76ff;
+  --sidebar-bg: #1e1e2f;
+  --sidebar-border: #2e2e42;
+  --chat-bg: #2c2c45;
+  --chat-hover: #3a3a5c;
+  --text-light: #ddd;
+  --text-muted: #bbb;
+  --user-msg-bg: #e3e6ff;
+  --bot-msg-bg: #f9f9f9;
+  --bot-msg-border: #e5e5e5;
+  --code-bg: #f4f4f4;
+  --code-border: #e0e0e0;
+  
+  /* Effects */
+  --shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  
+  /* Border Radius */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  
+  /* Transitions */
+  --transition: all 0.3s ease;
+}

@@ -1,0 +1,759 @@
+/* Chat Container and Messages */
+#chat-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: white;
+  position: relative;
+  transition: var(--transition);
+  min-width: 0;
+}
+
+#chat-container.centered {
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+#chat-container.centered #chat {
+  display: none;
+}
+
+#chat-container.centered #welcome-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+/* Welcome Message */
+#welcome-message {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+
+#welcome-message.show {
+  display: flex;
+  opacity: 1;
+}
+
+#welcome-message .welcome-avatar {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-bottom: 24px;
+  box-shadow: 0 8px 24px rgba(78, 90, 247, 0.15);
+  animation: floatIn 0.8s ease-out;
+}
+
+#welcome-message h2 {
+  font-size: clamp(1.6rem, 4vw, 2rem);
+  margin-bottom: 12px;
+  font-weight: 700;
+  color: #1a1a1a;
+  animation: slideUpWelcome 0.6s ease-out 0.2s both;
+}
+
+#welcome-message p {
+  color: #555;
+  font-size: clamp(1rem, 3vw, 1.15rem);
+  max-width: min(450px, 90vw);
+  line-height: 1.6;
+  animation: slideUpWelcome 0.6s ease-out 0.3s both;
+}
+
+/* Chat Area */
+#chat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overflow-x: visible; /* Allow tooltips to overflow horizontally */
+  /* * FIX: Increased padding-bottom from 24px to 90px.
+    * This ensures there is enough space at the bottom of the scroll container
+    * to display the message action buttons (44px) and their tooltips (~30px+),
+    * including 'Edit' and 'Regenerate', when hovering over the very last message.
+  */
+  padding: 24px 20px 90px 20px;
+  scroll-behavior: smooth;
+  gap: 4px; /* Reduced gap between messages */
+  -webkit-overflow-scrolling: touch;
+  background: #fafafa;
+  align-items: center;
+}
+
+/* Messages */
+.message {
+  max-width: min(700px, 90%);
+  padding: 0;
+  border-radius: 0;
+  line-height: 1.6;
+  animation: fadeInUp 0.3s ease;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  display: flex;
+  flex-direction: column;
+  gap: 4px; /* Reduced gap between header and content */
+  width: 100%;
+  align-self: center;
+  position: relative;
+  overflow: visible;
+  margin-bottom: 0; /* Remove bottom margin */
+  padding-bottom: 0; /* Remove bottom padding */
+}
+
+.message.user {
+  align-self: flex-end;
+  max-width: min(550px, 85%);
+  margin-right: calc((100% - min(700px, 90%)) / 2);
+}
+
+.message.bot {
+  align-self: center;
+}
+
+/* Message Header */
+.message-header {
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: #666;
+  margin-bottom: 2px; /* Reduced margin */
+  padding-left: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+  z-index: 1; /* Ensure header stays above content but below action buttons */
+}
+
+.message.user .message-header {
+  color: var(--primary-color);
+  text-align: right;
+  height: 40px;
+  padding-left: 0;
+  padding-right: 4px;
+  justify-content: flex-end;
+}
+
+.message.bot .message-header {
+  color: #2d3748;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bot-name {
+  font-weight: 600;
+  color: #2d3748;
+}
+
+/* Bot Avatar */
+.bot-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #e5e5e5;
+  background-color: white;
+  transition: var(--transition);
+}
+
+.bot-avatar.thinking {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+/* Message Content */
+.message-content {
+  padding: 16px 20px;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  position: relative;
+  z-index: 1; /* Ensure content stays above background but below action buttons */
+}
+
+.message.user .message-content {
+  background-color: var(--user-msg-bg);
+  color: #1a202c;
+  border: 1px solid #d1d7ff;
+  text-align: left;
+}
+
+.message.bot .message-content {
+  background-color: var(--bot-msg-bg);
+  color: #2d3748;
+  border: 1px solid var(--bot-msg-border);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+/* * --- THIS IS THE FIX (AGAIN) ---
+ * 1. `margin-top` is set to 0 to remove the gap.
+ * 2. `padding` is changed from `4px 0` to `8px 0 4px 0`.
+ * (This adds the 4px we removed from the margin to the top padding,
+ * preserving the 8px visual space, while keeping the bottom padding 4px).
+*/
+.message-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 0; /* REMOVED THE GAP */
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+  position: absolute;
+  top: 100%; /* Position below the message content */
+  left: 0;
+  right: 0;
+  z-index: 1000; /* Higher z-index to overlap with next message header */
+  padding: 8px 0 4px 0; /* Add the 4px margin to the top padding */
+}
+
+.message.user .message-actions {
+  justify-content: flex-end;
+}
+
+.message.bot .message-actions {
+  justify-content: flex-start;
+}
+
+/*
+ * This rule remains the same and is correct.
+ * The hover bridge now works because the boxes are seamless.
+*/
+.message-content:hover + .message-actions,
+.message-actions:hover {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.message-action-btn {
+  background: transparent;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  padding: 6px 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #666;
+  position: relative;
+  min-width: 32px;
+  height: 32px;
+}
+
+.message-action-btn:hover {
+  background: #f5f5f5;
+  border-color: #ccc;
+  color: #333;
+  transform: translateY(-1px);
+}
+
+.message-action-btn svg {
+  width: 16px;
+  height: 16px;
+  stroke-width: 2;
+}
+
+.message-action-btn.copied {
+  background: #e8f5e9;
+  border-color: #4caf50;
+  color: #4caf50;
+}
+
+.message-action-btn.regenerating {
+  opacity: 0.6;
+  pointer-events: none;
+  background: #fff3cd;
+  border-color: #ffc107;
+  color: #856404;
+}
+
+.message-action-btn.regenerating svg {
+  animation: spin 1s linear infinite;
+}
+
+.message.regenerating .message-content {
+  position: relative;
+  opacity: 0.7;
+}
+
+.message.regenerating .message-content::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(78, 90, 247, 0.1) 50%, transparent 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  pointer-events: none;
+  border-radius: 12px;
+}
+
+/* Action Button Tooltips - FIXED with higher z-index for overlap */
+.message-action-btn .action-tooltip {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #2c2c45;
+  color: white;
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+  z-index: 10002; /* Higher z-index to ensure it appears above everything */
+  font-weight: 500;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  margin-top: 8px;
+}
+
+/* Show tooltip on button hover */
+.message-action-btn:hover .action-tooltip {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Tooltip arrow pointing upward */
+.message-action-btn .action-tooltip::before {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 0 5px 5px 5px;
+  border-color: transparent transparent #2c2c45 transparent;
+}
+
+/* Edit Input */
+.message.editing .message-content {
+  padding: 0;
+}
+
+.edit-input-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 4px;
+}
+
+.edit-input {
+  width: 100%;
+  min-height: 60px;
+  padding: 12px;
+  border: 2px solid var(--primary-color);
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-family: inherit;
+  resize: vertical;
+  background: white;
+}
+
+.edit-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(78, 90, 247, 0.1);
+}
+
+.edit-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  padding: 0 4px;
+  margin-top: 8px;
+}
+
+.edit-actions button {
+  padding: 8px 18px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.edit-cancel {
+  background: #f0f0f0;
+  color: #333;
+  border: 1px solid #e0e0e0;
+}
+
+.edit-cancel:hover {
+  background: #e0e0e0;
+  transform: translateY(-1px);
+}
+
+.edit-save {
+  background: var(--primary-color);
+  color: white;
+}
+
+.edit-save:hover {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(78, 90, 247, 0.3);
+}
+
+/* Follow-up Suggestions */
+.followup-suggestions {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #e5e5e5;
+}
+
+.followup-suggestions-title {
+  font-size: 0.75rem;
+  color: #666;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.followup-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.followup-chip {
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 16px;
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  color: #333;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.followup-chip:hover {
+  border-color: var(--primary-color);
+  background: #f8f9ff;
+  transform: translateY(-1px);
+}
+
+.followup-chip.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Error Message */
+.message.error {
+  border-left: 4px solid #ef4444;
+}
+
+.retry-btn {
+  background: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: all 0.2s ease;
+}
+
+.retry-btn:hover {
+  background: #dc2626;
+  transform: translateY(-1px);
+}
+
+/* Typography */
+.message-content p {
+  margin: 0 0 12px 0;
+  line-height: 1.7;
+}
+
+.message-content p:last-child {
+  margin-bottom: 0;
+}
+
+.message-content strong {
+  font-weight: 700;
+  color: #1a202c;
+}
+
+.message-content em {
+  font-style: italic;
+  color: #4a5568;
+}
+
+/* Lists */
+.message-content ul,
+.message-content ol {
+  margin: 14px 0;
+  padding-left: 28px;
+}
+
+.message-content li {
+  margin: 8px 0;
+  line-height: 1.7;
+  padding-left: 8px;
+}
+
+.message-content ul {
+  list-style: none;
+  padding-left: 20px;
+}
+
+.message-content ul li {
+  position: relative;
+  padding-left: 24px;
+}
+
+.message-content ul li::before {
+  content: "•";
+  position: absolute;
+  left: 0;
+  color: var(--primary-color);
+  font-weight: 700;
+  font-size: 1.2em;
+}
+
+.message-content ol {
+  counter-reset: item;
+  list-style: none;
+  padding-left: 20px;
+}
+
+.message-content ol li {
+  position: relative;
+  padding-left: 28px;
+  counter-increment: item;
+}
+
+.message-content ol li::before {
+  content: counter(item) ".";
+  position: absolute;
+  left: 0;
+  color: var(--primary-color);
+  font-weight: 700;
+}
+
+/* Code Blocks */
+.message-content pre {
+  background-color: #f6f8fa;
+  border: 1px solid #e1e4e8;
+  border-radius: 8px;
+  padding: 0;
+  overflow: hidden;
+  margin: 12px 0;
+  position: relative;
+}
+
+.code-header {
+  background: #f0f0f0;
+  padding: 8px 12px;
+  border-bottom: 1px solid #e1e4e8;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.75rem;
+  color: #666;
+}
+
+.code-language {
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.code-copy-btn {
+  background: white;
+  border: 1px solid #d1d5da;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 0.7rem;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.code-copy-btn:hover {
+  background: #f6f8fa;
+  border-color: #a8a8a8;
+}
+
+.code-copy-btn.copied {
+  background: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+}
+
+.message-content pre code {
+  display: block;
+  padding: 12px 16px;
+  overflow-x: auto;
+  font-family: 'Monaco', 'Menlo', 'Consolas', 'Courier New', monospace;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  background: transparent;
+  color: inherit;
+}
+
+.message-content code {
+  background-color: var(--code-bg);
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+  font-size: 0.875rem;
+  color: #d73a49;
+}
+
+.message-content pre code {
+  background: none;
+  padding: 0;
+  color: inherit;
+  display: block;
+}
+
+/* Links */
+.message-content a {
+  color: var(--primary-color);
+  text-decoration: underline;
+  transition: color 0.2s ease;
+}
+
+.message-content a:hover {
+  color: var(--primary-hover);
+}
+
+/* Blockquotes */
+.message-content blockquote {
+  border-left: 3px solid var(--primary-color);
+  padding-left: 16px;
+  margin: 12px 0;
+  color: #4a5568;
+  font-style: italic;
+}
+
+/* Headings */
+.message-content h1,
+.message-content h2,
+.message-content h3,
+.message-content h4 {
+  margin: 16px 0 8px 0;
+  font-weight: 600;
+  color: #1a202c;
+}
+
+.message-content h1 { font-size: 1.5rem; }
+.message-content h2 { font-size: 1.3rem; }
+.message-content h3 { font-size: 1.15rem; }
+.message-content h4 { font-size: 1rem; }
+
+.message-content hr {
+  border: none;
+  border-top: 1px solid #e2e8f0;
+  margin: 16px 0;
+}
+
+/* Typing Indicator */
+.typing {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 12px;
+}
+
+.typing span {
+  width: 6px;
+  height: 6px;
+  background-color: #999;
+  border-radius: 50%;
+  animation: blink 1.4s infinite;
+}
+
+.typing span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.typing span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+/* Suggested Questions */
+.suggested-questions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 12px;
+  margin-top: 24px;
+  max-width: min(800px, 90vw);
+  width: 100%;
+  padding: 0 16px;
+  box-sizing: border-box;
+}
+
+.suggested-question {
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+  font-size: clamp(0.85rem, 2vw, 0.95rem);
+  color: #333;
+  line-height: 1.4;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.suggested-question:hover {
+  border-color: var(--primary-color);
+  background: #f8f9ff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Scroll to Bottom Button */
+.scroll-to-bottom {
+  position: absolute;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: white;
+  color: black;
+  border: 2px solid #e0e0e0;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s ease;
+  opacity: 0;
+  visibility: hidden;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.scroll-to-bottom.visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+.scroll-to-bottom:hover {
+  background: #f5f5f5;
+  transform: translateX(-50%) translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}

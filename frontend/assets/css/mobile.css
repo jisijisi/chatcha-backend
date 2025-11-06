@@ -1,0 +1,416 @@
+/* Responsive and Mobile Styles */
+
+/* Hide tooltips on mobile and when sidebar is expanded */
+@media (max-width: 1024px) {
+  .tooltip {
+    display: none !important;
+  }
+
+  /* NEW: Also hide the action button tooltips */
+  .message-action-btn .action-tooltip {
+    display: none !important;
+  }
+}
+
+#sidebar:not(.minimized) .tooltip {
+  display: none !important;
+}
+
+/* Tablet and smaller desktop */
+@media (max-width: 1024px) {
+  #sidebar {
+    width: 240px;
+  }
+  
+  .mobile-header {
+    display: none;
+  }
+  
+  #chat-container {
+    padding-top: 0;
+    height: 100vh;
+    height: 100dvh;
+  }
+  
+  #mobile-menu-toggle:not(.in-header) {
+    display: flex;
+  }
+  
+  .mobile-header .mobile-menu-toggle {
+    display: none;
+  }
+  
+  #chat-container.centered #welcome-message {
+    margin-top: 0;
+  }
+  
+  .input-area {
+    padding-bottom: max(15px, env(safe-area-inset-bottom));
+  }
+  
+  #chat {
+    padding-top: 20px;
+  }
+}
+
+/* Mobile and tablet portrait */
+@media (max-width: 768px) {
+  #app {
+    flex-direction: column;
+  }
+
+  #sidebar {
+    width: 280px;
+    position: fixed;
+    top: 0;
+    left: -100%;
+    height: 100%;
+    z-index: 20;
+    border-right: none;
+    border-bottom: 2px solid var(--sidebar-border);
+    transition: left 0.3s ease;
+  }
+
+  #sidebar.show {
+    left: 0;
+  }
+
+  #sidebar.minimized {
+    width: 280px;
+  }
+
+  #sidebar.minimized .sidebar-header h1,
+  #sidebar.minimized #sidebar h2,
+  #sidebar.minimized #chat-history {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  #sidebar.minimized #new-chat span {
+    display: inline;
+  }
+
+  #sidebar.minimized #chat-history {
+    height: auto;
+    padding: 0 20px 20px;
+  }
+
+  #sidebar.minimized .sidebar-header {
+    justify-content: space-between;
+    padding: 16px 20px;
+    gap: 12px;
+  }
+
+  #sidebar.minimized #new-chat {
+    padding: 12px 20px;
+    justify-content: flex-start;
+    margin: 16px 20px;
+    gap: 10px;
+  }
+
+  #sidebar.minimized .history-header {
+    opacity: 1;
+    visibility: visible;
+    padding: 16px 20px 10px;
+  }
+
+  #sidebar.minimized .history-header h2 {
+    opacity: 1;
+    visibility: visible;
+    width: auto;
+  }
+
+  .mobile-menu-toggle {
+    display: flex;
+  }
+
+  .sidebar-toggle {
+    display: none;
+  }
+
+  .history-dropdown {
+    display: none !important;
+  }
+
+  .mobile-header {
+    display: flex;
+  }
+
+  #chat-container {
+    height: 100vh;
+    height: 100dvh;
+    padding-top: 60px;
+  }
+
+  #chat {
+    padding: 20px 16px;
+    gap: 8px; /* Reduced gap for mobile */
+  }
+
+  .message {
+    max-width: min(700px, 95%);
+  }
+
+  .message.user {
+    max-width: min(550px, 90%);
+    margin-right: calc((100% - min(700px, 95%)) / 2);
+  }
+
+  .message-content {
+    padding: 14px 16px;
+    font-size: 0.9rem;
+  }
+
+  /* ========================================
+  CORRECTED RULE - As per your request
+  
+  NEW FIX: Added 'z-index: 1' to ensure buttons
+  go *behind* the mobile sidebar (which has z-index: 20).
+  ========================================
+  */
+  .message .message-actions {
+    opacity: 1;
+    pointer-events: auto;
+    z-index: 1; /* <-- THIS IS THE FIX */
+  }
+  /* ======================================== */
+
+  .input-area {
+    padding: 12px;
+    gap: 8px;
+  }
+
+  .input-area .input-wrapper {
+    max-width: 100%;
+  }
+
+  .input-area input {
+    padding: 12px 55px 12px 18px;
+  }
+
+  .input-area button {
+    width: 40px;
+    height: 40px;
+  }
+
+  .input-area button .arrow {
+    width: 18px;
+    height: 18px;
+  }
+
+  /* Fixed counter positioning for mobile */
+  .input-counter {
+    right: 8px !important;
+    font-size: 0.7rem;
+    padding: 2px 6px;
+  }
+
+  .modal {
+    width: 95%;
+    max-width: 400px;
+  }
+
+  .modal-header {
+    padding: 16px 20px;
+  }
+
+  .modal-body {
+    padding: 20px;
+  }
+
+  .modal-footer {
+    padding: 12px 20px;
+  }
+
+  .scroll-to-bottom {
+    bottom: 70px;
+    right: 16px;
+    width: 36px;
+    height: 36px;
+  }
+
+  .suggested-questions {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    margin-top: 16px;
+    max-width: 95vw;
+    padding: 0 8px;
+  }
+
+  .suggested-question {
+    padding: 12px 14px;
+    font-size: 0.85rem;
+    min-height: 55px;
+  }
+
+  .toast-container {
+    top: 80px;
+    right: 10px;
+    left: 10px;
+    max-width: none;
+  }
+
+  .toast {
+    max-width: none;
+    font-size: 0.9rem;
+    padding: 10px 14px;
+  }
+}
+
+/* Small mobile devices */
+@media (max-width: 480px) {
+  #sidebar {
+    width: 100%;
+    max-width: 300px;
+  }
+
+  .mobile-header {
+    height: 56px;
+    padding: 0 12px;
+  }
+
+  .mobile-header-title {
+    font-size: 1rem;
+  }
+
+  .mobile-header .mobile-menu-toggle {
+    padding: 8px;
+  }
+
+  #chat-container {
+    padding-top: 56px;
+    height: calc(100vh - 56px);
+    height: calc(100dvh - 56px);
+  }
+
+  #welcome-message h2 {
+    font-size: 1.4rem;
+  }
+
+  #welcome-message p {
+    font-size: 0.9rem;
+  }
+
+  #chat {
+    padding: 16px 12px;
+    gap: 8px; /* Consistent reduced gap */
+  }
+
+  .message {
+    max-width: 100%;
+  }
+
+  .message.user {
+    max-width: 90%;
+    margin-right: 5%;
+  }
+
+  .message-content {
+    font-size: 0.9rem;
+    padding: 12px 14px;
+  }
+
+  .input-area {
+    padding: 10px;
+  }
+
+  .input-area input {
+    padding: 10px 55px 10px 14px;
+  }
+
+  /* Fixed counter positioning for very small screens */
+  .input-counter {
+    right: 8px !important;
+    font-size: 0.65rem;
+  }
+
+  .modal-btn {
+    padding: 8px 20px;
+    font-size: 0.9rem;
+  }
+
+  .scroll-to-bottom {
+    bottom: 65px;
+    right: 12px;
+    width: 32px;
+    height: 32px;
+  }
+
+  .scroll-to-bottom svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .suggested-questions {
+    gap: 6px;
+    margin-top: 12px;
+  }
+
+  .suggested-question {
+    padding: 10px 12px;
+    font-size: 0.8rem;
+    min-height: 50px;
+  }
+}
+
+/* Large tablets and small desktops in landscape */
+@media (min-width: 769px) and (max-width: 1024px) and (orientation: landscape) {
+  .mobile-header {
+    display: none;
+  }
+  
+  #chat-container {
+    padding-top: 0;
+  }
+  
+  .mobile-header-title {
+    font-size: 1rem;
+    padding: 0 8px;
+  }
+  
+  #chat {
+    padding: 20px 16px;
+    gap: 8px; /* Consistent reduced gap */
+  }
+
+  .suggested-questions {
+    grid-template-columns: repeat(2, 1fr);
+    max-width: min(700px, 90vw);
+  }
+}
+
+/* Very large screens */
+@media (min-width: 1440px) {
+  #sidebar {
+    width: 280px;
+  }
+  
+  .message {
+    max-width: min(800px, 90%);
+  }
+  
+  .message.user {
+    max-width: min(600px, 85%);
+    margin-right: calc((100% - min(800px, 90%)) / 2);
+  }
+
+  .suggested-questions {
+    grid-template-columns: repeat(3, 1fr);
+    max-width: min(900px, 90vw);
+  }
+}
+
+/* Desktop */
+@media (min-width: 1025px) {
+  .mobile-header {
+    display: none !important;
+  }
+  
+  #chat-container {
+    padding-top: 0;
+  }
+  
+  .mobile-menu-toggle {
+    display: none;
+  }
+}

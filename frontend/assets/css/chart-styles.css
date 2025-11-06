@@ -1,0 +1,254 @@
+/* Chart and Data Visualization Styles */
+
+/* Chart Container */
+.chart-container {
+  margin: 24px 0;
+  padding: 20px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.chart-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 16px 0;
+  text-align: center;
+}
+
+.data-chart {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+}
+
+/* Data Tables */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 20px 0;
+  font-size: 0.9rem;
+  background: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border-radius: 8px;
+  overflow: hidden;
+  table-layout: auto;
+}
+
+.data-table thead {
+  background: linear-gradient(135deg, #4E5AF7 0%, #3b47d9 100%);
+  color: white;
+}
+
+.data-table thead th {
+  padding: 14px 16px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: normal;
+}
+
+.data-table tbody tr {
+  border-bottom: 1px solid #e5e7eb;
+  transition: background-color 0.2s ease;
+}
+
+.data-table tbody tr:hover {
+  background-color: #f8fafc;
+}
+
+.data-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.data-table td {
+  padding: 12px 16px;
+  color: #374151;
+  white-space: normal;
+  word-wrap: break-word;
+}
+
+.data-table tbody tr:nth-child(even) {
+  background-color: #f9fafb;
+}
+
+.data-table tbody tr:nth-child(even):hover {
+  background-color: #f1f5f9;
+}
+
+/* Responsive Tables */
+@media (max-width: 768px) {
+  .data-table {
+    font-size: 0.8rem;
+  }
+  
+  .data-table thead th,
+  .data-table td {
+    padding: 10px 12px;
+  }
+  
+  .chart-container {
+    padding: 16px;
+  }
+  
+  .data-chart {
+    max-width: 100%;
+    height: auto;
+  }
+}
+
+/* Table Wrapper for Horizontal Scroll on Mobile - FIXED */
+.message-content {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.message-content table {
+  width: 100%;
+  min-width: 100%;
+}
+
+/* For tables that are too wide, enable horizontal scrolling */
+@media (max-width: 768px) {
+  .message-content {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .message-content table {
+    min-width: 600px; /* Minimum width before scrolling kicks in */
+  }
+}
+
+/* Stats Cards (for stats type charts) */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin: 20px 0;
+}
+
+.stat-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 20px;
+  text-align: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.stat-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #4E5AF7;
+  margin-bottom: 8px;
+}
+
+.stat-label {
+  font-size: 0.85rem;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Chart Loading Animation */
+.chart-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 400px;
+  color: #9ca3af;
+}
+
+.chart-loading::after {
+  content: "Loading chart...";
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+/* Chart Animations */
+@keyframes fadeInChart {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.chart-container {
+  animation: fadeInChart 0.5s ease-out;
+}
+
+/* Ensure charts are visible in bot messages */
+.message.bot .chart-container {
+  background: white;
+  border-color: #e5e7eb;
+}
+
+/* Table Striping Colors */
+.data-table tbody tr:nth-child(odd) {
+  background-color: #ffffff;
+}
+
+.data-table tbody tr:nth-child(even) {
+  background-color: #f9fafb;
+}
+
+/* Table Cell Alignment for Numbers */
+.data-table td:last-child {
+  text-align: right;
+  font-weight: 500;
+}
+
+/* Compact Table Style for Mobile */
+@media (max-width: 640px) {
+  .data-table {
+    font-size: 0.75rem;
+  }
+  
+  .data-table thead th,
+  .data-table td {
+    padding: 8px 10px;
+  }
+  
+  .chart-container {
+    padding: 12px;
+    margin: 16px 0;
+  }
+  
+  .chart-title {
+    font-size: 1rem;
+    margin-bottom: 12px;
+  }
+  
+  .data-chart {
+    height: 300px !important;
+  }
+}
+
+/* Print Styles for Charts and Tables */
+@media print {
+  .chart-container,
+  .data-table {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  
+  .data-table {
+    box-shadow: none;
+    border: 1px solid #000;
+  }
+}

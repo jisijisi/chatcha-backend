@@ -1,0 +1,190 @@
+/* Input Area Styles */
+.input-area {
+  width: 100%;
+  padding: 15px;
+  text-align: center;
+  border-top: 1px solid #ddd;
+  background-color: #fff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  position: relative;
+  bottom: 0;
+}
+
+.input-area .input-wrapper {
+  position: relative;
+  flex: 1;
+  max-width: 700px;
+  display: flex;
+  align-items: center;
+}
+
+.input-area input {
+  width: 100%;
+  padding: 12px 60px 12px 18px;
+  border-radius: 25px;
+  border: 1px solid #ccc;
+  font-size: 1rem;
+  transition: var(--transition);
+  background: #fff;
+  box-sizing: border-box;
+}
+
+.input-area input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(78, 90, 247, 0.1);
+}
+
+/* Send Button */
+.input-area button {
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%);
+  border: none;
+  color: #fff;
+  font-size: 1.1rem;
+  border-radius: 50%;
+  width: 42px;
+  height: 42px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(78, 90, 247, 0.25);
+  position: relative;
+  overflow: hidden;
+  margin-left: 8px;
+}
+
+.input-area button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, transparent 0%, rgba(255, 255, 255, 0.2) 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.input-area button:hover::before {
+  opacity: 1;
+}
+
+.input-area button:hover,
+.input-area button:focus {
+  box-shadow: 0 4px 16px rgba(78, 90, 247, 0.4);
+  transform: translateY(-2px) translateZ(0);
+}
+
+.input-area button:active {
+  transform: translateY(0) scale(0.95);
+  box-shadow: 0 2px 8px rgba(78, 90, 247, 0.3);
+}
+
+.input-area button .arrow {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease;
+}
+
+.input-area button:hover .arrow {
+  transform: translateY(-2px);
+}
+
+/* Stop Button */
+.input-area button.stop-mode {
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%);
+  animation: pulse-stop 2s ease-in-out infinite;
+}
+
+.input-area button .stop-icon {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease;
+  color: white;
+}
+
+.input-area button.stop-mode:hover .stop-icon {
+  transform: scale(1.1);
+}
+
+/* Character Counter - Fixed positioning for all states */
+.input-counter {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.7rem;
+  color: #999;
+  pointer-events: none;
+  transition: color 0.2s ease;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 2px 5px;
+  border-radius: 8px;
+  z-index: 3;
+  backdrop-filter: blur(4px);
+  white-space: nowrap;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.input-counter.warning {
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.12);
+  font-weight: 500;
+}
+
+.input-counter.error {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.12);
+  font-weight: 500;
+}
+
+/* Centered Input Area (Welcome State) - Fixed counter positioning */
+#chat-container.centered .input-area {
+  position: relative;
+  padding: 15px;
+  bottom: auto;
+  transform: none;
+  width: 100%;
+  max-width: min(500px, 90vw);
+}
+
+#chat-container.centered .input-area input {
+  max-width: min(500px, 90vw);
+  padding-right: 60px !important;
+}
+
+#chat-container.centered .input-counter {
+  right: 8px !important; /* Force same position as normal state */
+}
+
+/* Mobile specific adjustments - Fixed counter positioning */
+@media (max-width: 768px) {
+  .input-area input {
+    padding-right: 55px;
+  }
+  
+  .input-counter {
+    right: 8px !important; /* Force consistent position */
+  }
+  
+  #chat-container.centered .input-area input {
+    padding-right: 55px !important;
+  }
+  
+  #chat-container.centered .input-counter {
+    right: 8px !important; /* Force same position */
+  }
+}

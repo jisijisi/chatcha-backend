@@ -1,0 +1,642 @@
+/* Sidebar Styles */
+#sidebar {
+  width: 260px;
+  background-color: var(--sidebar-bg);
+  color: white;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  border-right: 2px solid var(--sidebar-border);
+  transition: width 0.3s ease, padding 0.3s ease;
+  position: relative;
+  z-index: 20;
+  overflow: hidden;
+}
+
+#sidebar.minimized {
+  width: 65px;
+}
+
+#sidebar.minimized .sidebar-header h1,
+#sidebar.minimized #chat-history,
+#sidebar.minimized h2 {
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+  pointer-events: none;
+}
+
+#sidebar.minimized #chat-history {
+  height: 0;
+  overflow: hidden;
+  padding: 0;
+}
+
+/* Sidebar Header */
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--sidebar-border);
+  gap: 12px;
+  background-color: rgba(0, 0, 0, 0.1);
+  transition: padding 0.3s ease;
+  position: relative;
+}
+
+.sidebar-header h1 {
+  margin: 0;
+  font-size: 1.3rem;
+  text-align: left;
+  flex: 1;
+  font-weight: 600;
+  letter-spacing: -0.5px;
+  white-space: nowrap;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+/* Sidebar Toggle */
+.sidebar-toggle {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  border-radius: 6px;
+  flex-shrink: 0;
+  order: -1;
+  margin-right: 0;
+}
+
+.sidebar-toggle:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+#sidebar.minimized .sidebar-header {
+  justify-content: flex-start;
+  padding: 16px 10px;
+  gap: 0;
+}
+
+#sidebar.minimized .sidebar-toggle {
+  display: none;
+}
+
+/* Logo Container */
+.logo-container {
+  flex-shrink: 0;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  border-radius: 8px;
+  padding: 4px;
+  position: relative;
+  z-index: 2;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+#sidebar:not(.minimized) .logo-container {
+  cursor: default;
+}
+
+#sidebar.minimized .logo-container {
+  cursor: pointer;
+}
+
+#sidebar.minimized .logo-container:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.logo {
+  width: 50px;
+  height: 50px;
+  display: block;
+  object-fit: contain;
+  border-radius: 6px;
+  transition: opacity 0.3s ease;
+}
+
+/* Logo Hamburger Overlay */
+.logo-hamburger-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.logo-hamburger-overlay .hamburger {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 20px;
+  height: 16px;
+}
+
+.logo-hamburger-overlay .hamburger span {
+  display: block;
+  width: 100%;
+  height: 2px;
+  background-color: white;
+  border-radius: 2px;
+}
+
+#sidebar.minimized .logo-container:hover .logo {
+  opacity: 0;
+}
+
+#sidebar.minimized .logo-container:hover .logo-hamburger-overlay {
+  opacity: 1;
+}
+
+/* Mobile Menu Toggle */
+.mobile-menu-toggle {
+  display: none;
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  z-index: 15;
+  background: var(--sidebar-bg);
+  border: none;
+  cursor: pointer;
+  padding: 10px;
+  border-radius: 8px;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.mobile-menu-toggle:hover {
+  background-color: #252538;
+  transform: scale(1.05);
+}
+
+.mobile-menu-toggle:active {
+  transform: scale(0.95);
+}
+
+.hamburger {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 20px;
+  height: 16px;
+}
+
+.hamburger span {
+  display: block;
+  width: 100%;
+  height: 2px;
+  background-color: white;
+  border-radius: 2px;
+  transition: all 0.3s ease;
+}
+
+/* New Chat Button */
+#sidebar button#new-chat {
+  background-color: transparent;
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 10px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin: 16px 20px;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  font-weight: 500;
+  white-space: nowrap;
+  position: relative;
+  overflow: visible;
+  min-height: 40px;
+}
+
+#sidebar button#new-chat svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  transition: none;
+  position: relative;
+  z-index: 1;
+}
+
+#sidebar button#new-chat span {
+  transition: opacity 0.2s ease, width 0.2s ease;
+  white-space: nowrap;
+  overflow: hidden;
+  text-align: left;
+}
+
+#sidebar button#new-chat:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+#sidebar button#new-chat:active {
+  background-color: rgba(255, 255, 255, 0.15);
+  transform: scale(0.98);
+}
+
+#sidebar.minimized button#new-chat {
+  padding: 10px;
+  justify-content: center;
+  margin: 16px 10px;
+  gap: 0;
+  width: 45px;
+  min-height: 40px;
+  overflow: visible;
+}
+
+#sidebar.minimized button#new-chat span {
+  opacity: 0;
+  width: 0;
+  visibility: hidden;
+}
+
+/* History Header */
+.history-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px 10px;
+  margin: 0;
+  gap: 8px;
+  transition: opacity 0.2s ease, visibility 0.2s ease, padding 0.3s ease;
+}
+
+.history-header h2 {
+  font-size: 0.85rem;
+  margin: 0;
+  padding: 0;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  flex: 1;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+.history-toggle {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  border-radius: 4px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.history-toggle:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.history-toggle svg {
+  width: 18px;
+  height: 18px;
+  transition: transform 0.3s ease;
+}
+
+.history-toggle.collapsed svg {
+  transform: rotate(-90deg);
+}
+
+#sidebar.minimized .history-toggle svg {
+  transform: rotate(-90deg);
+}
+
+#sidebar.minimized .history-toggle.dropdown-open svg {
+  transform: rotate(90deg);
+}
+
+#sidebar.minimized .history-header {
+  padding: 5px 10px 10px;
+  justify-content: center;
+  margin-left: -65px;
+}
+
+#sidebar.minimized .history-header h2 {
+  opacity: 0;
+  visibility: hidden;
+  width: 0;
+  overflow: hidden;
+}
+
+/* Chat History */
+#chat-history {
+  list-style: none;
+  flex-grow: 1;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #555 var(--sidebar-bg);
+  padding: 0 20px 20px;
+  /* === MODIFICATION START === */
+  transition: opacity 0.3s ease, max-height 0.3s ease, padding 0.3s ease, margin 0.3s ease;
+  max-height: 1000px; /* Set a large height for the expanded state */
+  opacity: 1;
+  /* === MODIFICATION END === */
+}
+
+/* === NEW RULE START === */
+#chat-history.collapsed {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  padding-top: 0;
+  padding-bottom: 0;
+  margin-bottom: 0;
+}
+/* === NEW RULE END === */
+
+
+#chat-history::-webkit-scrollbar {
+  width: 6px;
+}
+
+#chat-history::-webkit-scrollbar-track {
+  background: var(--sidebar-bg);
+}
+
+#chat-history::-webkit-scrollbar-thumb {
+  background: #555;
+  border-radius: 3px;
+}
+
+#chat-history::-webkit-scrollbar-thumb:hover {
+  background: #777;
+}
+
+#chat-history li {
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  margin-bottom: 4px;
+  background-color: transparent;
+  color: var(--text-light);
+  font-size: 0.85rem;
+  font-weight: 500;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+  position: relative;
+}
+
+#chat-history li:hover,
+#chat-history li:focus {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+#chat-history li.active {
+  background-color: var(--chat-bg);
+  box-shadow: 0 2px 8px rgba(78, 90, 247, 0.15);
+}
+
+/* Ellipsis visibility - FIXED */
+#chat-history li .ellipsis {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+/* Desktop: Show on hover */
+@media (min-width: 769px) {
+  #chat-history li:hover .ellipsis,
+  #chat-history li.active .ellipsis {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  
+  /* Keep ellipsis visible when dropdown is open */
+  #chat-history li:has(.dropdown.show) .ellipsis {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+/* Mobile: Always show */
+@media (max-width: 768px) {
+  #chat-history li .ellipsis {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+/* Date Separator */
+.date-separator {
+  padding: 12px 20px 8px;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  user-select: none;
+  position: sticky;
+  top: 0;
+  background: var(--sidebar-bg);
+  z-index: 1;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  margin-bottom: 4px;
+}
+
+/* Rename Input */
+#chat-history li .rename-input {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--primary-color);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  font-family: inherit;
+  outline: none;
+  margin-right: 8px;
+}
+
+#chat-history li .rename-input:focus {
+  background: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 0 0 2px rgba(78, 90, 247, 0.3);
+}
+
+/* Dropdown and Ellipsis */
+.dropdown {
+  position: fixed;
+  background: var(--chat-bg);
+  border-radius: var(--radius-sm);
+  display: none;
+  padding: 6px 0;
+  z-index: 1003;
+  box-shadow: var(--shadow);
+  border: 1px solid #444;
+  min-width: 120px;
+}
+
+.dropdown.show {
+  display: block;
+  animation: fadeIn 0.2s ease;
+}
+
+.dropdown-option {
+  color: var(--text-light);
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: var(--transition);
+  background: none;
+  border: none;
+  padding: 6px 12px;
+  display: block;
+  width: 100%;
+  text-align: left;
+}
+
+.dropdown-option:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.ellipsis {
+  color: var(--text-light);
+  cursor: pointer;
+  font-size: 1.4rem;
+  line-height: 1;
+  padding: 2px 6px;
+  background: none;
+  border: none;
+  user-select: none;
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+  margin-left: 8px;
+}
+
+.ellipsis:hover {
+  color: white;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* History Dropdown */
+.history-dropdown {
+  display: none;
+  position: fixed;
+  background: var(--sidebar-bg);
+  border-radius: var(--radius-md);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--sidebar-border);
+  width: 280px;
+  max-height: 400px;
+  z-index: 1002;
+  overflow: hidden;
+  flex-direction: column;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.history-dropdown.show {
+  display: flex;
+  opacity: 1;
+}
+
+.history-dropdown-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--sidebar-border);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: rgba(0, 0, 0, 0.2);
+}
+
+.history-dropdown-header h3 {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+
+#history-dropdown-list {
+  list-style: none;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #555 var(--sidebar-bg);
+  padding: 8px;
+  flex: 1;
+  max-height: 350px;
+}
+
+#history-dropdown-list li {
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  margin-bottom: 4px;
+  background-color: transparent;
+  color: var(--text-light);
+  font-size: 0.85rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+}
+
+#history-dropdown-list li:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+#history-dropdown-list li.active {
+  background-color: var(--chat-bg);
+  box-shadow: 0 2px 8px rgba(78, 90, 247, 0.15);
+}
+
+/* Ellipsis in history dropdown - always visible */
+#history-dropdown-list li .ellipsis {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Update history toggle styles for minimized sidebar */
+#sidebar.minimized .history-toggle {
+  margin-left: 0;
+}
+
+#sidebar.minimized .history-toggle.dropdown-open svg {
+  transform: rotate(180deg);
+}
+
+/* Sidebar Overlay */
+#sidebar-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 15;
+  backdrop-filter: blur(2px);
+}
+
+#sidebar-overlay.active {
+  display: block;
+}

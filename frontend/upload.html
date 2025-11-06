@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Upload & Merge Resume Data</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f6fa;
+      padding: 40px;
+      color: #333;
+    }
+    h1 { color: #2d3436; }
+    .container {
+      background: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+      max-width: 600px;
+      margin: auto;
+    }
+    input[type="file"] {
+      margin: 10px 0;
+    }
+    pre {
+      background: #f0f0f0;
+      padding: 10px;
+      border-radius: 5px;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    button {
+      background: #0984e3;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    button:hover {
+      background: #74b9ff;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Upload & Merge Resume Data</h1>
+    <p>Upload a <strong>.json</strong> or <strong>.txt</strong> file to merge with your existing resume data.</p>
+
+    <input type="file" id="fileInput" accept=".json,.txt" />
+    <button onclick="mergeFile()">Merge File</button>
+
+    <h3>Preview of Merged Data:</h3>
+    <pre id="output">No file merged yet.</pre>
+
+    <button onclick="downloadUpdated()">Download Updated JSON</button>
+  </div>
+
+  <script>
+    let existingData = {};
+    let mergedData = {};
+
+    async function loadExistingResume() {
+      try {
+        const res = await fetch('resume.json');
+        existingData = await res.json();
+        console.log("Existing resume loaded:", existingData);
+      } catch (error) {
+        console.error("No existing resume found or failed to load:", error);
+        existingData = {};
+      }
+    }
+
+    async function mergeFile() {
+      const fileInput = document.getElementById('fileInput');
+      const file = fileInput.files[0];
+      if (!file) {
+        alert("Please select a file first.");
+        return;
+      }
+
+      const text = await file.text();
+      let uploadedData;
+
+      try {
+        uploadedData = JSON.parse(text);
+      } catch {
+        // If it's not pure JSON, wrap text into an object
+        uploadedData = { rawText: text };
+      }
+
+      mergedData = { ...existingData, ...uploadedData };
+      document.getElementById('output').textContent = JSON.stringify(mergedData, null, 2);
+
+      console.log("Merged data:", mergedData);
+      alert("File merged successfully!");
+    }
+
+    function downloadUpdated() {
+      if (!mergedData || Object.keys(mergedData).length === 0) {
+        alert("No merged data available yet!");
+        return;
+      }
+
+      const blob = new Blob([JSON.stringify(mergedData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'resume.json';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+
+    loadExistingResume();
+  </script>
+</body>
+</html>

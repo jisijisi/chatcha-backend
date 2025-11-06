@@ -1,0 +1,9 @@
+/* Main CSS - Imports all modules */
+@import url('variables.css');
+@import url('base.css');
+@import url('sidebar.css');
+@import url('chat.css');
+@import url('input.css');
+@import url('modal.css');
+@import url('animations.css');
+@import url('mobile.css');
