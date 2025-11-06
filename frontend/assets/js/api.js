@@ -1,4 +1,4 @@
-// api.js - Updated for Server-Side RAG
+// api.js - Complete Server-Side RAG System
 import { CONFIG } from './config.js';
 
 export class APIManager {
@@ -8,7 +8,6 @@ export class APIManager {
     this.cdoInfoCache = null;
     this.cacheTimestamp = null;
     this.CACHE_DURATION = 24 * 60 * 60 * 1000;
-    // No more client-side vector manager - all RAG is now server-side
     this.conversationSummary = '';
   }
   
@@ -501,22 +500,33 @@ Based on the context provided, please provide a comprehensive and accurate answe
   }
 
   /**
-   * Analyzes the question to determine if CDO company info is needed
+   * CDO Cache Methods
    */
-  needsCDOInfo(question) {
-    const lowerQuestion = question.toLowerCase();
-    
-    const cdoKeywords = [
-      'cdo', 'foodsphere', 'company', 'history', 'founder', 'founded',
-      'corazon dayro ong', 'jose ong', 'valenzuela', 'batangas',
-      'factory', 'establishment', 'origin', 'started', 'began',
-      'karne norte', 'product', 'brand', 'meat processing',
-      'about us', 'about the company', 'who are we', 'organization',
-      'business', 'corporation', 'manufacturing', 'food industry',
-      'million meats', 'corporate'
-    ];
-    
-    return cdoKeywords.some(keyword => lowerQuestion.includes(keyword));
+  async initializeCDOCache() {
+    try {
+      const cachedData = localStorage.getItem('cdoInfoCache');
+      const timestamp = localStorage.getItem('cdoCacheTimestamp');
+      
+      if (cachedData && timestamp) {
+        this.cdoInfoCache = cachedData;
+        this.cacheTimestamp = parseInt(timestamp);
+        console.log('Initialized CDO cache from localStorage');
+        
+        if (!this.isCacheValid()) {
+          console.log('Cache expired, fetching fresh data in background...');
+          this.getCDOInfo(true).catch(err => {
+            console.warn('Background refresh failed:', err);
+          });
+        }
+      } else {
+        console.log('No cache found, fetching CDO info...');
+        await this.getCDOInfo();
+      }
+    } catch (error) {
+      console.error('Error initializing CDO cache:', error);
+      this.cdoInfoCache = this.getFallbackCDOInfo();
+      this.cacheTimestamp = Date.now();
+    }
   }
 
   isCacheValid() {
@@ -634,6 +644,36 @@ Company History:
 Products: CDO brand, longanisa, tocino, siopao, Karne Norte canned goods
 
 Note: This is fallback information. Refer to official sources for current data.`;
+  }
+
+  /**
+   * Dummy methods for compatibility
+   */
+  enablePhaseOptimization() {
+    console.log('Phase optimization not needed with server-side RAG');
+  }
+
+  disablePhaseOptimization() {
+    console.log('Phase optimization not needed with server-side RAG');
+  }
+
+  /**
+   * Analyzes the question to determine if CDO company info is needed
+   */
+  needsCDOInfo(question) {
+    const lowerQuestion = question.toLowerCase();
+    
+    const cdoKeywords = [
+      'cdo', 'foodsphere', 'company', 'history', 'founder', 'founded',
+      'corazon dayro ong', 'jose ong', 'valenzuela', 'batangas',
+      'factory', 'establishment', 'origin', 'started', 'began',
+      'karne norte', 'product', 'brand', 'meat processing',
+      'about us', 'about the company', 'who are we', 'organization',
+      'business', 'corporation', 'manufacturing', 'food industry',
+      'million meats', 'corporate'
+    ];
+    
+    return cdoKeywords.some(keyword => lowerQuestion.includes(keyword));
   }
   
   clearCache() {

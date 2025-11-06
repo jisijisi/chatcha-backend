@@ -1,9 +1,11 @@
-// config.js - Production version
+// config.js - Updated for new backend
 export const CONFIG = {
-  API_URL: "https://chatjisi-backend.onrender.com/ask",
+  // Change this line - remove the port and use the Render domain
+  API_URL: "https://chatcha-backend.onrender.com/ask",
+  
+  // Rest of your config...
   GOOGLE_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbz9lRRV1Yc9nUknapn4-gliWSU3BfmpSzBuca200hV2C8z0469rMpLfN4VcwZ7y6nJ6bQ/exec",
   
-  // Storage Keys
   STORAGE_KEYS: {
     CHATS: "chats",
     CURRENT_CONVERSATION: "currentConversation",
@@ -14,11 +16,9 @@ export const CONFIG = {
     CDO_CACHE_TIMESTAMP: "cdoCacheTimestamp"
   },
   
-  // UI Configuration
   MAX_TITLE_LENGTH: 30,
   MOBILE_BREAKPOINT: 1024,
   
-  // RAG Configuration
   RAG_CONFIG: {
     ENABLED: true,
     SEARCH_TOP_K: 12,

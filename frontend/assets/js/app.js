@@ -89,8 +89,8 @@ class ChatApp {
     // Initialize CDO cache from localStorage or fetch fresh data
     await this.apiManager.initializeCDOCache();
 
-    // NEW: Initialize vector knowledge base
-    await this.apiManager.initializeKnowledgeBase(this.hrKnowledgeBase);
+    // HR knowledge base is now handled server-side via RAG
+    console.log('Server-side RAG system initialized');
     
     // Check if Sheets integration is enabled
     if (this.sheetsManager.isSheetsEnabled()) {
@@ -145,31 +145,14 @@ class ChatApp {
   }
 
   async loadHRKnowledge() {
-    try {
-      console.log('Loading HR knowledge base...');
-      const response = await fetch("hr-knowledge.json");
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
+      try {
+          // HR knowledge is now handled server-side
+          this.hrKnowledgeBase = { full_content: {} };
+          console.log('HR knowledge base handled server-side');
+      } catch (error) {
+          console.log('HR knowledge base handled server-side');
+          this.hrKnowledgeBase = { full_content: {} };
       }
-      this.hrKnowledgeBase = await response.json();
-      console.log('HR knowledge base loaded successfully');
-    } catch (error) {
-      console.error("Failed to load hr-knowledge.json:", error);
-      // Set default HR knowledge if file doesn't exist
-      this.hrKnowledgeBase = {
-        role: "HR and Recruitment Assistant",
-        expertise: [
-          "Talent Acquisition",
-          "Interview Techniques",
-          "HR Policies",
-          "Employee Relations",
-          "Performance Management",
-          "Recruitment Strategies"
-        ],
-        note: "Using default HR knowledge base"
-      };
-      this.showToast('Using default HR knowledge base', 'warning');
-    }
   }
 
   saveToStorage() {

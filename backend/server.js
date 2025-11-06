@@ -1,4 +1,4 @@
-// server.js - Enhanced with Server-Side RAG
+// server.js - Enhanced with Universal Semantic RAG using Gemini Embeddings
 import express from "express";
 import fetch from "node-fetch";
 import dotenv from "dotenv";
@@ -17,22 +17,32 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
-// Middleware
+// Middleware - CORS MUST come FIRST
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Accept', 'Authorization'],
+  credentials: true
+}));
+
+app.options('*', cors());
 app.use(express.json({ limit: '10mb' }));
-app.use(cors());
 app.use(express.static(path.join(__dirname, "../frontend")));
 
-// RAG System
-class SimpleRAG {
+// Universal Semantic RAG System - No Question-Specific Logic
+class SemanticRAG {
     constructor() {
         this.knowledgeBase = this.loadKnowledgeBase();
-        this.keywordWeights = this.getKeywordWeights();
-        console.log("✅ RAG System Initialized");
+        this.chunks = [];
+        this.embeddings = [];
+        this.isInitialized = false;
+        this.embeddingsCachePath = path.join(__dirname, 'embeddings-cache.json');
+        console.log("🔧 Initializing Universal Semantic RAG System...");
+        this.initializeRAG();
     }
     
     loadKnowledgeBase() {
         try {
-            // Try to load from the same directory
             const knowledgeBasePath = path.join(__dirname, 'hr-knowledge.json');
             if (fs.existsSync(knowledgeBasePath)) {
                 const data = fs.readFileSync(knowledgeBasePath, 'utf8');
@@ -48,279 +58,599 @@ class SimpleRAG {
         }
     }
     
-    getKeywordWeights() {
-        return {
-            // High priority HR terms
-            'internal hiring': 10,
-            'internal hiring process': 12,
-            'letter of intent': 10,
-            'loi': 9,
-            'interview': 8,
-            'recruitment': 8,
-            'hiring': 8,
-            'behavioral interview': 9,
-            'star method': 8,
-            'stages of hiring': 7,
-            'personnel requisition': 7,
-            'prf': 7,
+    async initializeRAG() {
+        try {
+            this.chunks = this.extractChunks(this.knowledgeBase.full_content);
+            console.log(`📚 Extracted ${this.chunks.length} text chunks`);
             
-            // Medium priority
-            'process': 6,
-            'policy': 6,
-            'procedure': 6,
-            'guideline': 5,
-            'framework': 5,
-            'employee': 4,
-            'onboard': 4,
-            'offboard': 4,
-            'performance': 4,
+            if (this.chunks.length === 0) {
+                console.warn("⚠️ No chunks extracted from knowledge base");
+                this.isInitialized = true;
+                return;
+            }
             
-            // CDO specific
-            'cdo': 3,
-            'foodsphere': 3
-        };
-    }
-    
-    search(question, topK = 12) {
-        const questionLower = question.toLowerCase();
-        const results = [];
-        
-        // Extract key phrases from question
-        const questionPhrases = this.extractPhrases(questionLower);
-        
-        console.log(`🔍 RAG Search: "${question}"`);
-        console.log(`📝 Detected phrases:`, questionPhrases);
-        
-        // Search through knowledge base
-        this.searchObject(this.knowledgeBase.full_content, questionPhrases, results, '');
-        
-        // Sort by score and return top results
-        const sortedResults = results
-            .sort((a, b) => b.score - a.score)
-            .slice(0, topK);
-        
-        console.log(`📊 Found ${sortedResults.length} relevant chunks`);
-        if (sortedResults.length > 0) {
-            console.log(`🎯 Top result score: ${sortedResults[0].score}`);
+            const cacheLoaded = await this.loadEmbeddingsCache();
+            
+            if (!cacheLoaded) {
+                await this.generateAllEmbeddings();
+                await this.saveEmbeddingsCache();
+            }
+            
+            this.isInitialized = true;
+            console.log("✅ Universal Semantic RAG System Ready!");
+        } catch (error) {
+            console.error("❌ Failed to initialize RAG:", error);
+            this.isInitialized = false;
         }
-        
-        return sortedResults;
     }
     
-    extractPhrases(text) {
-        const phrases = new Set();
-        const words = text.split(/\s+/);
-        
-        // Add individual important words
-        words.forEach(word => {
-            if (word.length > 3) {
-                phrases.add(word);
+    async loadEmbeddingsCache() {
+        try {
+            if (fs.existsSync(this.embeddingsCachePath)) {
+                console.log("📦 Loading embeddings from cache...");
+                const cacheData = fs.readFileSync(this.embeddingsCachePath, 'utf8');
+                const cache = JSON.parse(cacheData);
+                
+                if (cache.chunks.length === this.chunks.length) {
+                    this.embeddings = cache.embeddings;
+                    console.log("✅ Embeddings loaded from cache!");
+                    return true;
+                } else {
+                    console.log("⚠️ Cache size mismatch, regenerating embeddings");
+                    return false;
+                }
             }
-        });
-        
-        // Add common HR phrases if they appear in the question
-        Object.keys(this.keywordWeights).forEach(phrase => {
-            if (text.includes(phrase)) {
-                phrases.add(phrase);
-            }
-        });
-        
-        // Add multi-word combinations from the question
-        for (let i = 0; i < words.length - 1; i++) {
-            const twoWordPhrase = `${words[i]} ${words[i+1]}`;
-            if (twoWordPhrase.length > 6) {
-                phrases.add(twoWordPhrase);
-            }
+            return false;
+        } catch (error) {
+            console.warn("⚠️ Could not load embeddings cache:", error.message);
+            return false;
         }
-        
-        return Array.from(phrases);
     }
     
-    searchObject(obj, questionPhrases, results, path, depth = 0) {
-        if (depth > 8) return; // Prevent infinite recursion
-        
+    async saveEmbeddingsCache() {
+        try {
+            const cache = {
+                chunks: this.chunks,
+                embeddings: this.embeddings,
+                timestamp: new Date().toISOString()
+            };
+            fs.writeFileSync(this.embeddingsCachePath, JSON.stringify(cache));
+            console.log("💾 Embeddings cached successfully!");
+        } catch (error) {
+            console.warn("⚠️ Could not save embeddings cache:", error.message);
+        }
+    }
+    
+    /**
+     * UNIVERSAL CHUNK EXTRACTION - Works for ANY data structure
+     */
+    extractChunks(obj, path = '', chunks = [], parentContext = '') {
         for (const [key, value] of Object.entries(obj)) {
             const currentPath = path ? `${path}.${key}` : key;
+            const contextLabel = this.getContextLabel(key, currentPath);
             
-            if (typeof value === 'object' && value !== null) {
-                // Recursively search objects
-                this.searchObject(value, questionPhrases, results, currentPath, depth + 1);
-                
-                // Also consider the object as a whole for important sections
-                if (this.isImportantSection(currentPath)) {
-                    const objectText = JSON.stringify(value, null, 2);
-                    const score = this.calculateScore(objectText, questionPhrases);
-                    if (score > 2) { // Higher threshold for whole objects
-                        results.push({
-                            content: this.formatObjectContent(key, value, currentPath),
-                            score: score * 1.5, // Boost for complete sections
+            // Handle ALL objects with nested data structures
+            if (this.hasNestedStructure(value)) {
+                const structuredChunk = this.createStructuredChunk(key, value, currentPath, contextLabel);
+                if (structuredChunk) {
+                    chunks.push(structuredChunk);
+                }
+            }
+            
+            // Extract strings (lowered threshold for better coverage)
+            if (typeof value === 'string' && value.length > 15) {
+                chunks.push({
+                    text: value,
+                    path: currentPath,
+                    context: contextLabel,
+                    parentContext: parentContext
+                });
+            } 
+            // Handle arrays
+            else if (Array.isArray(value)) {
+                // Create aggregate chunk for arrays with multiple items
+                if (value.length > 0) {
+                    const arrayText = this.formatArrayAsText(key, value, currentPath);
+                    if (arrayText && arrayText.length > 50) {
+                        chunks.push({
+                            text: arrayText,
                             path: currentPath,
-                            type: 'complete_section'
+                            context: contextLabel,
+                            parentContext: parentContext,
+                            isAggregate: true
                         });
                     }
                 }
-            } else if (typeof value === 'string' && value.length > 10) {
-                // Search string values
-                const score = this.calculateScore(value, questionPhrases);
-                if (score > 0) {
-                    results.push({
-                        content: this.formatContent(key, value, currentPath),
-                        score: score,
-                        path: currentPath,
-                        type: 'text'
-                    });
-                }
-            } else if (Array.isArray(value)) {
-                // Search arrays
-                this.searchArray(value, questionPhrases, results, currentPath, depth + 1);
-            }
-        }
-    }
-    
-    searchArray(arr, questionPhrases, results, path, depth) {
-        arr.forEach((item, index) => {
-            const currentPath = `${path}[${index}]`;
-            
-            if (typeof item === 'object' && item !== null) {
-                this.searchObject(item, questionPhrases, results, currentPath, depth + 1);
-            } else if (typeof item === 'string' && item.length > 10) {
-                const score = this.calculateScore(item, questionPhrases);
-                if (score > 0) {
-                    results.push({
-                        content: this.formatContent(`item_${index}`, item, currentPath),
-                        score: score,
-                        path: currentPath,
-                        type: 'array_text'
-                    });
-                }
-            }
-        });
-    }
-    
-    isImportantSection(path) {
-        const importantSections = [
-            'attract_phase.processes_and_policies.internal_hiring_process',
-            'attract_phase.processes_and_policies.stages_of_hiring_process',
-            'attract_phase.learning_series.interviewing_101',
-            'attract_phase.framework',
-            'introduction.founders_message',
-            'introduction.playbook_overview'
-        ];
-        return importantSections.some(section => path.includes(section));
-    }
-    
-    calculateScore(text, questionPhrases) {
-        const textLower = text.toLowerCase();
-        let score = 0;
-        
-        questionPhrases.forEach(phrase => {
-            if (textLower.includes(phrase)) {
-                // Weight by phrase importance
-                const weight = this.keywordWeights[phrase] || 1;
-                // Count occurrences with regex for exact matching
-                const regex = new RegExp(phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
-                const occurrences = (textLower.match(regex) || []).length;
-                score += weight * occurrences;
                 
-                // Bonus for exact phrase matches
-                if (phrase.includes(' ') && textLower.includes(phrase)) {
-                    score += weight * 2;
-                }
+                // Also extract individual items
+                value.forEach((item, index) => {
+                    if (typeof item === 'string' && item.length > 10) {
+                        chunks.push({
+                            text: item,
+                            path: `${currentPath}[${index}]`,
+                            context: contextLabel,
+                            parentContext: parentContext
+                        });
+                    } else if (typeof item === 'object' && item !== null) {
+                        this.extractChunks(item, `${currentPath}[${index}]`, chunks, contextLabel);
+                    }
+                });
+            } 
+            // Recursively handle nested objects
+            else if (typeof value === 'object' && value !== null) {
+                this.extractChunks(value, currentPath, chunks, contextLabel);
             }
-        });
-        
-        return score;
-    }
-    
-    formatObjectContent(key, value, path) {
-        const sectionName = path.split('.').pop().replace(/_/g, ' ').toUpperCase();
-        return `## ${sectionName}\n${JSON.stringify(value, null, 2)}`;
-    }
-    
-    formatContent(key, value, path) {
-        // Truncate long content
-        let displayValue = value;
-        if (value.length > 500) {
-            displayValue = value.substring(0, 500) + '...';
         }
         
-        const sectionName = path.split('.').pop().replace(/_/g, ' ');
-        return `### ${sectionName}\n${displayValue}`;
+        return chunks;
     }
     
-    getContext(question, topK = 12) {
-        const results = this.search(question, topK);
+    /**
+     * UNIVERSAL: Check if object has nested structure worth preserving
+     */
+    hasNestedStructure(value) {
+        if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+            return false;
+        }
+        
+        // Check if object has multiple properties with complex data
+        const keys = Object.keys(value);
+        if (keys.length < 2) return false;
+        
+        // Check if it has arrays or nested objects
+        const hasComplexData = keys.some(key => {
+            const val = value[key];
+            return Array.isArray(val) || (typeof val === 'object' && val !== null);
+        });
+        
+        return hasComplexData;
+    }
+    
+    /**
+     * UNIVERSAL: Create comprehensive chunks for ANY structured data
+     */
+    createStructuredChunk(key, value, path, context) {
+        try {
+            let formattedText = `${this.formatKeyAsTitle(key)}\n\n`;
+            formattedText += this.formatStructuredObject(value, 0);
+            
+            // Only create chunk if it has substantial content
+            if (formattedText.length > 100) {
+                return {
+                    text: formattedText,
+                    path: path,
+                    context: context,
+                    isStructured: true,
+                    structureType: key
+                };
+            }
+            
+            return null;
+        } catch (error) {
+            console.warn(`Failed to create structured chunk for ${key}:`, error);
+            return null;
+        }
+    }
+    
+    /**
+     * UNIVERSAL: Format ANY structured object recursively
+     */
+    formatStructuredObject(obj, indent = 0) {
+        let text = '';
+        const indentation = '  '.repeat(indent);
+        
+        for (const [key, value] of Object.entries(obj)) {
+            const label = this.formatKeyAsTitle(key);
+            
+            if (typeof value === 'string') {
+                text += `${indentation}${label}: ${value}\n`;
+            } else if (Array.isArray(value)) {
+                text += `${indentation}${label}:\n`;
+                value.forEach((item, idx) => {
+                    if (typeof item === 'string') {
+                        text += `${indentation}  ${idx + 1}. ${item}\n`;
+                    } else if (typeof item === 'object' && item !== null) {
+                        text += `${indentation}  ${idx + 1}.\n`;
+                        text += this.formatStructuredObject(item, indent + 2);
+                    }
+                });
+            } else if (typeof value === 'object' && value !== null) {
+                text += `${indentation}${label}:\n`;
+                text += this.formatStructuredObject(value, indent + 1);
+            } else if (typeof value === 'number' || typeof value === 'boolean') {
+                text += `${indentation}${label}: ${value}\n`;
+            }
+        }
+        
+        return text;
+    }
+    
+    /**
+     * UNIVERSAL: Convert ANY key format to readable title
+     */
+    formatKeyAsTitle(key) {
+        return key
+            .replace(/_/g, ' ')
+            .replace(/([A-Z])/g, ' $1')
+            .split(' ')
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+            .join(' ')
+            .trim();
+    }
+    
+    /**
+     * UNIVERSAL: Format ANY array into readable text
+     */
+    formatArrayAsText(key, array, path) {
+        if (array.length === 0) return null;
+        
+        const title = this.formatKeyAsTitle(key);
+        let formattedText = `${title}:\n\n`;
+        
+        // Simple string arrays
+        if (array.every(item => typeof item === 'string')) {
+            array.forEach((item, idx) => {
+                formattedText += `${idx + 1}. ${item}\n`;
+            });
+            return formattedText;
+        }
+        
+        // Object arrays - format based on content
+        if (array.every(item => typeof item === 'object' && item !== null)) {
+            array.forEach((item, idx) => {
+                // Find the most important properties to display
+                const displayProps = this.getDisplayProperties(item);
+                
+                if (displayProps.length > 0) {
+                    formattedText += `${idx + 1}. `;
+                    formattedText += displayProps.map(prop => {
+                        const key = Object.keys(prop)[0];
+                        const value = prop[key];
+                        return `${this.formatKeyAsTitle(key)}: ${value}`;
+                    }).join(' | ');
+                    formattedText += '\n';
+                    
+                    // Add additional details
+                    const otherProps = Object.keys(item).filter(k => 
+                        !displayProps.some(p => Object.keys(p)[0] === k)
+                    );
+                    
+                    otherProps.forEach(k => {
+                        const value = item[k];
+                        if (typeof value === 'string' && value.length > 0) {
+                            formattedText += `   ${this.formatKeyAsTitle(k)}: ${value}\n`;
+                        } else if (Array.isArray(value) && value.length > 0) {
+                            formattedText += `   ${this.formatKeyAsTitle(k)}: ${value.join(', ')}\n`;
+                        }
+                    });
+                }
+            });
+            return formattedText;
+        }
+        
+        // Mixed arrays
+        array.forEach((item, idx) => {
+            formattedText += `${idx + 1}. ${String(item)}\n`;
+        });
+        
+        return formattedText;
+    }
+    
+    /**
+     * UNIVERSAL: Identify important properties in ANY object
+     */
+    getDisplayProperties(obj) {
+        const priorityKeys = [
+            'name', 'title', 'stage_name', 'phase', 'step', 
+            'label', 'description', 'question', 'action'
+        ];
+        
+        const props = [];
+        
+        // First, look for priority keys
+        for (const key of priorityKeys) {
+            if (obj[key] && typeof obj[key] === 'string') {
+                props.push({ [key]: obj[key] });
+            }
+        }
+        
+        // If no priority keys found, use first 2 string properties
+        if (props.length === 0) {
+            const stringKeys = Object.keys(obj).filter(k => typeof obj[k] === 'string');
+            stringKeys.slice(0, 2).forEach(k => {
+                props.push({ [k]: obj[k] });
+            });
+        }
+        
+        return props;
+    }
+    
+    /**
+     * UNIVERSAL: Generate context labels from path structure
+     */
+    getContextLabel(key, path) {
+        // Extract meaningful context from path
+        const pathParts = path.split('.');
+        
+        // Use the most specific/relevant part of the path
+        const relevantParts = pathParts.filter(part => 
+            !part.includes('[') && 
+            part.length > 0 &&
+            !['full_content', 'documents', 'data'].includes(part)
+        );
+        
+        if (relevantParts.length > 0) {
+            // Use the last two parts for better context
+            const contextParts = relevantParts.slice(-2);
+            return contextParts.map(p => this.formatKeyAsTitle(p)).join(' - ');
+        }
+        
+        return this.formatKeyAsTitle(key);
+    }
+    
+    async generateAllEmbeddings() {
+        console.log("🔄 Generating embeddings for all chunks...");
+        console.log("⏳ This may take a few minutes...");
+        
+        if (!GEMINI_API_KEY) {
+            throw new Error("GEMINI_API_KEY not set in environment");
+        }
+        
+        const batchSize = 5;
+        for (let i = 0; i < this.chunks.length; i += batchSize) {
+            const batch = this.chunks.slice(i, i + batchSize);
+            const batchEmbeddings = await Promise.all(
+                batch.map(chunk => this.getEmbedding(chunk.text))
+            );
+            this.embeddings.push(...batchEmbeddings);
+            
+            const progress = Math.min(i + batchSize, this.chunks.length);
+            const percentage = ((progress / this.chunks.length) * 100).toFixed(1);
+            console.log(`📊 Progress: ${progress}/${this.chunks.length} (${percentage}%)`);
+            
+            if (i + batchSize < this.chunks.length) {
+                await new Promise(resolve => setTimeout(resolve, 200));
+            }
+        }
+        
+        console.log("✅ All embeddings generated!");
+    }
+    
+    async getEmbedding(text) {
+        try {
+            const truncatedText = text.length > 2000 ? text.substring(0, 2000) : text;
+            
+            const response = await fetch(
+                `https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key=${GEMINI_API_KEY}`,
+                {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        model: "models/text-embedding-004",
+                        content: { parts: [{ text: truncatedText }] }
+                    })
+                }
+            );
+            
+            if (!response.ok) {
+                throw new Error(`Embedding API error: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            return data.embedding.values;
+        } catch (error) {
+            console.error("Error generating embedding:", error.message);
+            return new Array(768).fill(0);
+        }
+    }
+    
+    cosineSimilarity(a, b) {
+        if (!a || !b || a.length !== b.length) return 0;
+        
+        let dotProduct = 0;
+        let normA = 0;
+        let normB = 0;
+        
+        for (let i = 0; i < a.length; i++) {
+            dotProduct += a[i] * b[i];
+            normA += a[i] * a[i];
+            normB += b[i] * b[i];
+        }
+        
+        if (normA === 0 || normB === 0) return 0;
+        
+        return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
+    }
+    
+    /**
+     * UNIVERSAL SEARCH - Works for ANY question
+     */
+    async search(question, topK = 15) {
+        if (!this.isInitialized) {
+            console.warn("⚠️ RAG system not initialized");
+            return [];
+        }
+        
+        if (this.chunks.length === 0) {
+            console.warn("⚠️ No chunks available");
+            return [];
+        }
+        
+        console.log(`🔍 Searching: "${question}"`);
+        
+        const questionEmbedding = await this.getEmbedding(question);
+        
+        // Calculate similarity with universal boosting
+        const results = this.chunks.map((chunk, index) => {
+            let score = this.cosineSimilarity(questionEmbedding, this.embeddings[index]);
+            
+            // Universal boosting - NO question-specific logic
+            if (chunk.isStructured) {
+                score *= 1.2; // Structured data is generally more comprehensive
+            }
+            
+            if (chunk.isAggregate) {
+                score *= 1.15; // Aggregate chunks have more context
+            }
+            
+            // Generic keyword matching boost
+            score *= this.getUniversalBoost(question, chunk);
+            
+            return { ...chunk, score };
+        });
+        
+        const topResults = results
+            .sort((a, b) => b.score - a.score)
+            .slice(0, topK)
+            .filter(r => r.score > 0.2);
+        
+        console.log(`📊 Found ${topResults.length} relevant chunks`);
+        if (topResults.length > 0) {
+            console.log(`🎯 Top score: ${topResults[0].score.toFixed(3)}`);
+        }
+        
+        return topResults;
+    }
+    
+    /**
+     * UNIVERSAL BOOST - Works for ANY question without hardcoded keywords
+     */
+    getUniversalBoost(question, chunk) {
+        const lowerQuestion = question.toLowerCase();
+        const lowerChunkText = chunk.text.toLowerCase();
+        const lowerContext = chunk.context.toLowerCase();
+        
+        let boost = 1.0;
+        
+        // Extract important words from question (ignore common words)
+        const stopWords = ['the', 'is', 'at', 'which', 'on', 'a', 'an', 'and', 'or', 'but', 
+                          'in', 'with', 'to', 'for', 'of', 'as', 'by', 'what', 'how', 'when',
+                          'where', 'who', 'why', 'are', 'do', 'does', 'did', 'can', 'could'];
+        
+        const questionWords = lowerQuestion
+            .split(/\s+/)
+            .filter(w => w.length > 3 && !stopWords.includes(w));
+        
+        // Count matches in text
+        const textMatches = questionWords.filter(word => lowerChunkText.includes(word)).length;
+        
+        // Count matches in context
+        const contextMatches = questionWords.filter(word => lowerContext.includes(word)).length;
+        
+        // Apply proportional boost based on matches
+        if (textMatches > 0) {
+            boost *= (1 + (textMatches * 0.1)); // 10% boost per matching word
+        }
+        
+        if (contextMatches > 0) {
+            boost *= (1 + (contextMatches * 0.15)); // 15% boost per context match
+        }
+        
+        // Cap maximum boost to prevent over-weighting
+        return Math.min(boost, 2.0);
+    }
+    
+    /**
+     * UNIVERSAL CONTEXT GENERATION
+     */
+    async getContext(question, topK = 15) {
+        const results = await this.search(question, topK);
         
         if (results.length === 0) {
-            return "No relevant information found in HR knowledge base. Please contact HR for assistance.";
+            return "No relevant information found in the knowledge base. Please contact HR for assistance.";
         }
         
-        const contextParts = results.map(result => result.content);
-        const context = contextParts.join('\n\n');
+        // Group by context for organization
+        const grouped = {};
+        results.forEach(result => {
+            const ctx = result.context || 'General';
+            if (!grouped[ctx]) grouped[ctx] = [];
+            grouped[ctx].push(result);
+        });
         
-        console.log(`📄 Generated context length: ${context.length} characters`);
+        // Format with sections
+        const contextParts = [];
+        for (const [context, chunks] of Object.entries(grouped)) {
+            contextParts.push(`### ${context}\n`);
+            
+            // Prioritize structured and aggregate chunks
+            const structured = chunks.filter(c => c.isStructured || c.isAggregate);
+            const regular = chunks.filter(c => !c.isStructured && !c.isAggregate);
+            
+            [...structured, ...regular].forEach(chunk => {
+                contextParts.push(chunk.text + '\n');
+            });
+        }
+        
+        const context = contextParts.join('\n');
+        console.log(`📄 Context: ${context.length} chars, ${Object.keys(grouped).length} sections`);
+        
         return context;
     }
 }
 
 // Initialize RAG system
-const ragSystem = new SimpleRAG();
+const ragSystem = new SemanticRAG();
 
-// Root route (health check)
+// Routes
 app.get("/", (req, res) => {
     res.json({ 
-        status: "✅ ChatJisi backend is running successfully!",
-        rag: "✅ RAG System Active",
+        status: "✅ ChatJisi backend running",
+        rag: ragSystem.isInitialized ? "✅ Universal RAG Active" : "⚠️ Initializing...",
+        approach: "Universal semantic search for ANY question",
+        chunks: ragSystem.chunks.length,
         endpoints: ["/ask", "/rag/search", "/rag/status"]
     });
 });
 
-// RAG Status endpoint
 app.get("/rag/status", (req, res) => {
     res.json({ 
-        status: "ready",
-        service: "HR Knowledge RAG",
-        knowledge_base_loaded: !!ragSystem.knowledgeBase.full_content,
+        status: ragSystem.isInitialized ? "ready" : "initializing",
+        service: "Universal HR Knowledge RAG",
+        embedding_model: "text-embedding-004",
+        chunks: ragSystem.chunks.length,
+        embeddings: ragSystem.embeddings.length,
+        approach: "No hardcoded logic - works for ANY question",
         timestamp: new Date().toISOString()
     });
 });
 
-// RAG Search endpoint
 app.post("/rag/search", async (req, res) => {
     try {
-        const { question, top_k = 12 } = req.body;
+        const { question, top_k = 15 } = req.body;
         
         if (!question) {
-            return res.status(400).json({ error: "Question is required" });
+            return res.status(400).json({ error: "Question required" });
         }
         
-        console.log(`🎯 RAG Search Request: "${question}"`);
+        if (!ragSystem.isInitialized) {
+            return res.status(503).json({ 
+                error: "RAG initializing",
+                context: "Try again in a moment",
+                success: false
+            });
+        }
         
-        const context = ragSystem.getContext(question, top_k);
-        const results = ragSystem.search(question, top_k);
+        const context = await ragSystem.getContext(question, top_k);
+        const results = await ragSystem.search(question, top_k);
         
-        const response = {
-            context: context,
+        res.json({
+            context,
             results_count: results.length,
             max_similarity: results[0]?.score || 0,
             success: true,
             query: question
-        };
-        
-        console.log(`✅ RAG Search Complete: ${results.length} results found`);
-        res.json(response);
+        });
         
     } catch (error) {
-        console.error("❌ RAG search error:", error);
+        console.error("❌ RAG error:", error);
         res.status(500).json({ 
-            error: "Internal server error in RAG system",
-            context: "HR knowledge base currently unavailable. Please contact HR directly for assistance.",
+            error: "RAG system error",
             success: false
         });
     }
 });
 
-// Enhanced POST /ask route with RAG integration
 app.post("/ask", async (req, res) => {
     const { prompt, use_rag = true } = req.body;
 
@@ -329,36 +659,34 @@ app.post("/ask", async (req, res) => {
     }
 
     if (!GEMINI_API_KEY) {
-        return res.status(500).json({ error: "Gemini API key not set in environment" });
+        return res.status(500).json({ error: "API key not set" });
     }
 
     try {
         let finalPrompt = prompt;
         
-        // Use RAG to enhance the prompt if enabled
-        if (use_rag) {
-            console.log("🔍 Using RAG to enhance prompt...");
+        if (use_rag && ragSystem.isInitialized) {
+            console.log("🔍 Using Universal RAG...");
             const ragContext = await ragSystem.getContext(prompt);
             
-            // Create enhanced prompt with RAG context
-            finalPrompt = `You are Jisi, a professional AI HR and Recruitment Assistant for CDO Foodsphere, Inc.
+            finalPrompt = `You are Jisi, an AI HR Assistant for CDO Foodsphere, Inc.
 
-## CONTEXT FROM HR KNOWLEDGE BASE:
+## CONTEXT FROM KNOWLEDGE BASE:
 ${ragContext}
 
 ## USER QUESTION:
 ${prompt}
 
 ## INSTRUCTIONS:
-Based EXCLUSIVELY on the context provided above, provide a comprehensive and accurate answer to the user's question. If the information is not in the context, clearly state that and suggest contacting HR.
+Answer based ONLY on the context above. If information is missing, say so and suggest contacting HR.
 
-Provide your response:`;
+Your response:`;
             
-            console.log(`📝 Enhanced prompt length: ${finalPrompt.length} characters`);
+            console.log(`📝 Prompt: ${finalPrompt.length} chars`);
         }
 
         const response = await fetch(
-            "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+            "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent",
             {
                 method: "POST",
                 headers: {
@@ -372,35 +700,31 @@ Provide your response:`;
         );
 
         const data = await response.json();
-        console.log("🤖 Gemini API Response Received");
 
         if (!response.ok) {
             return res.status(response.status).json({ error: data.error?.message || "API error" });
         }
 
-        const answer =
-            data?.candidates?.[0]?.content?.parts?.[0]?.text ||
-            "I'm sorry, I couldn't generate a response.";
+        const answer = data?.candidates?.[0]?.content?.parts?.[0]?.text || 
+                      "I couldn't generate a response.";
 
         res.json({ 
             answer,
-            rag_used: use_rag,
+            rag_used: use_rag && ragSystem.isInitialized,
             success: true
         });
         
     } catch (error) {
-        console.error("❌ Error communicating with Gemini:", error);
+        console.error("❌ Error:", error);
         res.status(500).json({ 
-            error: "Failed to connect to Gemini API",
+            error: "Failed to connect to API",
             success: false
         });
     }
 });
 
-// Start server
 app.listen(PORT, () => {
-    console.log(`✅ Server running on port ${PORT}`);
-    console.log(`🌐 Visit http://localhost:${PORT}`);
-    console.log(`🔍 RAG Endpoint: http://localhost:${PORT}/rag/search`);
-    console.log(`📊 Status Endpoint: http://localhost:${PORT}/rag/status`);
+    console.log(`✅ Server on port ${PORT}`);
+    console.log(`🌐 http://localhost:${PORT}`);
+    console.log(`🎯 Universal RAG - Works for ANY question!`);
 });
