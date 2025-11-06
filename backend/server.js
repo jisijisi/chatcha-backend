@@ -685,13 +685,13 @@ Your response:`;
             console.log(`📝 Prompt: ${finalPrompt.length} chars`);
         }
 
+        // FIXED: Correct API endpoint for Gemini 2.0 Flash
         const response = await fetch(
-            "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent",
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GEMINI_API_KEY}`,
             {
                 method: "POST",
                 headers: {
-                    "Content-Type": "application/json",
-                    "x-goog-api-key": GEMINI_API_KEY,
+                    "Content-Type": "application/json"
                 },
                 body: JSON.stringify({
                     contents: [{ parts: [{ text: finalPrompt }] }],
@@ -702,7 +702,11 @@ Your response:`;
         const data = await response.json();
 
         if (!response.ok) {
-            return res.status(response.status).json({ error: data.error?.message || "API error" });
+            console.error("Gemini API Error:", data);
+            return res.status(response.status).json({ 
+                error: data.error?.message || "API error",
+                details: data
+            });
         }
 
         const answer = data?.candidates?.[0]?.content?.parts?.[0]?.text || 
@@ -718,6 +722,7 @@ Your response:`;
         console.error("❌ Error:", error);
         res.status(500).json({ 
             error: "Failed to connect to API",
+            details: error.message,
             success: false
         });
     }
