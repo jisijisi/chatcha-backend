@@ -41,3 +41,10 @@ coverage/
 ehthumbs.db
 Thumbs.db
 "@ | Out-File -FilePath ".gitignore" -Encoding UTF8
+
+# Cache files
+embeddings-cache.json
+cache-info.json
+*.cache
+npm-debug.log*
+.DS_Store

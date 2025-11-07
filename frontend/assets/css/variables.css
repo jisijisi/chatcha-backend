@@ -1,15 +1,16 @@
 /* CSS Variables */
 :root {
   /* Colors */
-  --primary-color: #4e5af7;
-  --primary-hover: #6c76ff;
+  --primary-color: #D71921; /* CDO Logo Red */
+  --primary-hover: #F58220; /* CDO Logo Orange */
   --sidebar-bg: #1e1e2f;
   --sidebar-border: #2e2e42;
   --chat-bg: #2c2c45;
   --chat-hover: #3a3a5c;
   --text-light: #ddd;
   --text-muted: #bbb;
-  --user-msg-bg: #e3e6ff;
+  --user-msg-bg: #FEEBEA; /* Light Red */
+  --user-msg-border: #F8BABA; /* Red Border */
   --bot-msg-bg: #f9f9f9;
   --bot-msg-border: #e5e5e5;
   --code-bg: #f4f4f4;

@@ -1,0 +1,163 @@
+{
+  "document_metadata": {
+    "title": "The Leader's Playbook",
+    "subtitle": "A Leader's Toolkit to Managing Employee Experience",
+    "organization": "CDO Foodsphere, Inc.",
+    "pages_covered": "1-53",
+    "version": "Current Edition"
+  },
+  "founders_message": {
+    "author": "Corazon Dayro-Ong",
+    "title": "Founder & Chairman",
+    "greeting": "My Dearest Leaders,",
+    "message": [
+      "When I first dreamt of starting my own business, I was inspired by the love that I have for my family more than anything else. I never imagined that such a simple dream would one day turn into a bigger reality - becoming one of the largest food enterprises in the Philippines. Now, it has become a home to other families as well.",
+      "Ever since, we have treated our employees as an extension of our own family. I always believe that when we are able to look after their welfare, they will in turn take care of our business and treat it as their own.",
+      "It is for this reason that I urge each one of you to lead your team with the same passion, understanding, and vigor as you do your job. As leaders, you play a vital role in helping us make this home flourish.",
+      "Your leadership should inspire your people to be better in what they do believing that it will fulfill their own sense of purpose. I trust that you will be our partner in nurturing the people that we have and in continuously making their stay in our home a truly meaningful one.",
+      "Let this playbook be your tool in guiding your people in their journey here in CDO. We depend on you in creating a prosperous home as we continue to remain relevant and evolve as a family that serves a bigger community.",
+      "Together, let us strengthen our bond as a family, as one Ka-Republika so that with One Heart and in One Home we will be able to fulfill our purpose and thrive as One CDO, continuously serving our customers and consumers with food that brings them Home."
+    ]
+  },
+  "playbook_overview": {
+    "description": "The Leader's Playbook is a comprehensive but easy-to-use manual that provides guidelines for leaders like you on managing your staff's employee experience using the current HR processes and tools.",
+    "structure": "This playbook offers the support that you need to carry out your role as a leader, arranged based on the employee's life cycle within the organization.",
+    "phases": [
+      "Attract",
+      "Onboard",
+      "Engage",
+      "Develop",
+      "Offboard"
+    ],
+    "contents_per_phase": [
+      "Relevant principles",
+      "Guidelines",
+      "Tools",
+      "Processes"
+    ],
+    "disclaimer": "Although this playbook intends to help you lead effectively, it does not guarantee to have all the answers. In situations that are extraordinarily complex, unusual, or new, it is still recommended to work with or consult your HR Business Partner.",
+    "expectation": "You are expected to be fully oriented with the contents of this playbook. Should there be any changes in the HR standards and guidelines and any other related information that will not be immediately reflected in the playbook, the Company, through Corporate HRAD, will make sure to notify its employees."
+  },
+  "employee_experience_concept": {
+    "title": "A meaningful employee experience in CDO should look and feel like HOME",
+    "definition": "A meaningful employee experience in CDO can be likened to finding a place called 'HOME' where one's capabilities are valued, recognized, and maximized throughout the employee's stay. Key to this experience is the leader's support, participation, and guidance.",
+    "journey_stages": [
+      {
+        "stage": "Initial Impression",
+        "quote": "This looks like a place I can call home."
+      },
+      {
+        "stage": "Confirmation",
+        "quote": "Indeed, it feels like home!"
+      },
+      {
+        "stage": "Contribution",
+        "quote": "Given my capabilities, I know how I can contribute to this household, and I am empowered to do so."
+      },
+      {
+        "stage": "Growth",
+        "quote": "This home supports my personal and professional growth."
+      },
+      {
+        "stage": "Legacy",
+        "quote": "I will always look at CDO as my home."
+      }
+    ]
+  },
+  "playbook_structure": {
+    "phases": [
+      {
+        "phase": "Attract",
+        "principles": [
+          "Stages of the Hiring Process"
+        ],
+        "processes_and_policies": [
+          "Interview Levels",
+          "PRF Levels of Approval",
+          "Internal Hiring Process"
+        ],
+        "tools": [
+          "Personnel Requisition Form",
+          "Job Description",
+          "Interview Guide Question"
+        ],
+        "learning_series": [
+          "Interviewing 101"
+        ]
+      },
+      {
+        "phase": "Onboard",
+        "principles": [
+          "Orientation vs Onboarding",
+          "Importance of Proper Onboarding",
+          "The Leader's Role in the Onboarding Phases"
+        ],
+        "processes_and_policies": [
+          "Onboarding Process",
+          "Probationary Period"
+        ],
+        "tools": [
+          "Hiring Leader's Guide",
+          "Welcome Email Template",
+          "Onboarding Buddy"
+        ],
+        "learning_series": []
+      },
+      {
+        "phase": "Engage",
+        "principles": [
+          "Performance Management System",
+          "Employee Rewards and Recognition",
+          "Employee Benefits",
+          "Employee Discipline"
+        ],
+        "processes_and_policies": [
+          "PMS Cycle",
+          "Performance Improvement",
+          "Code of Conduct"
+        ],
+        "tools": [
+          "Performance Evaluation",
+          "PEF Template",
+          "PIP Template",
+          "Code of Conduct Handbook"
+        ],
+        "learning_series": [
+          "Conducting a Performance Evaluation",
+          "Coaching 101"
+        ]
+      },
+      {
+        "phase": "Develop",
+        "principles": [
+          "The Principles of Developing Talent",
+          "CDO's Talent Development Framework",
+          "The Different Ways to Develop Talent",
+          "The Individual Development Plan"
+        ],
+        "processes_and_policies": [
+          "ASPIRE"
+        ],
+        "tools": [
+          "Internal/Inhouse Training",
+          "CDO LIVE",
+          "External Training"
+        ],
+        "learning_series": []
+      },
+      {
+        "phase": "Offboard",
+        "principles": [
+          "Stages of the Offboarding Process"
+        ],
+        "processes_and_policies": [
+          "FSI Separation Process",
+          "The Exit Interview",
+          "Employee Clearance Process"
+        ],
+        "tools": [],
+        "learning_series": []
+      }
+    ]
+  }
+}

@@ -2,9 +2,11 @@
 export const CONFIG = {
   // Change this line - remove the port and use the Render domain
   API_URL: "https://chatcha-backend.onrender.com/ask",
+  //API_URL: "http://localhost:3000/ask",
   
   // Rest of your config...
-  GOOGLE_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbz9lRRV1Yc9nUknapn4-gliWSU3BfmpSzBuca200hV2C8z0469rMpLfN4VcwZ7y6nJ6bQ/exec",
+  // Google Sheets integration removed by blanking this URL
+  GOOGLE_SCRIPT_URL: "",
   
   STORAGE_KEYS: {
     CHATS: "chats",

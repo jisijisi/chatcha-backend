@@ -1,0 +1,270 @@
+{
+  "title": "DEVELOP",
+  "tagline": "Develop your team members’ capabilities and potential.",
+  "subtitle": "Framework | Processes | Policies | Tools",
+  "framework": {
+    "main_goal": "Develop your team members' capabilities and potential. Identify strengths and areas for growth and provide opportunities that align with their individual and professional goals. A leader who develops others contributes to building a high-performing and future-ready organization.",
+    "leader_role": {
+      "title": "Your role as Leader:",
+      "responsibilities": [
+        "Coach and guide employees toward continuous improvement.",
+        "Create opportunities for learning and development.",
+        "Provide feedback and support career growth.",
+        "Recognize potential and prepare successors."
+      ]
+    },
+    "development_definition": {
+      "title": "DEVELOPMENT DEFINITION",
+      "description": "Employee development is the process where employees, with the support of their employer and leader, go through professional training or pursue learning opportunities to improve their skills and grow their knowledge and careers. In the context of business continuity, it also involves succession management."
+    },
+    "leadership_quote": {
+      "text": "Good leaders invest their time, energy, money, and thinking into growing others as leaders.",
+      "author": "John Maxwell, Leadership Development Guru"
+    },
+    "leadership_principle": "Leaders who look for potential in others, who coach, mentor, and who take the time to REPRODUCE more talent. When there are more leaders, more of the organization's mission can be accomplished.",
+    "benefits_of_talent_development": [
+      "Increases productivity and performance",
+      "Reduces/Closes skill gaps",
+      "Contributes to business continuity",
+      "Retains and attracts the best talents",
+      "Positively impacts employee engagement",
+      "Increases Customer Satisfaction",
+      "Sets the standard and improves on compliance"
+    ],
+    "did_you_know": {
+      "title": "DID YOU KNOW?",
+      "description": "According to leadership development guru, John Maxwell, People Development is one factor that makes leaders become more effective. Moving up from just a position-based influence, people will tend to follow more leaders who have shown competence and have contributed to their personal and professional growth."
+    },
+    "development_responsibility": "Joint Responsibility of Leader and Staff"
+  },
+  "processes_and_policies": {
+    "talent_development_cycle": {
+      "title": "CDO's Talent Development Cycle",
+      "stages": [
+        {
+          "stage": 1,
+          "name": "ASSESS",
+          "description": "Employees ASSESS themselves based on their past performance scores, feedback from leader, peers, mentors and customers. The Leader as coach plays a huge role in helping the employees assess themselves."
+        },
+        {
+          "stage": 2,
+          "name": "PLAN",
+          "description": "Employees PLAN for their development by creating an Individual Development Plan (IDP) that documents their competency gaps and developmental interventions. This is discussed with their immediate superior for a developmental coaching conversation."
+        },
+        {
+          "stage": 3,
+          "name": "IMPLEMENT",
+          "description": "Employees IMPLEMENT the plans. In this stage, it is critical that development coaching conversations with the immediate superior are kept ongoing to be able to ensure proper follow through and support."
+        },
+        {
+          "stage": 4,
+          "name": "MONITOR PROGRESS",
+          "description": "Employees MONITOR their progress on the achievement of their IDP. Developmental coaching conversations with the immediate superior continues. A review of the action plans take place as well as the support needed. Adjustments may be made, if necessary."
+        }
+      ]
+    },
+    "talent_development_process": {
+      "title": "Talent Development Process",
+      "leader_responsibilities": [
+        "Understanding and cascading the strategic priorities of the group and how this impacts the team's capability priorities",
+        "Assess their talents/staff by gathering relevant data about their capabilities through past and present performance, feedback from customers and peers, observation, conversations with staff"
+      ],
+      "employee_responsibilities": [
+        "Drive their own development in consideration of what will make them successful in their current role and the career they want to pursue"
+      ]
+    },
+    "roles_in_development_planning": {
+      "title": "Roles in Development Planning",
+      "leader_as_coach": [
+        "Communicates strategies and KRAs",
+        "Identifies skills needed and how roles will evolve",
+        "Does talent segmentation",
+        "Gathers/Analyzes data about people's performance and competence",
+        "Coaches people for development",
+        "Supports the Individual Development Plans and monitors progress",
+        "Provides feedback"
+      ],
+      "staff_as_driver": [
+        "Assess the ability to deliver current and future goals",
+        "Gathers/Analyzes data about own performance and competence",
+        "Creates own Individual Development Plan and implements it",
+        "Seeks out feedback and coaching from leader"
+      ]
+    },
+    "individual_development_plan": {
+      "title": "Individual Development Plan (IDP)",
+      "definition": "An Individual Development Plan (IDP) outlines a vision for an employees' career and set goals to capitalize on their strengths and address their development needs. It is a document that is prepared and developed to map out learning and development goals as driven by the staff and supported by the leader.",
+      "purposes": [
+        "Helps employees reach short and long-term career goals as well as improve current job performance",
+        "Tool to improve important competencies that an employee will need now or in the future",
+        "Used to open the door of communication and continuous feedback between the leader and the employee"
+      ],
+      "importance": [
+        "Fosters a culture of learning and focuses employees on being lifetime learners",
+        "Encourages people to take responsibility for their career planning",
+        "Reinforces our commitment to developing people and setting them up for success in their role",
+        "Important tool for conducting effective coaching conversations for development"
+      ]
+    },
+    "learning_methodologies": {
+      "title": "Learning Methodologies",
+      "learning_from_experience": [
+        "Ask your manager to delegate new work to you",
+        "Take on new and challenging projects/assignments",
+        "Be a change champion for a specific initiative",
+        "Make decisions outside your authority (with permission)",
+        "Deputize for your manager",
+        "Speak at internal or external events / present in meetings",
+        "Learn the roles of others",
+        "Understand different departments within the business",
+        "Become a subject matter expert",
+        "Become a team member in a project where you have no knowledge",
+        "Facilitate and chair team meetings",
+        "Introduce new strategies and ways of working",
+        "Cover for others roles while they are on holiday",
+        "Conduct client tours and manage VIP visits",
+        "Train, coach, mentor others",
+        "Network and interact with senior leadership team",
+        "Work in groups to solve real business issues",
+        "Get seconded for a temporary time in another department",
+        "Apply best practices from company associations and bodies",
+        "Cross-posting / immersion"
+      ],
+      "learning_from_others": [
+        "Receive formal coaching on a regular basis",
+        "Receive coaching from others (peers, colleagues)",
+        "Receive mentoring from a senior manager",
+        "Receive feedback from others on performance and outputs",
+        "Use 180/360 degree feedback as tool for improvement",
+        "Buddy up with a co-worker for sharing experiences and knowledge",
+        "Use tools for self-reflection and learning",
+        "Knowledge share with others – what works, what doesn't etc",
+        "Always be asking others for feedback, opinions and guidance",
+        "Learn from industry associations and key figures",
+        "Build and learn from your network – physical and online",
+        "Follow and participate with leading industry blogs – join the conversation"
+      ],
+      "formal_learning": [
+        "Attend physical courses and workshops",
+        "Attend virtual classes or LIVE/recorded webinars",
+        "Attend industry-specific conferences and events",
+        "Attend distance learning courses",
+        "Take eLearning and/or microlearning courses",
+        "Take professional qualifications and certifications",
+        "Attend college or university",
+        "Experience training simulations",
+        "Read books or white papers, watch videos, listen to podcasts"
+      ],
+      "source": "LinkedIn Article - https://www.linkedin.com/pulse/50-activities-use-70-20-10-model-sean-mcpheat"
+    },
+    "aspire_program": {
+      "title": "ASPIRE Program",
+      "description": "At CDO, we believe that every Ka-Republika has the capability to make great things happen. They find meaning in adversity, they break barriers, and they dare to make a difference. When faced with a situation that they cannot change, they challenge themselves. It's that quest and longing to make themselves better that set the foundation for ASPIRE.",
+      "definition": "ASPIRE is CDO's holistic approach to People Development, which aims to provide its employees with meaningful human experience through programs that will enhance their capabilities, cultivate employee engagement, and promote the development of total well-being.",
+      "leader_role": "Just as our Ka-Republika sets no boundaries on what they can achieve, so does learning. Your role as leader is to support their aspirations, push them to explore, and help pave the way. One step forward. One notch higher. One goal closer."
+    }
+  },
+  "tools": {
+    "title": "MY TOOLS in Developing Employees",
+    "available_tools": [
+      {
+        "tool_name": "Internal/Inhouse Training",
+        "description": "Annual training calendar of core program offerings including course description, schedule, target participants, learning method, and registration information",
+        "methodologies": [
+          "Face-to-face classroom session",
+          "Virtual/online session",
+          "Via FSI's own eLearning system (CDO LIVE)"
+        ],
+        "process": "Interested employees will have to secure your approval for them to register and attend any of the course offerings in line with their IDP or learning goals.",
+        "special_requests": "L&D may also accommodate special training request from other departments to address specific requirements. In addition, the team also facilitates teambuilding requests."
+      },
+      {
+        "tool_name": "CDO LIVE",
+        "full_name": "CDO Learning In a Virtual Environment",
+        "description": "FSI's learning management system (LMS) that provides a digital environment or platform in managing the company's various training initiatives. In order to support learning and development, the LMS gives employees the opportunity and greater flexibility to learn at their own pace, in their preferred place, and at their most convenient time."
+      },
+      {
+        "tool_name": "External Training",
+        "description": "Employees are provided the opportunity to attend external training, seminars, or conferences conducted by industry experts in order for them to learn new knowledge and skills pertinent to the enhancement of their competencies in the context of their individual development.",
+        "process": "Employees may submit and secure approval from their manager/immediate superior to attend an external training through the online ETA Form. Such application should be supported by the employee's IDP.",
+        "forms_available": [
+          "P2 Online ETA",
+          "P3 Online ETA"
+        ],
+        "leader_role": [
+          "Initiate, recommend, approve, or support the employee's initiative to attend external training or seminars in support of the employee's Individual Development Plan (IDP), competency enhancement, or as a compliance requirement",
+          "Ensure that the application meets the conditions and requirements of the external training application policy",
+          "Follow through on the employee's re-entry plan to maximize the learning investment"
+        ],
+        "note": "In some cases, the employee may be asked to sign a Return Service Training Agreement (RSTA), which requires him/her to continue his/her employment with FSI for a certain period of time depending on the training cost. Employee's failure to comply with the terms and conditions of the agreement for reasons within his/her control may require him/her to reimburse the pro-rated training cost."
+      }
+    ]
+  },
+  "learning_series": {
+    "idp_implementation": {
+      "title": "IMPLEMENTING INDIVIDUAL DEVELOPMENT PLANS",
+      "subtitle": "Support your team members in achieving their development goals through effective IDP implementation and coaching.",
+      "sections": {
+        "idp_discussion_tips": {
+          "title": "IDP Discussion Tips",
+          "tips": [
+            "Use data to back up your inputs and comments/suggestions",
+            "Help the employee think through the plan based on what you know about the company's directions/needs",
+            "Make sure you're clear about what will be included in the refined IDP, and how you will support it",
+            "Establish check-in schedules to track progress"
+          ]
+        },
+        "sample_idp": {
+          "title": "Sample IDP",
+          "employee_name": "Maria Dela Cruz",
+          "position": "Recruitment Asst.",
+          "department": "Corp HRAD",
+          "manager": "Juan Santos",
+          "year": "Y2022",
+          "rating": 5,
+          "career_path": [
+            "Recruitment Specialist",
+            "Recruitment Supervisor",
+            "HR Business Partner"
+          ]
+        },
+        "development_coaching": {
+          "title": "Development Coaching",
+          "description": "As a leader, your role in development coaching is crucial for the success of your team members' IDPs. Regular coaching conversations help ensure proper follow-through and support for their development goals.",
+          "key_elements": [
+            "Regular check-in sessions to monitor progress",
+            "Providing constructive feedback on development activities",
+            "Identifying and removing barriers to development",
+            "Celebrating milestones and achievements",
+            "Adjusting plans as needed based on progress and changing business needs"
+          ]
+        }
+      }
+    }
+  },
+  "faqs": {
+    "title": "FAQs",
+    "questions": [
+      {
+        "question": "What is the difference between training and development?",
+        "answer": "Training focuses on improving specific skills and knowledge for current job performance, while development is broader and focuses on preparing employees for future roles and responsibilities, including career growth and succession planning."
+      },
+      {
+        "question": "How often should IDPs be reviewed and updated?",
+        "answer": "IDPs should be reviewed regularly during performance check-ins, with formal updates typically occurring annually during the performance evaluation cycle. However, they can be adjusted more frequently as development needs or business priorities change."
+      },
+      {
+        "question": "What is the Return Service Training Agreement (RSTA)?",
+        "answer": "The RSTA is an agreement that requires employees to continue employment with FSI for a specified period after completing company-sponsored external training. The duration depends on the training cost, and failure to comply may require reimbursement of pro-rated training costs."
+      },
+      {
+        "question": "How can employees access CDO LIVE?",
+        "answer": "CDO LIVE is FSI's learning management system that provides employees with flexible learning opportunities. Employees can access it to take eLearning courses, participate in virtual training, and manage their development activities at their own pace and convenience."
+      },
+      {
+        "question": "What support should leaders provide for employee development?",
+        "answer": "Leaders should provide coaching, approve relevant training requests, facilitate development opportunities, provide regular feedback, monitor progress on IDPs, and help employees align their development goals with organizational needs and career aspirations."
+      }
+    ]
+  }
+}

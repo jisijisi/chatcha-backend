@@ -1,0 +1,194 @@
+{
+  "title": "OFFBOARD",
+  "tagline": "Ensure a smooth and professional exit process for employees leaving the organization.",
+  "subtitle": "Framework | Processes | Policies | Tools",
+  "framework": {
+    "main_goal": "Ensure a smooth and professional exit process for employees leaving the organization. The goal of the offboarding phase is to facilitate a respectful, transparent, and compliant transition that reflects the company's values. It also aims to preserve relationships and gather insights to improve the employee experience.",
+    "leader_role": {
+      "title": "Your role as Leader:",
+      "responsibilities": [
+        "Facilitate proper turnover and ensure business continuity.",
+        "Coordinate with HR and other departments to complete clearance and documentation.",
+        "Conduct an exit discussion to gain feedback.",
+        "Ensure separation is handled with fairness, professionalism, and empathy."
+      ]
+    },
+    "offboarding_definition": {
+      "title": "OFFBOARDING",
+      "description": "Offboarding is the process of disengaging an employee from their position within the organization, which may be due to resignation, termination, or retirement. Offboarding manages the employee experience at the end of their tenure with the organization, covering all the necessary steps to successfully part ways with the employee. This ensures a smooth transition for both the company and the exiting employee. Thus, it is important to have a standardized offboarding process to maintain a good relationship with the exiting employees."
+    },
+    "stages_of_offboarding": {
+      "title": "Stages of the Offboarding Process",
+      "stages": [
+        {
+          "stage": 1,
+          "name": "Filing of Separation Request",
+          "description": "Employees signify their intention to leave by filing for a request to leave the company. Employees may voluntarily separate themselves from the company, retire, be terminated or retrenched. It is important to identify the reason for separation, to properly tailor the process to the exiting employee."
+        },
+        {
+          "stage": 2,
+          "name": "Exit Interview",
+          "description": "This is the interview where the Human Resource Staff inquires further on the employee's reason for leaving and overall experiences in the company."
+        },
+        {
+          "stage": 3,
+          "name": "Documentation",
+          "description": "Employees must secure the necessary documents to ensure their smooth transition out of the company. These may include updating government documents, computation of benefit packages, retirement packages and the return of company equipment."
+        }
+      ]
+    }
+  },
+  "processes_and_policies": {
+    "types_of_separation": {
+      "title": "Types of Separation",
+      "voluntary": {
+        "resignation": {
+          "definition": "An employee decides to leave the company for whatever reason. As a policy, FSI requires a resigning employee to tender his/her resignation letter at least 30 days before the effective date. This allows the company to find a suitable replacement for the employee to ensure smooth transition or turnover of responsibilities. The period of notice may be shortened provided it is approved by the manager.",
+          "leader_responsibility": "As a leader, it is your responsibility to immediately endorse the employee's resignation letter to the HRBP, or to at least give an advance information once an employee notifies you of his/her intention to leave. This is to ensure proper management of the offboarding process.",
+          "handling_process": [
+            "Employee submits resignation letter to the manager/immediate superior",
+            "Manager accepts and endorses the resignation letter to the HRBP",
+            "HRBP endorses the resignation letter to the Compensation and Benefits Section for updating of records and processing",
+            "HRBP will provide the employee with the Employee Clearance Form (ECF) as well as the employee checklist. Such will be routed to the different departments to check and clear the employee's from accountabilities. Processing of clearance will take approximately 21 days",
+            "HRBP will schedule the employee (if probationary or regular) for an exit interview",
+            "C&B will advise the employee on the date to call to confirm the schedule of release of his/her back pay. Back pay will have to be released within 30 days from the clearance processing. Resigned employee will be asked to sign the Quit Claim"
+          ],
+          "note": "Leaders should not sign the ECF if the employee's turnover of accountabilities is not yet complete."
+        },
+        "retirement": {
+          "definition": "An employee leaves the company upon reaching the age of retirement. FSI has a non-contributory Retirement Program in place that provides retirement pay to deserving employees who resign and meet the twin requirements of age and length of service.",
+          "handling_process": [
+            "An employee who intends to retire must inform his/her manager or immediate superior and HRAD, through the HRBP, at least thirty (30) days before the date of retirement",
+            "He/She must accomplish the Retirement Application Form (RAF)",
+            "The manager/immediate superior should sign the RAF. The RAF and all pertinent documents must then be submitted to the HRBP",
+            "Availment of Early Retirement Plan must be reviewed by the HRBP and approved by the Top Management",
+            "Failure to comply with the due notice, except for Compulsory Retirement, will disqualify the employee from availing the retirement benefits",
+            "In case of death or permanent disability, the requirement for due notice shall no longer apply"
+          ],
+          "note": "The retirement benefit provided by FSI is separate and distinct from the retirement benefit of SSS and PAG-IBIG. However, HRAD and Finance will assist the retiring employee by providing the necessary documents to be able to claim his government retirement benefits."
+        }
+      },
+      "involuntary": {
+        "termination": {
+          "just_causes": [
+            "Serious misconduct",
+            "Willful disobedience",
+            "Gross and habitual neglect of duty",
+            "Fraud or breach of trust",
+            "Commission of a crime or offense against the employer, his family, or representative",
+            "Other similar causes"
+          ],
+          "authorized_causes": [
+            "Installation of labor-saving devices",
+            "Redundancy",
+            "Retrenchment to prevent losses",
+            "Closure and cessation of business",
+            "Disease/illness"
+          ],
+          "due_process_two_notice_rule": [
+            "A notice of intent to dismiss specifying the ground for termination, and giving said employee reasonable opportunity within which to explain his or her side",
+            "A hearing or conference where the employee is given opportunity to respond to the charge, present evidence or rebut the evidence presented against him or her",
+            "A notice of dismissal indicating that upon due consideration of all the circumstances, grounds have been established to justify termination"
+          ]
+        },
+        "retrenchment": {
+          "definition": "It is the termination of employment initiated by the employer through no fault of and without prejudice to the employees. The act of dismissing employees is governed by Article 283 of the Labor Code under Authorized Causes for termination of employment. It is undertaken to prevent substantial and serious losses.",
+          "causes": [
+            "Periods of business recession",
+            "Industrial depression",
+            "Seasonal fluctuations",
+            "Lack of work",
+            "Considerable reduction on the volume of the business"
+          ],
+          "legal_requirements": "In order to legally retrench employees, the employer must serve written notices to both the employee and DOLE at least 30 days prior to the intended date of termination. The employer must use fair and reasonable criteria in selecting employees to be dismissed, such as less preferred status, efficiency rating, and seniority (LIFO rule).",
+          "separation_pay": "Separation pay of the affected employee shall be equivalent to one (1) month pay or at least one-half (1/2) month pay for every year of service, whichever is higher."
+        },
+        "redundancy": {
+          "definition": "Redundancy is a condition which exists where the services of an employee are in excess of what is reasonably demanded by the actual requirements of the organization. This means that the position has become a duplication as a result of operational changes in the business.",
+          "causes": [
+            "Acquisition of new technology and/or equipment",
+            "Installation of labor-saving device",
+            "Overhiring of workers",
+            "General decline of the business"
+          ],
+          "separation_pay": "Separation pay of the affected employee is equivalent to one (1) month pay or one month for every year of service, whichever is higher."
+        }
+      }
+    },
+    "exit_interview": {
+      "title": "The Exit Interview",
+      "description": "The Exit Interview (EI) is an essential tool in identifying hidden challenges and opportunities that may contribute to increasing a company's competitive edge. Moreover, valuing an exiting employee's views may support overall employee knowledge transfer and engagement.",
+      "important_aspects": [
+        {
+          "aspect": "HR Issues",
+          "description": "Identify hidden challenges within the department such as succession planning or engagement."
+        },
+        {
+          "aspect": "Employee's perception of their role and the company",
+          "description": "This may revolve around job design, working conditions, culture, and peers."
+        },
+        {
+          "aspect": "Insight on managers",
+          "description": "Interviewer can inquire on leadership style of immediate superiors and how that affected the employee."
+        },
+        {
+          "aspect": "HR benchmarks",
+          "description": "Interviewer can get an idea about other programs, compensation and benefits in other companies."
+        },
+        {
+          "aspect": "Solicit ideas for innovation",
+          "description": "Exiting employees may see trends that existed within the company, or have further insights on the industry."
+        },
+        {
+          "aspect": "Lifelong advocates for the organization",
+          "description": "Exiting employees can become possible clients, forge new business alliance. Departing employees must be treated with respect and gratitude."
+        }
+      ],
+      "did_you_know": {
+        "title": "DID YOU KNOW?",
+        "description": "Some experts argue that the best time to conduct the EI is halfway between the announcement of an intention to leave and the actual departure. They argue this is when initial rush of emotion of exiting the company has declined but before the employee has fully mentally checked out. Moreover, a less structured, positively-framed EI guide may provide a clearer picture of the information.",
+        "source": "https://hbr.org/2016/04/making-exit-interviews-count"
+      }
+    }
+  },
+  "tools": {
+    "title": "MY TOOLS in Offboarding Employees",
+    "available_tools": [
+      "Employee Clearance Form (ECF)",
+      "Retirement Application Form (RAF)",
+      "Exit Interview Guide",
+      "Quit Claim",
+      "Separation Documents"
+    ]
+  },
+  "faqs": {
+    "title": "FAQs",
+    "questions": [
+      {
+        "question": "What is the notice period required for resignation?",
+        "answer": "As a policy, FSI requires a resigning employee to tender his/her resignation letter at least 30 days before the effective date. This allows the company to find a suitable replacement for the employee to ensure smooth transition or turnover of responsibilities. The period of notice may be shortened provided it is approved by the manager."
+      },
+      {
+        "question": "What is the difference between retrenchment and redundancy?",
+        "answer": "Retrenchment is termination of employment initiated by the employer to prevent substantial and serious losses, while redundancy exists where the services of an employee are in excess of what is reasonably demanded by the actual requirements of the organization due to operational changes."
+      },
+      {
+        "question": "When should back pay be released to resigned employees?",
+        "answer": "Back pay will have to be released within 30 days from the clearance processing. Resigned employee will be asked to sign the Quit Claim."
+      },
+      {
+        "question": "What are the requirements for retirement?",
+        "answer": "An employee who intends to retire must inform his/her manager or immediate superior and HRAD, through the HRBP, at least thirty (30) days before the date of retirement and must accomplish the Retirement Application Form (RAF). Failure to comply with the due notice, except for Compulsory Retirement, will disqualify the employee from availing the retirement benefits."
+      },
+      {
+        "question": "What is the due process for termination?",
+        "answer": "The due process follows the two-notice rule: A notice of intent to dismiss specifying the ground for termination, a hearing or conference where the employee is given opportunity to respond, and a notice of dismissal indicating that grounds have been established to justify termination."
+      }
+    ]
+  },
+  "sources": [
+    "https://hrmpractice.com/processes-for-employee-exit/",
+    "https://www.bamboohr.com/blog/exit-formalities-for-offboarding", 
+    "https://hbr.org/2016/04/making-exit-interviews-count"
+  ]
+}

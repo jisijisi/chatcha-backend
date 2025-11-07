@@ -410,7 +410,7 @@
 
 #chat-history li.active {
   background-color: var(--chat-bg);
-  box-shadow: 0 2px 8px rgba(78, 90, 247, 0.15);
+  box-shadow: 0 2px 8px rgba(215, 25, 33, 0.15); /* MODIFIED */
 }
 
 /* Ellipsis visibility - FIXED */
@@ -477,7 +477,7 @@
 
 #chat-history li .rename-input:focus {
   background: rgba(255, 255, 255, 0.15);
-  box-shadow: 0 0 0 2px rgba(78, 90, 247, 0.3);
+  box-shadow: 0 0 0 2px rgba(215, 25, 33, 0.3); /* MODIFIED */
 }
 
 /* Dropdown and Ellipsis */
@@ -606,7 +606,7 @@
 
 #history-dropdown-list li.active {
   background-color: var(--chat-bg);
-  box-shadow: 0 2px 8px rgba(78, 90, 247, 0.15);
+  box-shadow: 0 2px 8px rgba(215, 25, 33, 0.15); /* MODIFIED */
 }
 
 /* Ellipsis in history dropdown - always visible */

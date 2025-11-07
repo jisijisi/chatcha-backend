@@ -42,7 +42,7 @@ export class UIManager {
     }
     
     if (p) {
-      p.textContent = "I'm Jisi, your AI job assistant. Ask me any question to explore what I can bring to the role!";
+      p.textContent = "I'm CHA, your company AI assistant. How can I help you today?"; // UPDATED
     }
   }
 
@@ -55,7 +55,7 @@ export class UIManager {
     
     const avatar = document.createElement('img');
     avatar.src = 'assets/images/avatar-welcome.png';
-    avatar.alt = 'Jisi waving hello';
+    avatar.alt = 'CHA waving hello'; // UPDATED
     avatar.className = 'welcome-avatar';
     
     const h2 = welcomeDiv.querySelector('h2');
@@ -410,7 +410,7 @@ export class UIManager {
         }
       } else {
         const titleText = mobileHeaderTitle.querySelector('.title-text');
-        titleText.textContent = "ChatJisi";
+        titleText.textContent = "ChatCHA"; // No change needed
         mobileHeaderTitle.classList.remove('clickable');
         mobileHeaderTitle.classList.remove('dropdown-active');
         mobileHeaderTitle.setAttribute('aria-label', '');

@@ -1,0 +1,326 @@
+{
+  "title": "ONBOARD",
+  "tagline": "Indeed, it feels like Home!",
+  "subtitle": "Framework | Processes | Policies | Tools",
+  "framework": {
+    "main_goal": "Welcome your new staff into the CDO HOME. Create a positive new hire experience by facilitating a seamless integration.",
+    "leader_role": {
+      "title": "Your role as Leader:",
+      "responsibilities": [
+        "Clarify job expectations by ensuring that the new employee understands how to translate expectations in their day-to-day activities and how their role impacts the department's priorities.",
+        "Communicate CDO's strategic priorities, history, values, and culture.",
+        "Provide regular feedback on their performance and identify support to bridge any gaps."
+      ]
+    },
+    "onboarding_definition": {
+      "title": "ONBOARDING",
+      "description": "Onboarding is the process of facilitating all necessary organizational actions that support new employee integration and help them function in their role effectively within the organization. It occurs in the period between offer acceptance until full integration into the CDO family. This stage is critical because as early as Day 1, new hires are already imagining how their life is going to be during their stay in the organization."
+    },
+    "orientation_vs_onboarding": {
+      "title": "Orientation vs Onboarding",
+      "orientation": {
+        "definition": "one part of the onboarding process",
+        "characteristics": [
+          "a structured event that focuses on the information the employee needs to know to get started",
+          "awareness on the organizational structure, policies and procedures, team or people to work with, ways of working"
+        ]
+      },
+      "onboarding": {
+        "characteristics": [
+          "can last anywhere from 3 months to a year, depending on the roles and responsibilities of the position and the amount of organizational knowledge and understanding necessary in order to succeed in the role",
+          "aims to align the new employee with the company's culture, shared vision, mission, and values",
+          "focuses on strengthening the employee's connection to the organization and its people"
+        ]
+      }
+    },
+    "importance_of_onboarding": {
+      "title": "Importance of Proper Onboarding",
+      "description": "An established and effective employee onboarding program will help in the successful integration of a new hire in CDO. It is vital not only to the success of the team, but also to the productivity and longevity of the new employee.",
+      "benefits": [
+        "Increase productivity and retention",
+        "Reduce anxiety and stress for the new employee",
+        "Reduce new hire turnover",
+        "Prevent future spending on re-recruiting and training",
+        "Foster employee engagement"
+      ],
+      "success_factors": {
+        "description": "New hires will become successful in their jobs and make immediate contributions to the team if they:",
+        "factors": [
+          "understand their role and responsibilities",
+          "understand their role's impact to the team",
+          "integrate well into the culture of the organization",
+          "feel genuinely welcomed"
+        ]
+      },
+      "did_you_know": {
+        "title": "DID YOU KNOW?",
+        "statistics": [
+          "According to 7 Need-to-Know Facts about Employee Onboarding, employees who participate in a structured onboarding program are 69% more likely to stay with an organization for 3 years and more.",
+          "It also mentioned that onboarding programs can increase retention by 25% and improve employee performance by 11%."
+        ],
+        "source": "www.clickboarding.com"
+      }
+    }
+  },
+  "processes_and_policies": {
+    "onboarding_process": {
+      "title": "Onboarding Process",
+      "note": "This onboarding process is intended for office-based (production and non-production) employees only and not applicable to production workers. A separate orientation program is applicable to and facilitated for the production workers.",
+      "stages": [
+        {
+          "stage": "Pre-Arrival",
+          "responsibilities": [
+            "Check and update the onboarding checklist shared by Recruitment",
+            "Send a welcome note to the new hire (1st email in his/her inbox)",
+            "Ensure work space is set up and clean",
+            "Request appropriate technology access and equipment (via CDO IT Freshservice)",
+            "Notify your team about the new member",
+            "Assign an onboarding buddy"
+          ]
+        },
+        {
+          "stage": "New Hire Orientation (First Week)",
+          "responsibilities": [
+            "Meet regularly with the new hire to review job expectations",
+            "Orient the new hire on his/her duties and responsibilities and set performance expectations",
+            "Conduct departmental welcome and introduction to colleagues and stakeholders",
+            "Assign an onboarding buddy"
+          ]
+        },
+        {
+          "stage": "Department Assimilation (First 3 Months)",
+          "responsibilities": [
+            "Continue regular meetings or kumustahan sessions with the new hire",
+            "Provide regular feedback and support; obtain feedback as well",
+            "Conduct a midpoint performance review"
+          ]
+        },
+        {
+          "stage": "Prior to Regularization (3 Months Up)",
+          "responsibilities": [
+            "Conduct probationary performance evaluation on the 4th month",
+            "PEF: Mancom and Supervisors",
+            "PEF: Rank-&-File",
+            "Prepare and submit necessary documents for regularization"
+          ]
+        }
+      ]
+    },
+    "leader_key_responsibilities": {
+      "title": "Key Responsibilities",
+      "description": "As the hiring leader, you have the most influence in making the onboarding process a successful one. You serve as the link that integrates the new employee into the organization. You should be aware that a well-structured onboarding program not only increases employee retention, but also plays a vital role in building positive organizational culture. By making a proper and positive impression, employees will more likely stay and be a productive member of the organization.",
+      "responsibilities": [
+        {
+          "number": 1,
+          "title": "Clarify job expectations",
+          "details": [
+            "Discuss and review together the employee's duties and responsibilities and how the role impacts the department's goals and priorities.",
+            "Set expectations.",
+            "Ensure the employee understands how to translate expectations into day-to-day activities."
+          ]
+        },
+        {
+          "number": 2,
+          "title": "Manage performance and provide support",
+          "details": [
+            "Schedule regular meetings to provide continuous direction and support.",
+            "Provide feedback, both positive and constructive, on the employee's performance and determine support and resources needed to bridge any gaps."
+          ]
+        },
+        {
+          "number": 3,
+          "title": "Ensure regular and ongoing communication",
+          "details": [
+            "Discuss the formal and informal culture, values, and practices of the team and the company.",
+            "Discuss your preferred leadership, management, communication, problem-solving and decision-making style."
+          ]
+        }
+      ]
+    },
+    "probationary_period": {
+      "title": "PROBATIONARY PERIOD",
+      "description": "The first one hundred eighty days of a new employee is considered as the most critical period in his/her employment as it would determine his/her success in the organization in terms of job and culture fit. The probationary period helps employers observe the skills, competence, and performance of new employees and determine if they are able to meet the reasonable standards to become regular or permanent employees.",
+      "leader_goal": "In order to do this, the leader should develop performance goals and expectations, observe and provide regular feedback, and set aside ample time to discuss and evaluate the employee's performance.",
+      "duration": "180 DAYS",
+      "legal_reference": {
+        "description": "Under Article 281 of the Labor Code of the Philippines, the maximum length of probationary employment shall be 180 days, and is counted from the date an employee started working, unless it is covered by an apprenticeship agreement stipulating a longer period. The services of an employee who has been engaged on a probationary basis may be terminated for a just cause or when he fails to qualify as a regular employee in accordance with reasonable standards made known by the employer to the employee at the time of his engagement."
+      },
+      "timeline": {
+        "third_month": {
+          "title": "On the 3rd Month",
+          "action": "It is recommended that you conduct a mid-point performance evaluation to determine whether the new employee is meeting performance standards. It does not have to be through a formal performance evaluation, but you should have some form of documentation.",
+          "purpose": "Conducting a mid-point performance review allows the new employee the opportunity to make changes and improvements in his/her performance in the succeeding months before the 5th month performance evaluation."
+        },
+        "fourth_month": {
+          "title": "On the 4th Month",
+          "action": "Upon receiving the notice from HR-Compensation & Benefits on the regularization period of the new employee, you should immediately accomplish the Performance Evaluation Form (PEF). You should be able to submit it on the 5th month with a decision on whether or not to regularize the employee.",
+          "note": "When the employment is not terminated after the 180-day probationary period, it shall then be considered regular employment."
+        }
+      },
+      "watch_out": "During the probationary period of the new employee, your role is to monitor and review his/her performance based on the goals and expectations that were set and agreed upon since the first day of employment."
+    },
+    "regularization_process": {
+      "title": "Regularization Process",
+      "department_head_responsibility": {
+        "description": "It is crucial for you to submit the necessary documents and/or inform your HRBP before the 5th month of the probationary period if you are not recommending the employee for regularization since HR needs to provide him/her a 30-day notice prior to the end of his/her contract.",
+        "watch_out": true
+      },
+      "required_documents": [
+        "PEF for Mancom & Supervisors",
+        "PEF for Rank & File",
+        "RPA"
+      ]
+    }
+  },
+  "tools": {
+    "title": "MY TOOLS in Onboarding Employees",
+    "available_tools": [
+      "Hiring Leader's Onboarding Guide",
+      "New Employee Announcement Email",
+      "Welcome Email",
+      "Onboarding Buddy",
+      "FAQs"
+    ],
+    "hiring_leaders_guide": {
+      "title": "Hiring Leader's Onboarding Guide",
+      "pre_arrival": {
+        "title": "Pre-Arrival",
+        "tasks": [
+          "Check the Onboarding Checklist that will be sent by the Recruitment Team.",
+          "Request for computer/laptop setup and account creation (email account, login credentials, access to shared folder, etc.) via CDO IT Freshservice",
+          "Ensure workspace is clean with all the necessary equipment and supplies.",
+          "Send an announcement via email to concerned parties regarding the new employee. See New Employee Announcement Email template.",
+          "Assign an Onboarding Buddy.",
+          "Arrange a schedule for the first 1-2 weeks to discuss all necessary information that will help facilitate a smooth onboarding. Prepare information and documents, i.e. job description, organizational charts, strategic plans and priorities, programs, and specific policies and procedures, pertaining to the employee's role and the department/section's functions.",
+          "Arrange a welcome lunch on the new employee's first day. (optional)",
+          "Ensure that the employee attends the onsite EGCOP class or takes the EGCOP via CDO LIVE."
+        ]
+      },
+      "first_week": {
+        "title": "First Week (1-2 Weeks)",
+        "tasks": [
+          "Send a welcome email to the new employee on his/her first day.",
+          "Introduce the new employee to the team, co-workers, and to his/her onboarding buddy.",
+          "Issue laptop/computer and orient in the use of computer sign-in/log-in credentials, access to shared drives, and other portals.",
+          "Ensure that the employee was provided a copy of the onboarding manual (c/o HRBP).",
+          "Conduct a 1-on-1 session with the new employee to discuss his/her duties and responsibilities, the team's organizational structure, plans, priorities, and programs, policies and procedures. It will help if there are available documents that he/she can read and review.",
+          "Discuss your leadership/management style, expectations, and ways of working. Discuss communication channels that the team uses, i.e. Viber, Chat, Messenger. Share unwritten rules, nuances, and traditions.",
+          "Discuss timekeeping process and application via ESS portal, i.e. work schedule, PTO, OB, OT.",
+          "Discuss company policies and guidelines.",
+          "Give an office/plant tour through the assigned onboarding buddy, including location of washrooms, ATM, canteen, chapel, training/meeting/conference rooms, emergency exits, activity center.",
+          "Review the functions of other departments where relevant.",
+          "Plan and discuss the new employee's first assignment/project so that he/she has early success.",
+          "Remind the new employee to answer the Quick Onboarding Survey that can be found in the onboarding manual.",
+          "Arrange for regular or weekly meetings with the new employee to review and support their integration."
+        ]
+      },
+      "first_3_months": {
+        "title": "First 3 Months",
+        "tasks": [
+          "Schedule regular Kumustahan Sessions with the new employee to touch base, review and clarify performance objectives, expectations, project/assignment updates, and answer any questions.",
+          "Provide coaching and continuous feedback. Discuss possible issues and challenges and agree on solution.",
+          "Discuss training or workshops that are available and may be beneficial to the employee's development. Review learning and development opportunities.",
+          "Remind new employee to answer the 30-60-90 day onboarding survey.",
+          "Conduct mid-point performance evaluation."
+        ]
+      },
+      "three_months_up": {
+        "title": "3 Months Up",
+        "tasks": [
+          "Continue with regular Kumustahan Sessions with the new employee to touch base, review and clarify performance objectives, expectations, project/assignment updates, and answer any questions.",
+          "Continue to provide coaching and feedback, including discussion of possible issues and challenges and agree on solution.",
+          "Review the onboarding process with the new employee.",
+          "Conduct probationary review. Get in touch with HRBP.",
+          "Remind new employee to answer the 180-day onboarding survey.",
+          "Discuss career development and plans for the future."
+        ]
+      }
+    },
+    "new_employee_announcement_email": {
+      "title": "New Employee Announcement Email Template",
+      "description": "You may use this template as a reference when sending an announcement to the team. Please note that this is only a suggested format. You may create your own email depending on how you would want to introduce the new employee to the team.",
+      "template": {
+        "greeting": "Dear Team,",
+        "opening": "Good day!",
+        "announcement": "I am pleased to announce that Mr./Ms. <Name of New Employee> will be joining the <Department/Section> as <Position Title> effective <Start Date>.",
+        "background": "<Nickname> graduated from <University> with a degree in <Course>. (If not a fresh graduate, may add previous work experience) She used to work as a <Former Position Title> at <Former Company Name>. <May opt to share a few information about the new employee pertaining to his/her academic achievements or milestones in previous work>.",
+        "responsibilities": "As <Position Title>, <Nickname> will be responsible in <brief description of his/her job or duties and responsibilities>.",
+        "closing": "Please join me in welcoming <Nickname> to our Home.",
+        "signature": "Signature"
+      }
+    },
+    "welcome_email_template": {
+      "title": "Welcome Email Template",
+      "description": "You may use this template as a reference when sending a welcome email to the new employee. Please note that this is only a suggested format. You may personalize the email based on your team's set-up and requirements and your style and preference.",
+      "template": {
+        "greeting": "Dear <Name/Nickname of New Employee>,",
+        "opening": "Welcome to CDO Foodsphere, Inc. and to the <Department/Section>!",
+        "welcome_message": "We are pleased that you have chosen to be part of our home and we believe that this is the beginning of a meaningful and mutually beneficial relationship.",
+        "onboarding_manual": "By now, you should have received a copy of the Onboarding Manual. Kindly read through it to guide you in your integration with the company and our department.",
+        "additional_info": "<May include information pertaining to communication channels used by the team, systems that the new employee might need to access, i.e. ESS, online systems, etc.>",
+        "encouragement": "We hope that you will learn a lot not only about the company and your work, but also about the people and the culture of our organization. We encourage you to share your ideas and suggestions to further strengthen as well as improve our current systems, processes, and practices.",
+        "support": "We are here to support you as you transition into your new role. Should you have any questions or concerns, do not hesitate to get in touch with me or <HRBP>.",
+        "closing": "Again, welcome to CDO, Ka-Republika! We're looking forward to your successful journey in your new home.",
+        "signature": "Signature"
+      }
+    },
+    "onboarding_buddy": {
+      "title": "Assigning an Onboarding Buddy",
+      "definition": "An Onboarding Buddy is someone who partners with the new employee during the first year of employment and serves as a source of information, advice, guidance, and encouragement in order to steer the new employee in the right direction and helps create and maintain a positive, productive integration.",
+      "selection_criteria": {
+        "title": "Criteria for Selecting an Onboarding Buddy:",
+        "criteria": [
+          "Familiar with the organization and the department/section's system and processes",
+          "Well-engaged in the organization – appreciates the value of his/her employment with FSI; speaks well of the organization",
+          "Familiar with the new employee's role or will be working closely with the new employee",
+          "A positive role model; demonstrates high performance",
+          "Willing and able to mentor a new hire in order to help him/her easily get integrated in the organization",
+          "Has patience and good communication and interpersonal skills"
+        ]
+      },
+      "buddy_responsibilities": {
+        "title": "Responsibilities of the Onboarding Buddy:",
+        "responsibilities": [
+          "Be an informal resource on policies, procedures, work rules, norms, traditions, protocols. etc.",
+          "Be a tour guide",
+          "Guide the new hire in working out some logistics and admin-related concerns especially during the 1st week",
+          "Introduce the new employee to others especially with those whom he/she will have constant interaction with"
+        ]
+      },
+      "leader_role": {
+        "title": "YOUR ROLE AS A LEADER",
+        "responsibilities": [
+          "Select the best onboarding colleague based on the criteria",
+          "Ensure that the new employee has time to be accessible to the new employee",
+          "Monitor the onboarding colleague-new employee relationship",
+          "Evaluate the program"
+        ]
+      }
+    }
+  },
+  "faqs": {
+    "title": "FAQs",
+    "questions": [
+      {
+        "question": "Can the probationary period be extended?",
+        "answer": "No. Under normal circumstances, the probationary period of an employee should not be extended. The six months probationary period given to the new employee is considered as sufficient time for the employer and the new employee to determine if they have a good fit. However, exceptions may be made in very rare cases or under instances when complete evaluation of the employee's performance will not be possible. For emphasis, the extension must be done in good faith, with justification, and must be agreed upon by both the employer and employee. This should be approved by the Division Head and the HRAD Head."
+      },
+      {
+        "question": "Can a new employee be regularized prior to the regularization period?",
+        "answer": "No. Early regularization is discouraged unless under extreme circumstances."
+      },
+      {
+        "question": "Is there a salary increase upon regularization?",
+        "answer": "It is not automatic or guaranteed. However, in rare cases, a minimal adjustment may be recommended by the immediate superior or manager."
+      },
+      {
+        "question": "How do we count the probationary period?",
+        "answer": "The probationary period begins from the time the employee started working, not on when he/she signed the job offer or the employment contract. The probationary period of 6 months is equal to 180 days."
+      },
+      {
+        "question": "What happens if I was unable to submit the necessary documents past the new employee's probationary period?",
+        "answer": "The new employee automatically becomes a regular employee regardless of the result of the performance evaluation due to technicality."
+      }
+    ]
+  }
+}

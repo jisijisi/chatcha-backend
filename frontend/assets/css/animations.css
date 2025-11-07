@@ -127,9 +127,9 @@
 
 @keyframes pulse-stop {
   0%, 100% {
-    box-shadow: 0 4px 16px rgba(78, 90, 247, 0.4);
+    box-shadow: 0 4px 16px rgba(215, 25, 33, 0.4); /* MODIFIED */
   }
   50% {
-    box-shadow: 0 4px 20px rgba(78, 90, 247, 0.6);
+    box-shadow: 0 4px 20px rgba(215, 25, 33, 0.6); /* MODIFIED */
   }
 }

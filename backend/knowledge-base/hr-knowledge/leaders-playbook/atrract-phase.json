@@ -1,0 +1,423 @@
+{
+  "title": "ATTRACT",
+  "tagline": "This looks like a place I can call Home.",
+  "subtitle": "Framework | Processes | Policies | Tools",
+  "framework": {
+    "main_goal": "Attract the right talent to the CDO HOME.",
+    "leader_role": {
+      "title": "Your role as Leader:",
+      "responsibilities": [
+        "Identify the right talent needed to perform the job.",
+        "Determine selection criteria that will be used as reference in assessing the candidate's qualifications.",
+        "Represent and promote the Company's vision, mission, values, and philosophy.",
+        "Ensure awareness and compliance with the hiring guidelines."
+      ]
+    },
+    "key_principle": "Deciding on who to hire are among the most important choices that a leader will have to make. It is essential to acquire talents who can eagerly contribute to the growth potential of the organization. As Foodsphere, Inc. wants to invest in individuals with the right attitude, aptitude, and personal attributes as well as good cultural fit for the company, the leader must be able to drive this by carefully selecting qualified and diverse workforce that will help achieve the organization's goal."
+  },
+  "processes_and_policies": {
+    "stages_of_hiring_process": {
+      "title": "Stages of the Hiring Process",
+      "note": "All hiring should be based on an approved plantilla. Hiring outside of the approved plantilla must be approved by the President. In cases when there is a directive to cut on headcount, any additional headcount must first be approved by the President.",
+      "stages": [
+        {
+          "stage_number": 1,
+          "stage_name": "IDENTIFYING HIRING REQUIREMENTS",
+          "description": "Based on an approved strategic and operational manpower needs, hiring managers trigger the request for hire and provide HR with a detailed job description.",
+          "tools_required": [
+            "Personnel Requisition Form",
+            "Sample Job Description"
+          ]
+        },
+        {
+          "stage_number": 2,
+          "stage_name": "SOURCING",
+          "description": "HR-Recruitment sources applicants through different means like job advertisements, job fairs, social media, job sites (ex. LinkedIn, Jobstreet etc.), referrals, and internal recruitment (within the company).",
+          "tools_required": []
+        },
+        {
+          "stage_number": 3,
+          "stage_name": "SCREENING",
+          "description": "HR-Recruitment facilitates the screening by conducting phone calls, interviews and administering assessment tests. Favorable results will be passed on to the hiring manager who will conduct the succeeding interviews.",
+          "tools_required": []
+        },
+        {
+          "stage_number": 4,
+          "stage_name": "SELECTION",
+          "description": "Hiring managers provide feedback to HR-Recruitment and work together to generate hiring decisions - based on the applicant's performance on different aspects of the recruitment pipeline, such as interviews and standardized tests.",
+          "tools_required": [
+            "Interview Guide",
+            "CDO BBI Form"
+          ]
+        },
+        {
+          "stage_number": 5,
+          "stage_name": "JOB OFFER & HIRE",
+          "description": "HR gives the job offer to successful candidates, which includes details on role and responsibilities, salary, location, and benefits. Applicants may negotiate on certain terms, and HR reaches out to the hiring manager for any support needed.",
+          "tools_required": []
+        }
+      ]
+    },
+    "interview_levels": {
+      "title": "Interview Levels",
+      "description": "As part of the recruitment and selection process, applicants go through a series of interviews depending on the job level/rank of the position being applied for.",
+      "interview_matrix": {
+        "mancom_senior_manager_up": [
+          "Recruitment Head",
+          "Division Head (AVP/VP)",
+          "VP-HRAD",
+          "Sr. Consultant",
+          "President"
+        ],
+        "supervisor": [
+          "Recruitment Staff",
+          "Section Head/Department Head",
+          "Division Head (AVP/VP)"
+        ],
+        "rank_and_file": [
+          "Recruitment Staff",
+          "Department Supervisor",
+          "Section Head/Department Head",
+          "Division Head (AVP/VP)"
+        ],
+        "project_based_fixed_term_non_prod": [
+          "Recruitment Staff",
+          "Department Supervisor",
+          "Section Head/Department Head"
+        ],
+        "fixed_term_prod": [
+          "Recruitment Staff",
+          "Department Supervisor"
+        ]
+      }
+    },
+    "internal_hiring_process": {
+      "title": "Internal Hiring Process",
+      "process_steps": [
+        "Recruitment to send a monthly vacancy update to all email users.",
+        "Employee to prepare a Letter of Intent (LOI) and secure the approval from immediate superior prior to submission of application.",
+        "Once LOI is approved, employee to send an email to interapply@cdo.com.ph.",
+        "Recruitment to screen and evaluate internal applications following the standard assessment process.",
+        "Recruitment to discuss the profile of the candidate to the hiring manager.",
+        "Provide an update to the employee on the status of his/her application.",
+        "If the employee passed the assessment, releasing manager to prepare and submit the RPA to the HRBP.",
+        "HRBP to process the RPA and secure the signature of the receiving manager."
+      ],
+      "leaders_goal": {
+        "description": "The leader's role in filling up a vacancy is to raise a requisition and participate in the entire interview process from the preparation of the Personnel Requisition Form (PRF) to the final recommendation of candidates.",
+        "extended_goal": "Since our Company depends on the quality and talent of its employees, deciding on who to hire are among the most important choices that you will make as a leader. You must try to select, develop, and retain a qualified and diverse workforce that will promote and support the Company in achieving its organizational goals. At each stage of the employment process, from determining your staffing needs through recruitment, interviewing, and selection, you will be presented with opportunities to make choices that will lead to the effective management of your operations. You may seek advice and guidance from our Recruitment Team in making these choices, but selecting the candidate that best meets your needs will rest upon you.",
+        "equal_opportunity_means": [
+          "Provide fair and equal access to all available jobs, training, and promotional opportunities",
+          "Apply all policies and practices consistently to applicants and employees",
+          "Do not differentiate among applicants or employees on the basis of race, color, nationality, religion, gender identity or expression, physical or mental disability, medical condition, ancestry, marital status, age, etc."
+        ],
+        "legal_reference": "Republic Act 10524, Sec. 5"
+      },
+      "important_note": "Releasing manager should ensure a proper turnover of the employee's current responsibilities before he/she officially transfers to the new department/section.",
+      "related_documents": [
+        "Letter of Intent (LOI) Form",
+        "Sample email on internal hiring"
+      ]
+    }
+  },
+  "learning_series": {
+    "interviewing_101": {
+      "title": "INTERVIEWING 101",
+      "subtitle": "Facilitate a smooth interview process and create a positive impression on prospective candidates by preparing well.",
+      "sections": {
+        "job_interview_definition": {
+          "title": "Job Interview",
+          "definition": "A job interview is a conversation that occurs between a potential employer and a job applicant, where the employer has the opportunity to assess and appraise the qualifications and general fitness of the applicant for the job opening.",
+          "objective": "The objective of an interview is to know the applicant more by gathering information about his/her profile, competencies, and work experience (if applicable) and use them against the defined selection criteria to be able to choose the most qualified candidate."
+        },
+        "leader_goal_as_interviewer": {
+          "title": "Your Goal as a Leader",
+          "goals": [
+            "Treat all applicants in a fair and equal manner",
+            "Evaluate applicants effectively based on clearly defined set of selection criteria",
+            "Complete the interview process quickly including any related documentation",
+            "Choose the best candidate for the job"
+          ],
+          "preparation_importance": "It is important for leaders (as interviewers) to prepare well for the interview in order to facilitate a smooth process. Preparation includes coordinating with the concerned authorities, setting the most appropriate schedule and venue, and visualizing the interview proper, i.e. what questions to ask, how to open and close the interview, etc.",
+          "important_note": "Whenever you conduct an interview, you represent FSI. A good interview experience for the candidate will leave a positive impression for the Company even if no job offer will be made in the end. However, a bad interview may result in a bad image for the Company, which can be shared by the applicant through friends, relatives, and social media."
+        },
+        "preparing_for_interview": {
+          "title": "Preparing for the Interview",
+          "steps": [
+            {
+              "step": 1,
+              "action": "Review the job description",
+              "description": "Identify the competencies to describe the desired candidate (experience, knowledge, education, and intellectual, interpersonal, and motivational competencies). This is your job/candidate profile."
+            },
+            {
+              "step": 2,
+              "action": "Review each candidate's resume",
+              "description": "Select those who best match your job/candidate profile for interview."
+            },
+            {
+              "step": 3,
+              "action": "Inform or arrange an interview schedule",
+              "description": "Inform or arrange an interview schedule with the candidate through the Recruitment team. Ensure that the interview will be conducted in a quiet and private place, free of distractions and interruptions (applies whether the interview will be held virtually or in person). Do not be late in the interview schedule. Allot a maximum of one (1) hour for the interview."
+            },
+            {
+              "step": 4,
+              "action": "Prepare interview questions",
+              "description": "Prepare interview questions or check out guide questions to allow a smooth flow of conversation with the candidate. Ask questions that draw out the candidate's competencies in relation to the competencies necessary to effectively perform the job."
+            },
+            {
+              "step": 5,
+              "action": "Review materials before interview",
+              "description": "Review the candidate's resume and supporting materials shortly before the interview to refresh your memory."
+            },
+            {
+              "step": 6,
+              "action": "Record evaluation",
+              "description": "After the interview, record your evaluation and recommendation in the interview evaluation form that will be provided by the Recruitment team or, in the absence of an evaluation form, prepare your own interview rating sheet."
+            }
+          ]
+        },
+        "conducting_the_interview": {
+          "title": "Conducting the Interview",
+          "steps": [
+            {
+              "step": 1,
+              "title": "Set the interview climate",
+              "description": "Choose a schedule and a venue that will allow you to conduct the interview with no distractions or interruptions. BE ON TIME! This applies even if the interview will be conducted online. Focusing on the applicant will allow you to gather as much information as you need as well as fairly assess his/her qualifications."
+            },
+            {
+              "step": 2,
+              "title": "Establish rapport with the applicant",
+              "description": "Try to put the applicant at ease - greet them with a warm friendly smile, introduce yourself, shake their hands (if face-to-face), and ask simple questions like, 'How was your day?', 'Have you had a hard time finding our office?'"
+            },
+            {
+              "step": 3,
+              "title": "Set the agenda",
+              "description": "Describe the interview structure, i.e. how the interview will proceed, who will be involved (if it's a panel)."
+            },
+            {
+              "step": 4,
+              "title": "Take notes",
+              "description": "This will help you ask follow-up questions and recall specific details about the applicant. Notes need not be verbatim; key words or phrases will do."
+            },
+            {
+              "step": 5,
+              "title": "Listen carefully",
+              "description": "Do not anticipate the answers of the applicant. Reserve judgment until after the applicant has finished answering."
+            },
+            {
+              "step": 6,
+              "title": "Ask questions",
+              "description": "Begin with relatively simple questions based on information included in the applicant's CV or resume. Then focus on behavioral-based questions that will allow the applicant to talk about his/her previous experiences and achievements."
+            },
+            {
+              "step": 7,
+              "title": "Maintain control",
+              "description": "If the applicant gets off-track, ask a specific question that will bring him/her back to the interview."
+            },
+            {
+              "step": 8,
+              "title": "Allow opportunity for questions",
+              "description": "Before ending the interview, give the applicant the opportunity to ask questions and try to answer them to the best of your knowledge. Do not give false or incomplete information."
+            },
+            {
+              "step": 9,
+              "title": "Close the interview",
+              "description": "Ask whether the candidate has anything more to tell you or any questions. Explain the next step in the process. Thank the candidate. Complete your notes and/or rating sheet (if any)."
+            }
+          ]
+        },
+        "behavioral_based_interview": {
+          "title": "Behavioral-based Interview",
+          "definition": "Behavioral interview is a structured interviewing approach that focuses on asking questions to identify past behaviors and successes that closely relate to situations the candidates will encounter in the job for which they have applied for. This is based on the premise that past behavior is the most accurate predictor of future behavior.",
+          "purpose": "The candidate has the opportunity to demonstrate their potential for succeeding in the new job by providing concrete examples of how they used specific behaviors or skills to handle certain situations based on their past experience. This helps the interviewer get an accurate picture of not only what the candidate can do, but how they do it.",
+          "source": "www.ddiworld.com",
+          "statistics": [
+            {
+              "metric": "hiring_confidence",
+              "percentage": "14%",
+              "description": "of hiring managers are confident in their hiring decisions"
+            },
+            {
+              "metric": "turnover_from_bad_hires",
+              "percentage": "80%",
+              "description": "of employee turnover comes from bad hiring decisions"
+            },
+            {
+              "metric": "cost_of_bad_hire",
+              "multiplier": "2x",
+              "description": "The financial cost of a bad hire can exceed twice the salary of the position"
+            }
+          ]
+        },
+        "star_method": {
+          "title": "STAR Method",
+          "description": "Part of behavioral interviewing is the use of the STAR method, which was introduced by Development Dimensions International (DDI), an international human resources and leadership development consultancy. The STAR method helps one capture complete information about how someone has performed on the job. It is one of the simplest and most effective ways to communicate in an interview or even when providing feedback.",
+          "purpose": "Using this method in a behavioral interview allows the candidate to tell stories about themselves based on past experiences and behavior, which will help you draw better conclusions about their skill and job fit.",
+          "components": [
+            {
+              "letter": "S",
+              "component": "Situation",
+              "description": "Ask the candidate to explain the situation to set the context/background",
+              "example_questions": [
+                "Tell me about a time when...",
+                "Think of a situation where you..."
+              ]
+            },
+            {
+              "letter": "T",
+              "component": "Task",
+              "description": "Ask to describe the problem or challenge and the task that needs to be achieved",
+              "example_questions": [
+                "What hurdles did you face?",
+                "What made it difficult?"
+              ]
+            },
+            {
+              "letter": "A",
+              "component": "Action",
+              "description": "Ask about the actions taken to handle the situation and overcome the challenge",
+              "example_questions": [
+                "What steps did you take?",
+                "What decisions did you make?",
+                "What strategies had been effective?"
+              ]
+            },
+            {
+              "letter": "R",
+              "component": "Result",
+              "description": "Ask to describe the outcome of the action and its impact",
+              "example_questions": [
+                "What was the result of your actions?"
+              ]
+            }
+          ]
+        },
+        "behavioral_sample_questions": {
+          "title": "Behavioral-based Sample Guide Questions",
+          "important_note": "Ask only questions that specifically pertain to the candidate's skills, knowledge, abilities, and interests related to the position, as described on the requisition and job description, based on the predetermined selection criteria. Questions related to gender, sexual orientation, age, marital status, color, race, religion, national origin, medical condition, pregnancy, or disabilities are inappropriate and must be avoided.",
+          "categories": {
+            "openness_and_collaboration": {
+              "title": "On Openness & Collaboration",
+              "questions": [
+                "Describe a time when you had to collaborate with a team member in another department in your company. How did you overcome the differences in department goals?",
+                "Tell me about a time when you had to collaborate with a member of your team who was not responsive. How did you handle that situation? Were you able to fulfill your responsibilities and hit your goals?",
+                "Tell me about a time when you worked with a team to solve a problem. What was the situation? How were you involved? What steps did you take? What was the outcome?",
+                "Describe a time when you disagreed with a team member. How did you resolve the problem?",
+                "Can you give me an example of a time you faced conflict while working on a team? How did you handle/manage that situation and still fulfill your responsibilities?"
+              ]
+            },
+            "integrity": {
+              "title": "On Integrity",
+              "questions": [
+                "Tell me about a time when you had to choose between making an easy decision and making the right decision.",
+                "How have you dealt with failure in the past?",
+                "Do others consider you trustworthy? Tell me of a situation when this has been manifested.",
+                "Tell me about a time when you need to admit a mistake that you made.",
+                "Tell me of a situation in which you had to make a sacrifice in order to stay true to your values."
+              ]
+            },
+            "passion_for_customers_and_consumers": {
+              "title": "On Passion for Customers and Consumers",
+              "questions": [
+                "Give me an example of when you had to interact with a difficult client/customer. What were the circumstances of the interaction? How did you handle this difficulty? Were you able to change the experience from negative to positive?",
+                "Tell me about a time you went above and beyond what was expected to please a customer?",
+                "Give me an example where you did not meet a client's expectations. What happened and how did you attempt to fix it?",
+                "Tell me about a time you thought you communicated clearly but were misunderstood. What happened and how did you handle the situation?",
+                "Give me an example of a time when you had to explain something fairly complex to a frustrated client or coworker. How did you make sure they understood you?"
+              ]
+            },
+            "innovation_and_entrepreneurship": {
+              "title": "On Innovation and Entrepreneurship",
+              "questions": [
+                "Tell me about a time when you took an innovative approach to solve an issue.",
+                "Tell me about a time your innovative idea didn't work out. What did you learn from it?",
+                "How have you used innovation to overcome workplace challenges?",
+                "Tell me about a time you used your knowledge of your organization to come up with an idea or project and had it approved.",
+                "Have you ever run over budget? Why did that happen, and how did you handle it?"
+              ]
+            },
+            "love_for_god": {
+              "title": "On Love for God",
+              "questions": [
+                "Tell me about a time when you initiated activities that had been helpful to others or to a certain group/community?",
+                "Describe a time when you think you had positively influence another person.",
+                "Tell me about a time when you had to ensure that diversity and inclusion was observed in the workplace."
+              ]
+            }
+          }
+        }
+      }
+    }
+  },
+  "tools": {
+    "title": "MY TOOLS in Attracting Talents",
+    "available_tools": [
+      {
+        "tool_name": "Personnel Requisition Form (PRF)",
+        "link": "https://docs.google.com/spreadsheets/d/1QpVhn2VzeIQ0QRLRaAn9kjn-UGMs2Uy7/edit?gid=865132987#gid=865132987",
+        "description": "Accomplish the form completely and submit it to the Recruitment Section to initiate the sourcing of candidates for the position.",
+        "contact_info": {
+          "plant_2_locals": "7254, 7204, or 7205",
+          "plant_3_locals": "7604"
+        },
+        "instruction": "Get in touch with any of the Recruitment Team for questions or concerns at the following local numbers"
+      },
+      {
+        "tool_name": "Sample Job Description",
+        "link": "https://drive.google.com/file/d/18Jz7j2KsuOPo7J4Run_qxewBVBXiwqKO/view",
+        "description": "Having a clear and accurate job description will help you determine the fit of candidates for the role and evaluate their skills and abilities.",
+        "benefits": "Accurate JDs help filter your applicants, saving a significant amount of time in screening. It can attract skilled people aligned with what you need."
+      },
+      {
+        "tool_name": "CDO Behavior-based Interview Form",
+        "description": "Interview guide with behavioral-based questions organized by competency"
+      },
+      {
+        "tool_name": "Sample Emaili on Internal Hiring",
+        "link": "https://drive.google.com/file/d/1b8QIL9WPjqt4vFx9A32VNQBq9o0QkxhF/view"
+      },
+      {
+        "tool_name": "Letter of Intent (LOI) Form",
+        "link": "https://drive.google.com/file/d/1Txi9I-CbVldMi-XX24PPJY38fBjBguQl/view"
+      }
+    ]
+  },
+  "faqs": {
+    "title": "FAQs",
+    "questions": [
+      {
+        "question": "Are we open to hiring fresh graduates or candidates without prior work experience?",
+        "answer": "Yes, although our priority is to hire experienced candidates, there are roles that do not require such and are open to accepting fresh graduates or candidates without prior work experience, but who possess good potential."
+      },
+      {
+        "question": "Are we open to hiring of employee's relatives?",
+        "answer": "FSI employees' relatives up to the second degree of consanguinity or affinity are not allowed to apply for regular, contractual, or project-based employment. They may only be employed on the following conditions:",
+        "conditions": [
+          "Prospective applicant will not be directly reporting to or working with the relative employee within the same section or department",
+          "Prospective applicant meets the basic requirements of the job",
+          "Approval, along with a justification letter, is obtained from the Supervisor, Section Head/Department Head, Division Head, and President"
+        ],
+        "special_conditions": {
+          "ojt_and_seasonal": "Hiring of employees' relatives are only allowed for OJT or during peak season provided that the following conditions are met:",
+          "requirements": [
+            "Seasonal employees or OJTs will not directly report to their relatives",
+            "S/he will not be in the same section or department as their relatives"
+          ]
+        }
+      },
+      {
+        "question": "Are we open to re-hiring previous employees?",
+        "answer": "Yes, the Company allows rehiring of a previous employee depending on the following conditions:",
+        "conditions": [
+          "A previous regular employee can be rehired six (6) months after his/her separation with the Company",
+          "A previous seasonal employee can be rehired as a seasonal employee if s/he has been recommended by his/her immediate superior, or as a regular employee if s/he does not have a relative who is an active employee of the Company",
+          "A previous contractual employee can be rehired as a probationary/regular employee",
+          "The employee has shown satisfactory performance during his/her previous stint with the Company",
+          "The employee resigned on a voluntary basis and not due to termination for a company violation",
+          "The employee has no derogatory or disciplinary action record while employed with the Company or in any of its affiliated companies, and in any of his/her succeeding employers after leaving the Company"
+        ],
+        "note": "All applicants under this category should still undergo the usual selection and hiring process and the terms of employment."
+      }
+    ]
+  }
+}

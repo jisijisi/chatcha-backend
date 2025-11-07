@@ -47,7 +47,7 @@
   border-radius: 50%;
   object-fit: cover;
   margin-bottom: 24px;
-  box-shadow: 0 8px 24px rgba(78, 90, 247, 0.15);
+  box-shadow: 0 8px 24px rgba(215, 25, 33, 0.15); /* MODIFIED */
   animation: floatIn 0.8s ease-out;
 }
 
@@ -180,7 +180,7 @@
 .message.user .message-content {
   background-color: var(--user-msg-bg);
   color: #1a202c;
-  border: 1px solid #d1d7ff;
+  border: 1px solid var(--user-msg-border); /* MODIFIED */
   text-align: left;
 }
 
@@ -289,7 +289,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(90deg, transparent 0%, rgba(78, 90, 247, 0.1) 50%, transparent 100%);
+  background: linear-gradient(90deg, transparent 0%, rgba(215, 25, 33, 0.1) 50%, transparent 100%); /* MODIFIED */
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
   pointer-events: none;
@@ -364,7 +364,7 @@
 
 .edit-input:focus {
   outline: none;
-  box-shadow: 0 0 0 3px rgba(78, 90, 247, 0.1);
+  box-shadow: 0 0 0 3px rgba(215, 25, 33, 0.1); /* MODIFIED */
 }
 
 .edit-actions {
@@ -404,7 +404,7 @@
 .edit-save:hover {
   background: var(--primary-hover);
   transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(78, 90, 247, 0.3);
+  box-shadow: 0 2px 8px rgba(215, 25, 33, 0.3); /* MODIFIED */
 }
 
 /* Follow-up Suggestions */
@@ -440,7 +440,7 @@
 }
 
 .followup-chip:hover {
-  border-color: var(--primary-color);
+  border-color: var(--primary-hover); /* MODIFIED */
   background: #f8f9ff;
   transform: translateY(-1px);
 }
@@ -718,7 +718,7 @@
 }
 
 .suggested-question:hover {
-  border-color: var(--primary-color);
+  border-color: var(--primary-hover); /* MODIFIED */
   background: #f8f9ff;
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);

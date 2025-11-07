@@ -3,24 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ChatJisi - AI HR Assistant</title>
-  <meta name="description" content="Chat with Jisi - Your AI HR and Recruitment Assistant">
+  <title>ChatCHA - AI HR Assistant</title>
+  <meta name="description" content="Chat with CHA - Your AI HR and Recruitment Assistant">
 
-  <!-- Favicon -->
   <link rel="icon" type="image/png" href="assets/images/logo.png">
   
-  <!-- CSS - Single Import (imports all CSS modules) -->
   <link rel="stylesheet" href="assets/css/main.css">
   
-  <!-- Syntax Highlighting -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 </head>
 <body>
   <div id="app">
-    <!-- Sidebar -->
     <aside id="sidebar" aria-label="Chat navigation">
-      <!-- Sidebar Header -->
       <div class="sidebar-header">
         <button id="sidebar-toggle" class="sidebar-toggle" aria-label="Toggle sidebar" aria-expanded="true">
           <span class="hamburger">
@@ -30,7 +25,7 @@
           </span>
         </button>
         <div class="logo-container">
-          <img src="assets/images/logo.png" alt="ChatJisi Logo" class="logo">
+          <img src="assets/images/logo.png" alt="ChatCHA Logo" class="logo">
           <div class="logo-hamburger-overlay">
             <span class="hamburger">
               <span></span>
@@ -39,7 +34,7 @@
             </span>
           </div>
         </div>
-        <h1>ChatJisi</h1>
+        <h1>ChatCHA</h1>
       </div>
 
       <button id="new-chat" aria-label="Start new chat">
@@ -54,9 +49,7 @@
       </nav>
     </aside>
 
-    <!-- Main Chat Section -->
     <main id="chat-container" class="centered">
-      <!-- Mobile menu toggle button -->
       <button id="mobile-menu-toggle" class="mobile-menu-toggle" aria-label="Open menu" aria-expanded="false">
         <span class="hamburger">
           <span></span>
@@ -66,20 +59,19 @@
       </button>
 
       <section id="welcome-message" class="show" aria-live="polite">
-        <h2>Hi, I'm Jisi</h2>
+        <h2>Hi, I'm CHA</h2>
         <p>Welcome! I'm your AI HR and Recruitment Assistant. Ask me anything about hiring, recruitment, HR policies, or candidate evaluation.</p>
-        <!-- Suggested questions will be added here by JavaScript -->
-      </section>
+        </section>
 
       <div id="chat" role="log" aria-live="polite" aria-atomic="false"></div>
 
       <form class="input-area" role="search">
-        <label for="question" class="sr-only">Ask Jisi</label>
+        <label for="question" class="sr-only">Ask CHA</label>
         <input 
           id="question" 
           type="text"
-          placeholder="Ask Jisi here" 
-          aria-label="Ask Jisi here"
+          placeholder="Ask CHA here" 
+          aria-label="Ask CHA here"
           autocomplete="off"
           maxlength="500"
         />
@@ -92,10 +84,8 @@
     </main>
   </div>
 
-  <!-- Sidebar overlay for mobile -->
   <div id="sidebar-overlay" aria-hidden="true"></div>
 
-  <!-- Chat History Dropdown Menu (for minimized sidebar) -->
   <div id="history-dropdown" class="history-dropdown" aria-hidden="true">
     <div class="history-dropdown-header">
       <h3>Previous Chats</h3>
@@ -103,7 +93,6 @@
     <ul id="history-dropdown-list" role="list"></ul>
   </div>
 
-  <!-- Modal -->
   <div id="modal-overlay" class="modal-overlay" aria-hidden="true">
     <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
       <div class="modal-header">
@@ -121,7 +110,6 @@
     </div>
   </div>
 
-  <!-- Mobile Header -->
   <header id="mobile-header" class="mobile-header" aria-hidden="true">
     <button id="mobile-header-toggle" class="mobile-menu-toggle in-header" aria-label="Open menu" aria-expanded="false">
       <span class="hamburger">
@@ -131,15 +119,14 @@
       </span>
     </button>
     <div class="mobile-header-center">
-      <img src="assets/images/logo.png" alt="ChatJisi Logo" class="mobile-header-logo" id="mobile-header-logo">
+      <img src="assets/images/logo.png" alt="ChatCHA Logo" class="mobile-header-logo" id="mobile-header-logo">
       <button id="mobile-header-title" class="mobile-header-title" aria-label="Chat options">
-        <span class="title-text">ChatJisi</span>
+        <span class="title-text">ChatCHA</span>
         <svg class="dropdown-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <polyline points="6 9 12 15 18 9"></polyline>
         </svg>
       </button>
     </div>
-    <!-- Dropdown for mobile header -->
     <div id="mobile-header-dropdown" class="mobile-header-dropdown" role="menu">
       <button class="dropdown-option" id="mobile-rename-option" role="menuitem">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -158,7 +145,6 @@
     </div>
   </header>
 
-  <!-- JavaScript - ES6 Module -->
   <script type="module" src="assets/js/app.js"></script>
 </body>
 </html>

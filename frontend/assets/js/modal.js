@@ -9,8 +9,8 @@ export class ModalManager {
 
   showWelcomeModal(onConfirm) {
     this.showModal({
-      title: "Welcome to ChatJisi! ✨",
-      message: "I'm Jisi, your AI HR and Recruitment Assistant! I'm here to help you with everything related to human resources, talent acquisition, and building great teams.\n\nWhat should I call you?",
+      title: "Welcome to ChatCHA! ✨", // No change needed
+      message: "I'm CHA, your AI assistant for CDO Foodsphere! I'm here to help with questions about company policies, history, products, and more.\n\nWhat should I call you?", // UPDATED
       inputValue: "",
       confirmText: "Let's Get Started! 🚀",
       confirmClass: "",

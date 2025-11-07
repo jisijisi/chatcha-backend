@@ -1,0 +1,1579 @@
+{
+  "title": "ENGAGE",
+  "tagline": "Engage your team members to thrive and contribute their best.",
+  "subtitle": "Framework | Processes | Policies | Tools",
+  "framework": {
+    "main_goal": "Engage your team members to thrive and contribute their best. Build connection, encourage collaboration, and create a work environment that values open communication, feedback, and recognition.",
+    "leader_role": {
+      "title": "Your role as Leader:",
+      "responsibilities": [
+        "Build strong working relationships with your team.",
+        "Create opportunities for meaningful dialogue and feedback.",
+        "Recognize and celebrate individual and team contributions.",
+        "Empower team members by involving them in decision-making."
+      ]
+    },
+    "engagement_definition": {
+      "title": "ENGAGEMENT DEFINITION",
+      "description": "Employee engagement refers to the emotional commitment that an employee has towards the organization, its goals, and values. It is the level of enthusiasm and connection employees feel toward their work. Engaged employees are motivated to contribute to the organization's success and are more likely to stay within the company for a long time."
+    },
+    "why_engagement_matters": {
+      "description": "Employees are more engaged when they feel that their work is positive and fulfilling. They feel proud of, inspired by, and actively involved with their work. They also feel that their employers listen to and care for them.",
+      "engaged_employees": [
+        "Show higher productivity and better performance.",
+        "Deliver better customer experience.",
+        "Have lower absenteeism and turnover rates.",
+        "Promote stronger teamwork and collaboration."
+      ],
+      "disengaged_employees": [
+        "Demonstrate lower motivation and commitment.",
+        "Have higher absenteeism and turnover.",
+        "Negatively impact overall team morale."
+      ],
+      "benefits": "Through effective employee engagement initiatives and programs, employees will bring unique benefits to the organization in the form of higher profitability, better customer retention, better talent acquisition and retention, lower employee turnover, and a safer work environment.",
+      "did_you_know": {
+        "title": "DID YOU KNOW?",
+        "statistics": [
+          "In a 2017 study by Gallup, it was found that only 15 percent of the world's one billion workers are engaged at work. That's an alarming statistic. Lower engagement leads to lower productivity and thus, slower economic growth.",
+          "Employee engagement leads to +42% in commitment, +38% in employee retention, and +25% in customer focus."
+        ],
+        "source": "Gallup Workplace Report"
+      }
+    }
+  },
+  "processes_and_policies": {
+    "performance_management": {
+      "title": "What is Performance Management?",
+      "description": "A corporate management tool that helps leaders monitor and evaluate employees' work performance.",
+      "definition": {
+        "primary": "Performance Management System is the continuous process of improving performance by setting individual and team goals that are aligned to the strategic goals of the organization, planning performance to achieve goals, reviewing and assessing progress, and developing the knowledge, skills, and abilities of people.",
+        "secondary": "It is an ongoing process of communication between a superior and a subordinate that happens throughout the year. It involves a continuous process of clarifying expectations, setting objectives, identifying goals, providing feedback, and reviewing results/outputs."
+      },
+      "leader_responsibilities": {
+        "introduction": "As a leader, your responsibility is to develop a high performance culture at FSI by ensuring the following:",
+        "responsibilities": [
+          "Communicate FSI's mission, goals, and values to your team",
+          "Clearly define the work standards and expectations with your team and individual members",
+          "Track and analyse performance data",
+          "Conduct regular feedback with your team to keep them informed about their progress towards the achievement of goals",
+          "Provide guidance and corrective actions for non-achievement of goals or performance expectations",
+          "Communicate and establish a shared belief with regard to the importance of continuously improving performance"
+        ]
+      },
+      "key_characteristics": [
+        "Continuous process",
+        "Ongoing communication",
+        "Year-round activity",
+        "Two-way interaction between superior and subordinate"
+      ],
+      "core_components": [
+        "Setting individual and team goals",
+        "Aligning goals to strategic organizational goals",
+        "Planning performance",
+        "Reviewing and assessing progress",
+        "Developing knowledge, skills, and abilities",
+        "Clarifying expectations",
+        "Setting objectives",
+        "Identifying goals",
+        "Providing feedback",
+        "Reviewing results/outputs"
+      ]
+    },
+    "performance_management_system_cycle": {
+      "title": "Performance Management System Cycle",
+      "principle": "Strong performance management rests on the simple principle that 'what gets measured and tracked gets done'.",
+      "overview": "In an ideal system, a business creates a cascade of metrics and targets, from its top-level strategic objectives down to the daily activities of its frontline employees. Managers continually monitor those metrics and regularly engage with their teams to discuss progress in meeting the targets. Good performance is rewarded; underperformance triggers action to address the problem.",
+      "goal_cascade": {
+        "levels": [
+          {
+            "level": 1,
+            "name": "Strategic Objectives",
+            "description": "Top-level organizational goals"
+          },
+          {
+            "level": 2,
+            "name": "Departmental Goals",
+            "description": "Goals aligned to strategic objectives at department level"
+          },
+          {
+            "level": 3,
+            "name": "Individual Goals",
+            "description": "Goals aligned to departmental goals at individual employee level"
+          }
+        ]
+      },
+      "pms_cycle": {
+        "stages": [
+          {
+            "stage": 1,
+            "name": "Planning & Goal Setting",
+            "description": "Goals are set and individual success metrics defined",
+            "timing": "Occurs every Q4 in preparation for the succeeding year, with goals finalized by January",
+            "activities": [
+              "Set goals",
+              "Define individual success metrics"
+            ]
+          },
+          {
+            "stage": 2,
+            "name": "Monitoring",
+            "description": "Goals are tracked and feedback is given regularly",
+            "timing": "Occurs regularly depending on agreed scheduled check-ins (i.e. monthly, quarterly)",
+            "activities": [
+              "Track goals",
+              "Provide regular feedback",
+              "Conduct scheduled check-ins"
+            ]
+          },
+          {
+            "stage": 3,
+            "name": "Evaluating",
+            "description": "Assess employee's job performance as measured by set expectations",
+            "timing": "Submission every February",
+            "activities": [
+              "Assess job performance",
+              "Measure against set expectations",
+              "Submit evaluation"
+            ]
+          },
+          {
+            "stage": 4,
+            "name": "Revisiting",
+            "description": "Goals are reviewed and targets are calibrated",
+            "timing": "After evaluation phase",
+            "activities": [
+              "Review goals",
+              "Calibrate targets",
+              "Adjust as needed"
+            ]
+          }
+        ]
+      },
+      "key_principles": [
+        "Continuous monitoring",
+        "Regular team engagement",
+        "Discussion of progress",
+        "Reward good performance",
+        "Address underperformance"
+      ]
+    },
+    "balanced_scorecard": {
+      "title": "The Balanced Scorecard (BSC)",
+      "description": "The Balanced Scorecard was originally developed by Dr. Robert Kaplan of Harvard University and Dr. David Norton as a framework for measuring organizational performance using a more balanced set of performance measures.",
+      "center": "VISION AND STRATEGY",
+      "perspectives": [
+        {
+          "perspective": "Financial",
+          "question": "What are the financial objectives for growth and profitability?",
+          "metrics": [
+            "ROI",
+            "Cash flow",
+            "Financial results",
+            "Revenue",
+            "Expenses",
+            "Net income"
+          ]
+        },
+        {
+          "perspective": "Customer",
+          "questions": [
+            "Who are the target customer segments that will generate growth and profit?",
+            "What is our value proposition to these target segments?"
+          ],
+          "metrics": [
+            "Customer satisfaction rate",
+            "Customer retention",
+            "Delivery & quality performance"
+          ]
+        },
+        {
+          "perspective": "Learning & Growth",
+          "question": "What skills should our people excel in, to enable them to perform the key internal processes?",
+          "metrics": [
+            "Job satisfaction",
+            "Training opportunities",
+            "Job knowledge and skills",
+            "Employee retention"
+          ]
+        },
+        {
+          "perspective": "Internal Process",
+          "question": "What internal processes should we excel in, to enable us to deliver our value proposition?",
+          "metrics": [
+            "Process alignment",
+            "Automation",
+            "Activities per function",
+            "Quality control"
+          ]
+        }
+      ],
+      "key_relationships": [
+        {
+          "from": "Learning & Growth",
+          "to": "Internal Process",
+          "description": "Employee capabilities enable process excellence"
+        },
+        {
+          "from": "Internal Process",
+          "to": "Customer",
+          "description": "Process excellence delivers customer value"
+        },
+        {
+          "from": "Customer",
+          "to": "Financial",
+          "description": "Customer satisfaction drives financial results"
+        }
+      ]
+    },
+    "balanced_scorecard_perspectives": {
+      "title": "Balanced Scorecard Perspectives",
+      "description": "The BSC suggests that we examine an organization from four different perspectives to help develop objectives, measures (KPIs), targets, and initiatives relative to those views.",
+      "perspectives": [
+        {
+          "name": "Financial",
+          "focus_areas": [
+            "Financial Performance",
+            "Effective Resource Use"
+          ]
+        },
+        {
+          "name": "Customer",
+          "focus_areas": [
+            "Customer Value",
+            "Satisfaction and/or Retention"
+          ]
+        },
+        {
+          "name": "Internal Process",
+          "focus_areas": [
+            "Efficiency",
+            "Quality"
+          ]
+        },
+        {
+          "name": "Learning & Growth",
+          "focus_areas": [
+            "Human Capital",
+            "Infrastructure & Technology",
+            "Culture",
+            "Knowledge & Innovation"
+          ]
+        }
+      ],
+      "purpose_of_bsc": {
+        "title": "Purpose of the BSC",
+        "organizational_uses": [
+          "Communicate what they are trying to accomplish",
+          "Align the day-to-day work that everyone is doing with strategy",
+          "Prioritize projects, products, and services",
+          "Measure and monitor progress towards strategic targets"
+        ],
+        "measurement_approach": {
+          "financial_measures": {
+            "type": "Lagging indicators",
+            "description": "Tell the results of actions already taken"
+          },
+          "operational_measures": {
+            "type": "Leading indicators",
+            "description": "Drivers of future financial performance",
+            "areas": [
+              "Customer satisfaction",
+              "Internal processes",
+              "Organization's innovation and improvement activities"
+            ]
+          }
+        }
+      }
+    },
+    "cascading_of_bsc": {
+      "title": "Cascading of BSC",
+      "definition": "Cascading a balanced scorecard means to translate the corporate-wide scorecard starting from the top and rolling down into a department, group, and even up to the employee level.",
+      "purpose": "Cascading strategy focuses the entire organization on strategy and creating the connection between the work people do and high level desired results. As the management system is cascaded down through the organization, objectives become more operational and tactical, as do the performance measures. Accountability follows the objectives and measures, as ownership is defined at each level. This alignment step is critical to becoming a strategy-focused organization.",
+      "hierarchy": {
+        "levels": [
+          {
+            "level": 1,
+            "name": "Division KPIs",
+            "scope": "Corporate/Division level"
+          },
+          {
+            "level": 2,
+            "name": "Department/Section KPIs",
+            "scope": "Department/Section level"
+          },
+          {
+            "level": 3,
+            "name": "Individual KPIs",
+            "scope": "Individual employee level"
+          }
+        ]
+      },
+      "implementation_process": {
+        "steps": [
+          {
+            "step": 1,
+            "name": "Division BSC Approved",
+            "description": "Division-level balanced scorecard is reviewed and approved"
+          },
+          {
+            "step": 2,
+            "name": "Agree on LEAD Targets Per KPI",
+            "description": "Leadership agrees on target metrics for each key performance indicator"
+          },
+          {
+            "step": 3,
+            "name": "Assign Responsible Depts/Units",
+            "description": "Departments and units are assigned ownership of specific KPIs"
+          },
+          {
+            "step": 4,
+            "name": "Managers Assign Individual Targets",
+            "description": "Managers cascade targets down to individual employee level"
+          },
+          {
+            "step": 5,
+            "name": "Individual Target Setting Discussion",
+            "description": "One-on-one discussions between managers and employees to set individual targets"
+          },
+          {
+            "step": 6,
+            "name": "Teams Create Performance Dashboards",
+            "description": "Teams develop dashboards to monitor and track performance"
+          }
+        ]
+      }
+    },
+    "lead_and_lag_measures": {
+      "title": "LEAD and LAG Measures",
+      "quote": {
+        "text": "Focusing on the wildly important requires you to go against your basic wiring as a leader to do more, and instead, focus on less so that your team can achieve more.",
+        "author": "Sean Covey",
+        "source": "Co-author of The 4 Disciplines of Execution"
+      },
+      "lead_measures": {
+        "title": "LEAD",
+        "definition": "An indicator of performance that might predict future success.",
+        "characteristics": [
+          "Are predictive measurement",
+          "Give early indications of performance",
+          "Keep you on track as they show the progress you're making toward your goal",
+          "Are controllable",
+          "Can influence change"
+        ],
+        "description": "Lead measures track the critical activities that drive or lead to the lag measure. They are in-process measures. They are things like new market development, number of sales calls made, calories consumed per day, and safety training.",
+        "monitoring_frequency": "Should be checked more often",
+        "nature": "Proactive and influenceable"
+      },
+      "lag_measures": {
+        "title": "LAG",
+        "definition": "An indicator of past performance that measures how an individual or a team performed.",
+        "characteristics": [
+          "Are output/after-the-event measurement",
+          "Take a long time to impact or measure",
+          "Most accurately measure the actual business impact you're trying to achieve",
+          "Are unpredictable and uncontrollable",
+          "Only records what has happened"
+        ],
+        "examples": "Lags are things like revenue, profit, quality, accident rate, and customer satisfaction. They are called lags because by the time you see them, the performance that drove them has already passed.",
+        "limitation": "You can do nothing to fix them.",
+        "monitoring_frequency": "Take a long time to change so there's no need to track them on a daily or weekly basis",
+        "nature": "Reactive and historical"
+      }
+    },
+    "lead_and_lag_measures_examples": {
+      "title": "Strategic Objectives with Lead and Lag Measures",
+      "source": "https://www.intrafocus.com/lead-and-lag-indicators/",
+      "context": {
+        "recommendation": "It has been customary for businesses to just use lagging indicators to measure success. However, since it takes a long time to see results and it prohibits teams to make the necessary ongoing adjustments, it has been recommended to use a combination of lead and lag measures.",
+        "benefit": "Using lead and lag indicators result in enhanced business performance overall. Inasmuch as a Balanced Scorecard requires a 'balance' of measures across organizational disciplines, so a 'balance' of lead and lag indicators are required to ensure the right activities are in place to guarantee the right outcomes."
+      },
+      "perspectives": [
+        {
+          "perspective": "Financial Perspective",
+          "description": "Usually this section concerns itself with key financial data such as revenue, cost of sale, gross margin, expenses and net profit, however it can also include financial initiatives such as risk assessments and cost-benefit analysis.",
+          "objectives": [
+            {
+              "strategic_objective": "Improve return on investment",
+              "lead_measure": null,
+              "lag_measure": "Return on investment"
+            },
+            {
+              "strategic_objective": "Broaden revenue portfolio",
+              "lead_measure": "Add three more products to the portfolio this year",
+              "lag_measure": "Revenue growth"
+            },
+            {
+              "strategic_objective": "Reduce overall costs",
+              "lead_measure": null,
+              "lag_measure": "Expense costs"
+            }
+          ]
+        },
+        {
+          "perspective": "Customer Perspective",
+          "description": "The company seen from the customer's viewpoint. Unsatisfied customers will look for other suppliers to meet their needs. Customer satisfaction is in itself a lead indicator that can predict potential future loss.",
+          "objectives": [
+            {
+              "strategic_objective": "Increase customer satisfaction",
+              "lead_measure": "More account management",
+              "lag_measure": "Customer satisfaction score"
+            },
+            {
+              "strategic_objective": "Increase company awareness",
+              "lead_measure": "Number of press articles",
+              "lag_measure": "Customers call us"
+            },
+            {
+              "strategic_objective": "Decrease customer attrition",
+              "lead_measure": "Improved customer service",
+              "lag_measure": "Number of customers"
+            }
+          ]
+        },
+        {
+          "perspective": "Internal Processes Perspective",
+          "description": "The ability to determine how well the business is running and whether or not the products and/or services meet the needs of its customers and are aligned to the companies objectives.",
+          "objectives": [
+            {
+              "strategic_objective": "Create innovative products",
+              "lead_measure": "Product development cycle",
+              "lag_measure": "New product/service revenue"
+            },
+            {
+              "strategic_objective": "Improve the knowledge base",
+              "lead_measure": "Number of articles submitted",
+              "lag_measure": "Knowledge base in place"
+            },
+            {
+              "strategic_objective": "Reduce operational problems",
+              "lead_measure": "Hours spent with customer",
+              "lag_measure": "Product/service error rate"
+            }
+          ]
+        },
+        {
+          "perspective": "Learning and Growth Perspective",
+          "description": "The main resource in most companies today is its people, it is essential, especially in a climate where technology is changing rapidly, that they grow and learn continuously. Focus has to be on where best to spend ever decreasing budgets.",
+          "objectives": [
+            {
+              "strategic_objective": "Development of strategic skills",
+              "lead_measure": "Service/product cover ratio",
+              "lag_measure": "Employee satisfaction"
+            },
+            {
+              "strategic_objective": "Better strategic communication",
+              "lead_measure": "Information availability",
+              "lag_measure": "Employee satisfaction"
+            },
+            {
+              "strategic_objective": "Alignment of personal goals",
+              "lead_measure": "Goal alignment",
+              "lag_measure": "Revenue per employee"
+            }
+          ]
+        }
+      ]
+    },
+    "performance_planning": {
+      "title": "Performance Planning",
+      "description": "Performance Management begins with a planning session wherein goals, Key Result Areas (KRA), Key Performance Indicators (KPI), targets, and work standards are established and mutually agreed upon by the immediate superior and the subordinate.",
+      "purpose_of_written_performance_expectations": [
+        "Serves as an objective and tangible basis in discussing performance",
+        "Allows the employee to distinguish between acceptable and unacceptable results or work output",
+        "Increases job satisfaction since employees are aware when tasks performed or results meet expectations",
+        "Informs new employees of your expectations about job performance",
+        "Encourages an open, collaborative, and trusting relationship with employees"
+      ],
+      "performance_expectations": {
+        "components": [
+          "Results",
+          "Actions & Behaviors"
+        ],
+        "measurement": {
+          "results": "Often measured based on the established standards and objectives",
+          "actions_and_behaviors": "Can be measured through performance dimensions"
+        },
+        "requirements": "It is important that the performance expectations are written, verifiable, and mutually understood by both the immediate superior and the employee."
+      }
+    },
+    "key_components": {
+      "kra": {
+        "title": "Key Result Areas (KRAs)",
+        "definition": "KRAs refer to the general areas of outcomes or outputs for which a role, or a combination of roles, is responsible. These are the main goals which are critical for an organization or employee to achieve to be successful. KRAs will differ significantly depending on the role of an employee or the specific goals of a department or an organization.",
+        "guiding_questions": [
+          "What must be measured?",
+          "What does success look like for the employee/department/organization?",
+          "What is the relatively small portion of your work that brings the most value to your organization?"
+        ],
+        "focus_areas": "The KRA for an organization should focus on the vital areas that fit best with an organization's strategic goals and most directly drive its success.",
+        "common_kra_areas": [
+          "Profit and economic gain",
+          "Customer satisfaction",
+          "Employee engagement",
+          "Product quality",
+          "Organizational management",
+          "Innovation",
+          "Process improvement"
+        ],
+        "leader_questions_for_development": [
+          "What is the purpose of every position that reports to you?",
+          "Why is each staff member employed by your organization?",
+          "For each employee, create a list of vital tasks they've been hired to do.",
+          "Arrange the tasks based on their importance to your organization."
+        ],
+        "key_elements_for_individual_kra": [
+          {
+            "element": 1,
+            "name": "Begin with a conversation",
+            "description": "It is crucial for an immediate superior to meet and discuss with the employee in preparing and writing the KRA for the position. This is an opportunity for both parties to consider and agree on the appropriate goals that will be measured for the position."
+          },
+          {
+            "element": 2,
+            "name": "Broadly define the job profile",
+            "description": "KRAs should be able to give a general description of the job and clarity on the role and mission of the employee within the organization."
+          },
+          {
+            "element": 3,
+            "name": "Create SMART KRAs",
+            "description": "KRAs should be Specific, Measurable, Attainable, Relevant, and Time-bound."
+          },
+          {
+            "element": 4,
+            "name": "Set a limited and realistic number",
+            "description": "KRAs refer to the most important objectives and should, therefore, be limited to the critical few. A typical area targets three to five KRAs. This helps determine the most valuable indicators, makes tracking easier, and aids in allocating resources to that which will reap the greatest value."
+          },
+          {
+            "element": 5,
+            "name": "Put it in writing",
+            "description": "KRAs must be written, reviewed, agreed upon, and signed by all parties involved."
+          }
+        ],
+        "recommended_number": "Three to five KRAs"
+      },
+      "kpi": {
+        "title": "Key Performance Indicators (KPIs)",
+        "definition": "KPIs refer to any metric/criteria that measures or evaluates the performance in the Key Result Areas (KRAs), which linked back to the achievement of the department/organization objectives, and the achievement of the organization's goals. KPIs can involve sales figures, product performance, return on investments, savings, and a wide range of other areas that are quantifiable or have observable indicators.",
+        "guiding_questions": [
+          "How will the KRA be measured?",
+          "How will I assess our progress towards the achievement of our goals?"
+        ],
+        "expression_types": [
+          {
+            "type": "Timeliness",
+            "description": "The amount of time needed to complete a certain task or activity; answers the questions: by when, how soon, or within what period"
+          },
+          {
+            "type": "Quantity/Productivity",
+            "description": "Specifies how much work must be completed within a certain period of time"
+          },
+          {
+            "type": "Quality",
+            "description": "Describes how well the work must be accomplished; specifies accuracy, precision, appearance, or effectiveness"
+          },
+          {
+            "type": "Cost",
+            "description": "Used when performance can be reviewed in terms of utilization of resources: money saved, waste reduced, income generated"
+          }
+        ],
+        "examples": [
+          {
+            "level": "Company",
+            "kra": "Net Profit",
+            "kpi": "% growth from net sales",
+            "target": "Increase net profit by 20%"
+          },
+          {
+            "level": "Department",
+            "kra": "Market Share",
+            "kpi": "% growth of follower base converted to sales",
+            "target": "Increase market share by 35%"
+          },
+          {
+            "level": "Individual",
+            "category": "Quantity",
+            "kpi": "% increase of new clients",
+            "target": "Increase number of clients to 20%"
+          },
+          {
+            "level": "Individual",
+            "category": "Quality",
+            "kpi": "# of customer complaints per month",
+            "target": "Reduce customer complaints to 0"
+          },
+          {
+            "level": "Individual",
+            "category": "Timeliness",
+            "kpi": "# of issues resolved within a set timeline",
+            "target": "Resolve simple issues within 24 hours"
+          },
+          {
+            "level": "Individual",
+            "category": "Productivity",
+            "kpi": "# of downtime per month",
+            "target": "Reduce downtime incidents in production to 0"
+          }
+        ],
+        "note": "KPIs must be submitted to the HRBP for proper documentation."
+      },
+      "values_and_behaviors": {
+        "title": "Values: Defining Actions and Behaviors",
+        "rationale": "Performance expectations cannot be satisfied solely by results. It is important to consider other aspects of performance that will lead to the achievement of established objectives and standards, such as actions and behaviors. Understanding how employees act and behave in order to perform their job is also important to success as the end results.",
+        "principle": "It is believed that the manner by which employees conduct themselves in carrying out their work will largely impact the outcome or the results that will be produced. It is therefore vital that leaders also focus on and assess the way people go about their work.",
+        "leader_responsibility": "As a leader, you should be able to identify and quantify aspects of performance to make them specific, observable, job-related, and behavioral. You start by defining the job and stating the range of behaviors the employees must exhibit to successfully perform the job based on expectations and standards.",
+        "dimensions": {
+          "definition": "These behaviors may be grouped into broad categories called dimensions, which answer the question: 'How does an employee act and/or behave when s/he does the job well?'"
+        },
+        "cdo_implementation": {
+          "measurement_approach": "At CDO, this dimension is being measured using the company's core values with behavioral descriptions indicated per job level.",
+          "core_values": [
+            "Passionate about Customers and Consumers",
+            "Innovative and Entrepreneurial Spirit",
+            "Integrity",
+            "Open and Collaborative",
+            "Love for God"
+          ]
+        }
+      }
+    },
+    "performance_monitoring": {
+      "title": "Performance Monitoring",
+      "description": "Once the Key Result Areas, Key Performance Indicators, and targets have been established, your role as a leader is to observe the employee's performance and check-in with them regularly by providing feedback.",
+      "leader_responsibilities": [
+        "Monitor the progress of the activities that have been identified in relation to the accomplishment of the department or individual goals",
+        "Recognize and reinforce strong performance by the employees and the team",
+        "Identify and encourage improvement areas where necessary"
+      ],
+      "periodic_feedback_sessions": {
+        "purpose": "You may conduct periodic feedback sessions to discuss actual performance, particularly problems and difficulties encountered and agreed resolution to said problems.",
+        "importance": "This is critical for employees on probation as this will be the major deciding factor for his/her regularization.",
+        "process": "You can show and discuss the employee's rating based on actual accomplishments as well as significant observations during the covered evaluation period. The employee will also be given the opportunity to respond and propose a plan of action particularly on areas of performance that need improvement."
+      },
+      "dashboard": {
+        "title": "Example of a Dashboard",
+        "description": "In order to monitor performance, you may create a dashboard that the team can use as reference in checking and assessing the progress of your KRA/KPI. This can be reviewed monthly or weekly.",
+        "columns": [
+          "KRA",
+          "KPI",
+          "TARGET",
+          "STATUS",
+          "UPDATES/ACTION PLAN"
+        ],
+        "examples": [
+          {
+            "kra": "Increase number of clients",
+            "kpi": "# of new clients",
+            "target": "From average of 20 to 40 per month",
+            "status_options": [
+              "On track",
+              "At risk",
+              "Delayed"
+            ]
+          },
+          {
+            "kra": "Reduce customer complaints",
+            "kpi": "# of customer complaints",
+            "target": "From average of 20 to 5 per month",
+            "status_options": [
+              "On track",
+              "At risk",
+              "Delayed"
+            ]
+          },
+          {
+            "kra": "Response rate",
+            "kpi": "# of issues resolved within set timeline",
+            "target": [
+              "Simple: 3 issues within 24 hours",
+              "Complex: 1 issue within 3 days"
+            ],
+            "status_options": [
+              "On track",
+              "At risk",
+              "Delayed"
+            ]
+          },
+          {
+            "kra": "Reduce downtime incidents in production",
+            "kpi": "# of downtime per month",
+            "target": [
+              "From average of 5 to 1 per month",
+              "From 5 hours downtime to 1 hour"
+            ],
+            "status_options": [
+              "On track",
+              "At risk",
+              "Delayed"
+            ]
+          }
+        ]
+      }
+    },
+    "performance_review_evaluation": {
+      "title": "Performance Review/Evaluation",
+      "description": "Review provides an opportunity for the leader to communicate with the employee with regard to past performance, evaluate the employee's job satisfaction, and make plans for the employee's future performance.",
+      "definition": "Performance review is the process of measuring an employee's performance in the current position based on the agreed standards and expectations. This is also known as appraisal, evaluation, or assessment.",
+      "summary": "The performance evaluation summarizes the employee's contribution over the entire review period. Depending on the organization's policy, an employee can be formally assessed once or twice a year. However, it is suggested that employees receive some form of evaluation or assessment on a more frequent basis or as often as necessary.",
+      "benefits": [
+        "Drive performance",
+        "Promote job satisfaction",
+        "Identify training opportunities",
+        "Lift employee morale through appreciation of contributions",
+        "Increase employee engagement",
+        "Encourage open communication",
+        "Boost company culture"
+      ],
+      "frequency": {
+        "title": "Frequency",
+        "categories": [
+          {
+            "category": "1. Probationary Employees",
+            "description": "Each probationary employee shall be formally evaluated on the fourth month of the probation period in order to serve as basis for personnel action (either for regularization or termination of contract)."
+          },
+          {
+            "category": "2. Regular Employees",
+            "description": "All regular employees are to be evaluated fully annually. This is being held every January covering the months of January to December of the previous year."
+          },
+          {
+            "category": "3. Special Evaluation",
+            "occasions": [
+              "When an employee is being considered for promotion",
+              "When a contractual or project-based employee is being considered for a regular or permanent position",
+              "When an employee is undergoing a Performance Improvement Plan (PIP)"
+            ]
+          }
+        ],
+        "leader_role": [
+          "Accomplish the Performance Evaluation Form (PEF) of each of the employee reporting under you and submit it on a timely manner, based on the submission guidelines released by HRAD through the HR Business Partners",
+          "Ensure that the discussion with each employee takes place"
+        ]
+      },
+      "components_of_rating": {
+        "title": "Components of Rating",
+        "breakdown": {
+          "kpi": {
+            "percentage": "70%",
+            "description": "The KPI rating is derived from actual accomplishments/outputs versus set targets as agreed by both the immediate superior and the employee during the performance planning phase."
+          },
+          "cdo_values": {
+            "percentage": "30%",
+            "description": "The employee is also evaluated based on certain dimensions and indicators in relation to the Company's core values, each has a corresponding qualitative description. The employee will be rated according to the degree by which said attributes are being exhibited. Specific critical incidents should be cited. It is recommended that the superior maintains a record of work-related behavior, whether positive or negative, demonstrated by the employee."
+          }
+        },
+        "note": "As an internal process, you may encourage your staff to do a self-assessment first during the performance review period. This will allow them to become more aware of their own strengths and areas for improvement. Thus, enabling them to participate more constructively when you meet for the performance discussion."
+      },
+      "performance_evaluation_form": {
+        "title": "Performance Evaluation Form",
+        "sections": [
+          {
+            "section": "I. KPI",
+            "description": "The table below shows the KPIs as aligned to the Balanced Scorecard (BSC) of the division.",
+            "criteria_to_set": [
+              {
+                "criterion": "Unit of measure",
+                "definition": "Standard for measurement of the identified KPI"
+              },
+              {
+                "criterion": "Performance Targets Value",
+                "definition": "Specific target set for each KPI"
+              },
+              {
+                "criterion": "Actual Performance Value",
+                "definition": "Actual attainment of the identified KPI"
+              },
+              {
+                "criterion": "% Distribution of KPI",
+                "definition": "Allocation of percentage for each KPI depending on the importance or value of the KPI; total of which should be 100"
+              }
+            ],
+            "auto_calculated_fields": [
+              {
+                "field": "% Achievement",
+                "calculation": "Computed by dividing the Actual Performance Value over the Performance Targets Value"
+              },
+              {
+                "field": "Equivalent Rating",
+                "calculation": "Corresponding rating of the % Achievement"
+              },
+              {
+                "field": "Weighted Rating",
+                "calculation": "Computed by multiplying the Equivalent Rating by the % Distribution of KPI; the sum of all the weighted rating will be the employee's rating for the KPI component"
+              }
+            ]
+          },
+          {
+            "section": "II. Values Component",
+            "description": "The employee will be given the opportunity to do a self-assessment and cite a critical incident for each of the value indicated."
+          },
+          {
+            "section": "Individual Development Plan (IDP)",
+            "description": "The last part of the PEF is the Individual Development Plan (IDP), which contains the recommended learning activities and interventions to help address performance gaps. This may include formal training, immersion/OJT, continuing education, or mentoring/coaching."
+          }
+        ],
+        "refusal_to_sign": "In case the employee does not agree or refuses to sign the PEF, you may escalate it to the next level superior or department/division head, looping in your HRBP.",
+        "forms_available": [
+          "PEF for Mancom & Supervisors",
+          "PEF 1 - For Manufacturing (Rank & File)",
+          "PEF 2 - For Office (Rank & File)"
+        ]
+      },
+      "performance_improvement_plan": {
+        "title": "Performance Improvement Plan (PIP)",
+        "definition": "A Performance Improvement Plan, also known as a performance action plan, is a tool to give an employee with performance deficiencies the opportunity to succeed. It may be used to address failures to meet specific job goals or to ameliorate behavior-related concerns.",
+        "description": "It is a formal document stating any recurring performance issues along with goals and specific steps that an employee needs to achieve in order to improve his performance and regain good standing at the company, usually within a specific timeline.",
+        "purpose": "This strategy facilitates a constructive discussion between a manager and an employee with a higher degree of clarity about specific expectations. It also provides a complete documentation of agreements, progress, and consequence.",
+        "employee_responsibility": "During the PIP period, the employee should make sure that he meets the stated goals within the timeline. He/She should initiate discussion or communication with his/her manager at any time throughout the plan.",
+        "leader_role": [
+          "Coordinate with your HRBP when the decision to place an employee under PIP is made",
+          "Develop the PIP stating specific goals and timelines as well as consequences",
+          "Discuss the PIP with the employee",
+          "Monitor and provide regular feedback to the employee (midpoint discussion and at the end of PIP period)"
+        ],
+        "trigger": "A PIP is given after an employee receives a poor performance review. Once an employee obtains a rating that does not meet expectations/standards, he/she may be placed under PIP.",
+        "refusal_to_sign": "In case the employee does not agree or refuses to sign the PIP, you may escalate it to the next level superior or department/division head, looping in your HRBP.",
+        "duration": {
+          "minimum": "90 days",
+          "extension": "Can be extended to another 90 days if performance did not improve during the first 90 days",
+          "maximum": "180 days"
+        },
+        "consequences": [
+          "While the employee is under PIP, his/her incentive during the covered period shall be suspended",
+          "Consistent failure to meet the performance expectations within the PIP period may lead to disciplinary action, up to and including termination",
+          "If the employee shows progress and successfully completes the PIP, he/she is expected to maintain an acceptable level of performance at all times. Otherwise, he/she may be put on another PIP that may lead to disciplinary action, up to and including termination"
+        ],
+        "pip_stages": [
+          {
+            "stage": "PIP I",
+            "description": "The initial opportunity given to the employee to address and improve a performance issue. Both must affix their signature on the PIP I letter to indicate that the content of the PIP has been reviewed, understood, and discussed by the two parties. A copy of the PIP letter must be given to the employee and another copy kept in the employee's 201 File.",
+            "successful_completion": "If the employee successfully meets the goals and has shown progress during the first 90 days of the PIP, he/she will be removed from the program and will be given a PIP Completion Letter. However, the employee will have to maintain an acceptable level of performance at all times. Otherwise, he/she will be placed under another PIP that may lead to a disciplinary action, up to and including termination."
+          },
+          {
+            "stage": "PIP II",
+            "description": "The last opportunity given to the employee to regain his/her performance in the event that he/she did not successfully complete PIP I. The employee will be given another 90 days to meet the stated goals in the PIP within the given timeline. Just like in the first PIP, a discussion of the goals will have to be made giving emphasis on the likelihood of the employee being terminated for failure to successfully accomplish the objectives that were set under the PIP. This shall be documented using the PIP II Letter."
+          }
+        ]
+      }
+    },
+    "recognition_and_rewards": {
+      "title": "Recognition and Rewards",
+      "definition": "A system where employees are acknowledged for their contribution and engagement in the workplace. This has to be an innate part of any company's culture. Recognition is relational and has an emotional value attached to it. Rewards are transactional and have some monetary value attached to it.",
+      "employee_recognition": {
+        "title": "Employee Recognition",
+        "definition": "It is the open acknowledgment and expressed appreciation of an employee's exemplary performance and contribution to the organization. The essential goal is to reinforce particular behaviors, practices, or activities that result in better performance and positive business results.",
+        "importance": "The best way to motivate employees is to acknowledge them for being good at what they do. While it has been common to recognize employees through monetary rewards, giving appreciation doesn't have to be expensive or glamorous.",
+        "key_benefits": [
+          {
+            "benefit": "Retention",
+            "statistic": "Employees not adequately recognized are 2x more likely to quit"
+          },
+          {
+            "benefit": "Productivity",
+            "statistic": "A simple thanks increased productivity by 50%"
+          },
+          {
+            "benefit": "Morale",
+            "statistic": "65% of employees say that respectful treatment contributes to job satisfaction"
+          },
+          {
+            "benefit": "Purpose",
+            "impact": "Recognition encourages a sense of purpose"
+          }
+        ]
+      },
+      "employee_rewards": {
+        "title": "Employee Rewards",
+        "definition": "An employee reward system is a motivation tactic organizations use to help their staff feel encouraged to complete high-quality work. Companies may often use rewards as extra encouragement by supplementing their employee's salaries. Employees may also earn other tangible or monetary rewards separate from their paycheck.",
+        "rationale": "Initiatives on recognition are worthwhile since they emphasize the positives, sending employees a clear message that what they're doing matters. When you reward your employees who have exhibited exemplary performance with what they want, they will become more focused and motivated to do better.",
+        "types": {
+          "monetary": [
+            "Bonus",
+            "Incentive",
+            "Profit-sharing plans",
+            "Stock options"
+          ],
+          "non_monetary": [
+            "Additional paid time off",
+            "Company-branded give aways",
+            "Appreciation post",
+            "Recognition wall",
+            "Lunch treat",
+            "Employee appreciation events (i.e. birthdays, anniversaries, Employee of the Year)"
+          ]
+        }
+      },
+      "fsi_incentive_program": {
+        "title": "FSI's Incentive Program",
+        "definition": "An incentive program is the structured use of rewards and recognition to motivate the desired behavior from groups of people during a defined period of time. It is a tool used to reward milestones and accomplishments of specific results, whether by a group or by an individual.",
+        "nature": "Incentive is a variable pay, not a fixed benefit, and is based on pay for performance philosophy. The spirit of giving is hinged on the achievement of the bottomline target, that is, Net Income After Tax (NIAT).",
+        "leader_responsibilities": [
+          "Explain how the incentive scheme works, including the eligibility requirements and the level of performance that is expected of them for them to reap the reward",
+          "Explain that incentive is a variable pay; it is not a fixed benefit",
+          "Conduct regular check-ins with your team to gauge their satisfaction with the program",
+          "Express appreciation towards your team and to individual members for their contribution",
+          "Provide feedback to top management of how the plan is working"
+        ]
+      }
+    },
+    "employee_benefits": {
+      "title": "Employee Benefits",
+      "definition": "The non-wage compensation provided to employees by an organization in addition to their normal salaries or wages.",
+      "detailed_definition": "Employee benefits are any benefits provided to employees in addition to their base salaries and wages. Simply put, any non-wage benefit offered to an employee, either mandatory or voluntary, can be classified as an employee benefit.",
+      "types": {
+        "mandatory": "Some employee benefits are required by law",
+        "voluntary": "Additional benefits beyond the requirements are often called perks or fringe benefits"
+      },
+      "importance": {
+        "attraction_and_retention": "Offering an attractive benefits package is one of the most effective ways of attracting and retaining employees as it shows your organization's worth and increases morale.",
+        "statistics": [
+          {
+            "source": "Society of Human Resource Management (SHRM)",
+            "finding": "92% of employees say that their benefits are important for their overall job satisfaction"
+          },
+          {
+            "source": "Survey of job seekers",
+            "finding": "63% pay attention to what benefits a company offers"
+          }
+        ]
+      },
+      "examples": [
+        "Paid time off",
+        "Health insurance",
+        "Retirement benefits",
+        "Education loan",
+        "Other loans (house loan, vehicle loan etc)",
+        "Flexible alternative arrangements"
+      ],
+      "organizational_values": "Ultimately, the company's benefits package can be a reflection of its values as it sends a message about the organization's beliefs and recognizes the employees' needs outside of the workplace and in support of their overall wellbeing.",
+      "fsi_benefits_package": {
+        "title": "FSI's Employee Benefits Package",
+        "description": "FSI offers a comprehensive benefit program to all employees that promotes overall well-being of the employees. In addition to this, the Company is fully compliant to the mandatory benefits of the Government. As a Leader, you are also treated as a strategic partner in the implementation of these benefits to your subordinates through your approval.",
+        "government_mandated": [
+          "Philhealth",
+          "SSS",
+          "Sickness Benefit",
+          "Expanded Maternity Leave",
+          "Salary Loan",
+          "HDMF",
+          "13th Month Pay",
+          "Paternity Leave",
+          "Solo Parent Leave",
+          "Special Leave for Women"
+        ],
+        "company_initiated": {
+          "cba_benefits": [
+            "Leave/PTO",
+            "Wage Increase",
+            "Medical Benefits*",
+            "Uniform Issuance",
+            "Birthday Incentive",
+            "Service Incentive Awards",
+            "Bereavement Assistance",
+            "Rice Subsidy",
+            "Foodstore Credit Limit"
+          ],
+          "non_cba_benefits": [
+            "Paid Time Off",
+            "Medical Benefits",
+            "Foodstore Credit Limit",
+            "Car Plan Benefit and Allowance",
+            "Extended Benefits",
+            "Blood Donation Program",
+            "Motorcycle Loan",
+            "Educational Subsidy"
+          ]
+        }
+      }
+    },
+    "employee_discipline": {
+      "title": "Employee Discipline",
+      "introduction": "A clear and well-defined progressive disciplinary policy not only protects the company but shows the employees the importance of creating a culture of trust and honesty.",
+      "definition": "Employee discipline refers to the regulations or conditions that are imposed on employees by management in order to either correct or prevent behaviors that are detrimental to an organization. Employee discipline should be positive and should contribute to a safe and pleasant work environment for everyone.",
+      "purpose": {
+        "primary_goal": "The purpose of employee discipline is not to embarrass or degrade an employee. The purpose is to ensure that an employee performs in a manner that is deemed acceptable by the organization. The focus is not on punishment and consequences, but rather on plans for improvement and growth.",
+        "employee_benefit": "An effective discipline policy gives employees the opportunity to improve and develop as they address and correct their mistakes with the ultimate goal of becoming a valuable, contributing member of the workforce.",
+        "employer_protection": "At the same time, it protects the employers from possible legal case brought about by a termination or adverse employment decision by ensuring they have proper documentation and by remaining fair in their decisions.",
+        "workplace_fairness": "This promotes a fair workplace where a standard process and documentation is being followed that helps to avoid any biases or discrimination."
+      },
+      "leader_responsibilities": {
+        "context": "Disciplining employees is one of the most difficult part of managing human resource. It is important to note though that the role of disciplining does not only rest upon the HR professionals. Discipline is, first and foremost, a line function. It is the role of the leaders to ensure that the rules and regulations that govern the standards of behavior or conduct in an organization are well communicated and properly implemented.",
+        "requirements": [
+          "Fully conversant of the company rules and regulations and disciplinary procedure in place, particularly going through the due process",
+          "Keep people up to date when changes in policies and procedures are made",
+          "Inform employees regarding acceptable and unacceptable behavior and knows when an employee is deviating",
+          "Capable of preventing deviations from policies",
+          "Remain impartial, fair, and consistent",
+          "Document performance and behavioral issues",
+          "Be prepared to take action when necessary, with the support of HR or senior officers where appropriate, that: does not expose the company to legal liabilities and maintains the employee's self-esteem and the relationship"
+        ],
+        "important_notes": [
+          "Discipline is a sensitive matter, therefore must at all times be administered in private, with the specific violation explained and clarified to the erring person",
+          "Cases leading to dismissal as a disciplinary action must first pass consultation with HRAD",
+          "All records pertaining to corrective actions must be maintained as classified information"
+        ]
+      },
+      "fsi_code_of_conduct": {
+        "title": "FSI's Code of Conduct (COC) & Workplace Principles",
+        "policy": "It is the general policy of the Company to conduct its business activities and transactions with the highest level of integrity and ethical standards consistent to the Company's culture and in accordance with all applicable laws.",
+        "scope": "This set of Business Conduct and Workplace Principles generally covers a wide range of business values and disciplinary procedures. It does not cover specific issues that may arise, but it sets out basic principles to guide all employees, officers, contractors/subcontractors, consultants and business partners of the Company. All employees must strictly comply with these policies and maintain desirable business behavior as outlined in this guideline.",
+        "principles": [
+          "Foodsphere, Inc. conducts its business with the highest level of Integrity",
+          "Foodsphere, Inc. employees always work as a team, built upon mutual respect and courtesy",
+          "Foodsphere, Inc. employees carry out the company's affairs with entrepreneurial spirit, seizing every available opportunity in advancing and protecting the company's interests",
+          "Foodsphere, Inc. employees are dedicated to deliver high performance for the good of our customers through unending pursuit of excellence",
+          "Foodsphere, Inc. promotes a culture of welfare for its employees"
+        ]
+      },
+      "guide_to_using_coc": {
+        "title": "Guide to Using the COC & Workplace Principles",
+        "disciplinary_actions": {
+          "policy": "It is the policy of the company that any conduct or behavior which interferes with or negatively affects employment may lead to disciplinary action ranging from written warning to termination of employment. Once the facts are gathered, the appropriate action will be determined, as outlined below:",
+          "types": [
+            {
+              "action": "Written Warning",
+              "description": "Often the first step to correct performance or behavioral issue(s) when a situation cannot be addressed by mere counselling"
+            },
+            {
+              "action": "Suspension",
+              "description": "Used to allow employees an opportunity to consider their commitment to correcting a behavior problem. Suspensions are used to correct behaviors that are more severe and would greatly affect operations and workplace harmony"
+            },
+            {
+              "action": "Dismissal",
+              "description": "Considered as the last option, an employee's employment maybe terminated for cause due to a very serious or severe violation of the Code of Conduct and Workplace Discipline"
+            }
+          ]
+        },
+        "classification_of_violations": {
+          "title": "Classification of Violations",
+          "classes": [
+            {
+              "class": 5,
+              "first_offense": "Written Warning",
+              "severity": "Minor"
+            },
+            {
+              "class": 4,
+              "first_offense": "7 Days suspension",
+              "severity": "Significant"
+            },
+            {
+              "class": 3,
+              "first_offense": "15 Days Suspension",
+              "severity": "Severe"
+            },
+            {
+              "class": 2,
+              "first_offense": "30 Days Suspension",
+              "severity": "Very Serious"
+            },
+            {
+              "class": 1,
+              "first_offense": "Dismissal",
+              "severity": "Extremely Severe or Serious"
+            }
+          ]
+        },
+        "unauthorized_absences_awol": {
+          "title": "Unauthorized Absences (AWOL)",
+          "context": "Regular attendance and punctuality is expected from all employees.",
+          "leader_actions": [
+            "Ensure that all communication channels are exhausted to contact the employee and gain information on the current situation and welfare of the employee and the reason for the absence",
+            "If warranted, the immediate superior must initiate the disciplinary process in case the employee does not have a valid reason for the absence",
+            "In the event that all communication channels are already exhausted, the immediate superior must report the absence to their HR Business Partner for the processing of the Return to Work Order to be sent through registered mail on the last known address of the employee"
+          ]
+        },
+        "preventive_suspension": {
+          "description": "In cases warranting termination of employment, the employee may be put on preventive suspension during the course of investigation, until a decision has been reached.",
+          "duration": "A preventive suspension not exceeding thirty (30) days may be implemented",
+          "conditions": "If the concerned employee's presence in the Company premises poses a serious danger to life and property or if his presence is viewed as a threat to the objectivity of the ongoing investigation or would intimidate other concerned employees"
+        },
+        "cleansing_period": {
+          "definition": "Cleansing period refers to the period of time required from an infraction record to be 'cleansed' and the employee's discipline record is reset to 'zero'.",
+          "duration": "The clearing period is one year from the date the violation was committed",
+          "impact": "Any repetition of the same violation within the clearing period will merit an imposition of corrective action following the progressive discipline schedule"
+        },
+        "administrative_hearing": {
+          "description": "The enforcement of discipline in the workplace is an inherent management right and prerogative. In cases where the process may lead to dismissal or the allegation is a Class 2 violation (or higher) of our Code of Conduct, or in the event that there is not enough information or facts to make an objective decision, an administrative hearing must be called for to ensure that the employee is given due process and a thorough investigation is done.",
+          "committee": "The HR Business Partner, will lead the investigating committee which may include the supervisor or manager of the employee, union officer or representative, supervisor or manager from other departments. Depending on the level of the employee and the gravity of the offense, higher levels of authority may be included.",
+          "process": "After concluding the investigation, the committee must deliberate on the results of the investigation, agree on the next course of action and the immediate superior must issue the notice of decision to the employee."
+        },
+        "due_process": {
+          "requirements": "The supervisor and the HR Business Partner or Representative shall ensure that:",
+          "steps": [
+            "There is just cause or substantive reason to initiate the discipline or corrective action process",
+            "The employee is given notice of the proceedings and pending corrective action. The Notice-To-Explain (NTE) form maybe used for this purpose. In special cases, it maybe necessary to issue a more formal memo to the employee to detail this process step",
+            "The employee is given five (5) calendar days to respond to the notice-to-explain and submit a written explanation",
+            "The concerned employee is given the opportunity to be heard through interviews, written explanation, and/or clarificatory meetings"
+          ]
+        },
+        "appeals_and_grievance": {
+          "non_union_appeals": {
+            "title": "Appeals Process for Non-Union Members",
+            "process": [
+              "If an employee is not satisfied with the disciplinary action, he could appeal to the next higher level of authority over the immediate superior who is meting out the discipline",
+              "The appeal should be formalized in writing and submitted within three (3) days from the date the decision is received",
+              "All decisions involving termination of employment have to be reviewed and approved by the division head of the concerned employee, together with the Head of Human Resources"
+            ]
+          },
+          "union_grievance": {
+            "title": "Grievance Mechanism for Union Members",
+            "reference": "Refer to the Grievance Mechanism procedure as agreed upon on the prevailing Collective Bargaining Agreement (CBA)"
+          }
+        },
+        "effect_on_career_progression": {
+          "title": "Effect of Disciplinary Action to Career Progression and Other Benefits",
+          "impact_table": [
+            {
+              "disciplinary_record": "Written Warning",
+              "qualified_for_promotion": "No",
+              "qualified_for_internal_transfer": "No",
+              "qualified_for_performance_bonus": "Yes"
+            },
+            {
+              "disciplinary_record": "Suspension",
+              "qualified_for_promotion": "No",
+              "qualified_for_internal_transfer": "No",
+              "qualified_for_performance_bonus": "No"
+            }
+          ]
+        },
+        "documentation": {
+          "refusal_to_sign": [
+            "If an employee refuses to sign any document relating to the corrective action/discipline process, a witness/es may be asked to sign",
+            "One (1) witness if the employee refuses to sign the Notice To Explain (NTE)",
+            "Two (2) witnesses if the employee refuses to sign the Notice of Disciplinary Action (NDA)",
+            "Refusal to sign the NTE or NDA will not in any way invalidate the infraction committed by the employee"
+          ]
+        }
+      },
+      "discipline_process": {
+        "title": "Our Discipline Process",
+        "progressive_discipline_matrix": {
+          "class_1": {
+            "first_offense": "Dismissal"
+          },
+          "class_2": {
+            "first_offense": "30 Days Suspension",
+            "second_offense": "Dismissal"
+          },
+          "class_3": {
+            "first_offense": "15 Days Suspension",
+            "second_offense": "30 Days Suspension",
+            "third_offense": "Dismissal"
+          },
+          "class_4": {
+            "first_offense": "7 Days Suspension",
+            "second_offense": "15 Days Suspension",
+            "third_offense": "30 Days Suspension",
+            "fourth_offense": "Dismissal"
+          },
+          "class_5": {
+            "first_offense": "Written Warning",
+            "second_offense": "7 Days Suspension",
+            "third_offense": "15 Days Suspension",
+            "fourth_offense": "30 Days Suspension",
+            "fifth_offense": "Dismissal"
+          }
+        },
+        "steps": [
+          {
+            "step": 1,
+            "action": "Issue the Notice To Explain memo to the employee"
+          },
+          {
+            "step": 2,
+            "action": "Investigate, inquire, and validate findings"
+          },
+          {
+            "step": 3,
+            "action": "Deliberate and establish findings"
+          },
+          {
+            "step": 4,
+            "action": "Administer the corrective action"
+          }
+        ]
+      }
+    }
+  },
+  "learning_series": {
+    "conducting_performance_evaluation": {
+      "title": "CONDUCTING PERFORMANCE EVALUATION",
+      "subtitle": "Create a productive performance evaluation process that will encourage high involvement from the employee.",
+      "sections": {
+        "goal_setting": {
+          "title": "Goal Setting",
+          "description": "It helps you to define the most important outcomes and metrics for each of your strategic priority focus areas. It is recommended to set 3 to 5 goals for each priority. This will guide you in determining your action plan that is aligned with your strategic goals.",
+          "importance": "It is important to make sure that your goals are SMART and include KPIs so that you can measure and track your progress.",
+          "smart_criteria": {
+            "elements": [
+              "Specific",
+              "Measurable",
+              "Achievable",
+              "Relevant",
+              "Time-bound"
+            ]
+          }
+        },
+        "six_steps_to_writing_effective_goal": {
+          "title": "6 Steps to Writing an Effective Goal",
+          "steps": [
+            {
+              "step": 1,
+              "name": "Make It Actionable",
+              "description": "Use a verb when writing your goal. Be clear and specific about what you will actually do. Your goal should be understandable to anyone."
+            },
+            {
+              "step": 2,
+              "name": "Assign an Owner",
+              "description": "Although many people may contribute work to your goal, you should assign an owner who will be ultimately accountable for the success of the goal."
+            },
+            {
+              "step": 3,
+              "name": "Establish Timing",
+              "description": "Set clear and realistic start and end dates for your goal. Having a set due date in mind will help you plan your execution."
+            },
+            {
+              "step": 4,
+              "name": "Define Success",
+              "description": "Agree on clear success criteria for your goal so that everyone is aligned on what achieving the goals looks like. In tracking your progress, you may use the Green-Yellow-Red indicators."
+            },
+            {
+              "step": 5,
+              "name": "Connect to Why",
+              "description": "Link your goal to your long-term strategy or connect it to your larger goals. You should be able to understand how your goal fits in the bigger picture."
+            },
+            {
+              "step": 6,
+              "name": "Break It Down",
+              "description": "Think of the top 2-3 milestone actions that you need to do to accomplish your goal. Write down what they are, who will do them, and by when."
+            }
+          ],
+          "source": "RhythmSystems.com"
+        },
+        "ways_to_write_the_goal": {
+          "title": "Ways to Write the Goal",
+          "formulas": [
+            {
+              "formula": "FORMULA OPTION 1: No Baseline",
+              "structure": "Have X (the metric) to the Y (the thing) by Z (the date)",
+              "short_form": "Have X to Y by Z",
+              "examples": [
+                "Launch 12 new products by June 2023",
+                "Open 300 stores (25 stores/month) by December 2023"
+              ]
+            },
+            {
+              "formula": "FORMULA OPTION 2: With Known Baseline",
+              "structure": "Go from X (the baseline) to Y (the new metric) by Z (the date)",
+              "short_form": "From X to Y by Z",
+              "examples": [
+                "Increase customer net promoter score from 7 to 9 by March 2023",
+                "Increase revenue from 2 million to 4 million by January 2024"
+              ]
+            }
+          ]
+        },
+        "how_to_conduct_performance_evaluation": {
+          "title": "How to Conduct the Performance Evaluation",
+          "phases": [
+            {
+              "phase": "Preparation",
+              "activities": [
+                "Schedule a mutually convenient time and place for the performance evaluation discussion. Ensure that there will be enough time and privacy for the activity. Allot at least an hour.",
+                "Give the employee an advance notice so that he/she can prepare for the discussion. You may ask the employee to prepare by doing a self-evaluation to ensure that a dialogue will take place during the process.",
+                "Review the position's responsibilities and standards.",
+                "Review the employee's job performance for the past year/evaluation period.",
+                "Identify potential development areas that can be addressed.",
+                "Prepare the employee's job description, samples of work, documentation of inputs from key people, letters of commendation and/or criticism, and records of disciplinary action."
+              ],
+              "sample_questions_for_employee_self_evaluation": [
+                "What have been your major accomplishments?",
+                "What could be improved? What could you have done better?",
+                "What help do you need in order to do your job better? What additional resources or tools do you need to successfully do your job?",
+                "Would you like to see your responsibilities change? If so, how?",
+                "What other things would you like to learn to help you develop professionally and personally?"
+              ]
+            },
+            {
+              "phase": "Conduct",
+              "guidelines": [
+                "Make sure your focus is on the person and not on distractions.",
+                "Make the discussion conversational. Encourage the employee to share his/her insights.",
+                "Keep the focus on job performance and related factors, not on personality.",
+                "Discuss job requirements, employee strengths, accomplishments, and improvement needs.",
+                "Be prepared to cite observations for each point discussed. Use objective evidence to support your observations.",
+                "Reach agreement on goals, development plans, and timetables.",
+                "Do not promise any promotion or salary increase to the employee during the discussion.",
+                "Document and summarize what has been discussed and end on a positive note."
+              ]
+            },
+            {
+              "phase": "Follow-up",
+              "activities": [
+                "Review the key highlights of the discussion from your perspective taking note of the accomplishments, work that is going well and on track, and opportunities for improvement.",
+                "Record the plans made and points that require follow-up.",
+                "Provide a copy of the final performance evaluation form to the employee.",
+                "Ensure that you will have scheduled one-on-one sessions to do follow-up, check progress, and reconnect."
+              ]
+            }
+          ]
+        },
+        "constructive_feedback_vs_destructive_feedback": {
+          "title": "Constructive Feedback vs Destructive Feedback",
+          "constructive_feedback": {
+            "definition": "Constructive feedback is providing useful comments and suggestions that contribute to a positive outcome, a better process or an improved behavior. It is corrective, but not critical. It always comes with positive intentions and is used as a supportive communication tool to address specific issues or concerns.",
+            "benefits": "It improves employee morale, positively impacts the behavior, reduces confusion regarding expectations and current performance, provides a new perspective and gives valuable insight to the person receiving feedback."
+          },
+          "destructive_feedback": {
+            "definition": "Destructive feedback points at faults and is a direct attack on the individual. No practical advice or supportive feedback is given.",
+            "impact": "This is used to hurt people's feelings. Instead of telling the employee what they did well and where they went wrong, leaders will just tell them that they're doing a terrible job without providing any evidence to support their assessments. Employees exit such conversations feeling low and defeated without even knowing what they've done wrong or how they could do better next time."
+          }
+        },
+        "key_actions_in_giving_constructive_feedback": {
+          "title": "Key Actions in Giving Constructive Feedback",
+          "steps": [
+            {
+              "step": 1,
+              "action": "State the constructive or positive purpose of your feedback",
+              "description": "This establishes a common ground and shows the employee that your aim is to deal with the problem or issue and help make things better. By doing this, it will be most likely to win the acceptance and cooperation of the employee.",
+              "example": "The reason why I want to discuss this matter with you is to help us improve our team's relationship and get us to work more efficiently."
+            },
+            {
+              "step": 2,
+              "action": "Describe specifically and factually what you have observed",
+              "description": "This will help establish objectivity and avoid the employee from taking a defensive stance.",
+              "example": "I have observed that in order to avoid conflicts, you and your team have clammed up and have kept quiet in all our meetings."
+            },
+            {
+              "step": 3,
+              "action": "Describe your reaction",
+              "description": "This will allow the employee to see the impact of their actions to you and/or to the team or department.",
+              "example": "I feel that this is causing lack of openness that may hinder the team's ability to address problems and work more efficiently."
+            },
+            {
+              "step": 4,
+              "action": "Give the other person the opportunity to respond and get agreement on the issue or problem",
+              "description": "This will show that you recognize the value of his/her ideas or opinion on the matter and will also clarify any misunderstandings or misconceptions.",
+              "example": "How do you feel about that? (Wait for a response) So we agree that this is an issue?"
+            },
+            {
+              "step": 5,
+              "action": "Agree on plan of action",
+              "description": "Ask and listen first to his/her opinion and plan to resolve the issue or problem. This will drive ownership of the proposed solutions and encourage accountability from the employee. Once you have exhausted all possible solutions that he/she can think of, give your opinion or input as well.",
+              "example": "What would you suggest we do to resolve this issue? (Exhaust opinion) In addition, I would suggest that… Is that OK with you?"
+            },
+            {
+              "step": 6,
+              "action": "Summarize what has been discussed and express support",
+              "description": "This is a chance to clarify and confirm agreements made and emphasize that follow-throughs will be made until the problem or issue is resolved. This will also reinforce the constructive intent of your feedback.",
+              "example": "So we agree that to resolve this issue, we can do the following… Are these steps OK with you?"
+            }
+          ]
+        }
+      }
+    },
+    "coaching_101": {
+      "title": "COACHING 101",
+      "subtitle": "Empower your staff to drive their own performance and development by learning the basics of coaching and embracing your role of being a coach.",
+      "sections": {
+        "definition": {
+          "title": "Coaching Definition",
+          "quote": "Coaching is unlocking a person's potential to maximize their own performance. It is helping them to learn rather than teaching them to learn.",
+          "author": "Sir John Whitmore",
+          "role": "Pioneer of Coaching & Leadership Development"
+        },
+        "what_coaching_is": {
+          "title": "What Coaching Is",
+          "description": "Put simply, coaching is a process that aims to improve performance and focuses on the 'here and now' rather than the distant past or future.",
+          "belief": "Good coaches believe that the individual always has the answer to their own problems but understands that they may need help to find the answer. Thus, the coach is not considered as an expert but as a facilitator of learning.",
+          "elements": [
+            "Developing people's knowledge, skills, capabilities, habits",
+            "Building enthusiasm",
+            "Helping people achieve a level of performance that is required of them",
+            "Allowing elbow room for errors",
+            "Trusting and respecting team members",
+            "Offering regular positive and constructive feedback",
+            "Creating a climate of confidence and freedom to express ideas"
+          ],
+          "source": "skillsyouneed.com"
+        },
+        "difference_from_similar_activities": {
+          "title": "Difference from Similar Activities",
+          "coaching": {
+            "characteristics": [
+              "Involves the belief that the individual has the answers to their own problems within them",
+              "Coach is not a subject expert",
+              "Key skill is asking the right questions"
+            ]
+          },
+          "teaching": {
+            "characteristics": [
+              "Involves the process of getting knowledge, skills, or abilities by study, experience or teaching",
+              "Teacher/Trainer is the expert who imparts knowledge (right answer) to the students"
+            ]
+          },
+          "mentoring": {
+            "characteristics": [
+              "Similar to coaching, but mentors usually have considerable experience or expertise in the individual's line of work",
+              "Involves wide ranging discussions that may not be limited to the work context",
+              "Provides guidance and advice"
+            ]
+          },
+          "counselling": {
+            "characteristics": [
+              "Closer to a therapeutic intervention",
+              "Focuses on the past, helping the individual overcome barriers and issues"
+            ]
+          }
+        },
+        "essence_of_coaching": {
+          "title": "Essence of Coaching",
+          "key_concepts": [
+            "Taking a person from who he is at present to who he desires to be in the future",
+            "Supports a person at every level in becoming who they want to be",
+            "Builds awareness, empowers choice, and leads to change"
+          ],
+          "inner_game_concept": {
+            "source": "The Inner Game of Tennis by Timothy Gallwey",
+            "quote": "Every game is composed of two parts, an outer game and an inner game. The former is played with against opponents, and is filled with a lot of contradictory advice; the latter is played not against, but within the mind of the player, and its principal obstacles are self-doubt, insecurities, lapses in concentration, and anxiety.",
+            "insight": "His insight was that coaches could help individuals to improve their game by distracting them from their inner dialogue.",
+            "tennis_coach_example": "A tennis coach who wants his students to feel that the cost of the lesson is worthwhile will give a detailed, continuous feedback highlighting the slightest flaw that they can spot. As the student becomes aware of dozens of errors they need to fix, they'd feel that the lesson fee is justifiable and so they book more classes. Gallwey uses the same approach in his early days as a tennis coach. Over time, he saw that when he stepped back and gave his students less feedback, they improved faster. Players would correct obvious mistakes without any guidance. They knew the correct way of playing tennis. They just needed to overcome the habits of the mind getting in the way.",
+            "application": "Gallwey's insight does not just apply to tennis, but that individuals generally did have the answers to their own problems within themselves.",
+            "management_example": "Consider a manager who feels the need to constantly micromanage their employees and direct every detail of their work, not allowing any autonomy or flexibility. As a result, the employees lose interest in ever taking initiative or directing their own work. Instead of getting the perfect work they want, the manager receives lackluster efforts.",
+            "reference": "The Inner Game: Why Trying Too Hard can be Counterproductive"
+          }
+        },
+        "essential_skills": {
+          "title": "Essential Skills to Help You Become an Effective Coach",
+          "skills": [
+            {
+              "skill": "Empathizing Skill",
+              "description": "Ability to get a sense of the other person's emotional state"
+            },
+            {
+              "skill": "Interpersonal Communication Skill",
+              "description": "Ability to conduct a productive and result-oriented dialogue or conversation with the coachee"
+            },
+            {
+              "skill": "Goal-Setting Skill",
+              "description": "Ability to elicit clear, well-defined and emotionally engaging goals from the coachee"
+            },
+            {
+              "skill": "Teaching Skill",
+              "description": "Ability to understand that people learn and take in information in different ways"
+            }
+          ]
+        },
+        "grow_model": {
+          "title": "GROW Model",
+          "description": "The model was originally developed in the 1980s by business coaches Graham Alexander, Alan Fine, and Sir John Whitmore. This framework is a structured approach to conducting an effective dialogue. A good way of thinking about the GROW Model is to think about how you'd plan a journey. First, you decide where you are going (the GOAL), and establish where you currently are (your current REALITY). You then explore various routes (the OPTIONS) to your destination. In the final step, establishing the WILL, you ensure that you're committed to making the journey, and are prepared for the obstacles that you could meet on the way.",
+          "stages": [
+            {
+              "stage": "G - Goal",
+              "title": "Clarify the Goal",
+              "questions": [
+                "What do you want to achieve?",
+                "What are your objectives?",
+                "What is the most important thing to focus on?",
+                "How will you know when you have achieved it?",
+                "Over what time frame?"
+              ],
+              "coach_role": "Help the coachee clarify the goal. Help the coachee set clear goals and identify what they would like to achieve. Agree areas for discussion in this session. Help the coachee set and articulate goals."
+            },
+            {
+              "stage": "R - Reality",
+              "title": "Assess the Reality",
+              "questions": [
+                "Where are you now?",
+                "What is happening at the moment?",
+                "What is the result or effect of this on you?",
+                "What have you done so far?"
+              ],
+              "coach_role": "Help the coachee understand what is happening right now/gain insight. Clarify the issue/situation. Determine current impact. Determine future implications. Invite self-assessment. Provide observations and feedback. Let the coachee tell their story. Get a clear picture of what's actually happening, when it happens, what the effects are, and what they have tried to do about it so far."
+            },
+            {
+              "stage": "O - Options",
+              "title": "Explore Options",
+              "questions": [
+                "What can you do to bridge the gap?",
+                "What steps could you take?",
+                "What are the pros and cons of your options?",
+                "What obstacles stand in your way?"
+              ],
+              "coach_role": "Help the coachee find out what is possible. a. Generating options b. Assessing options. Brainstorm options. Assess pros and cons. Get the coachee to describe an ideal outcome and encourage exploration of a range of ways this may be achieved."
+            },
+            {
+              "stage": "W - Way Forward",
+              "title": "Choose a Way Forward",
+              "questions": [
+                "Which option feels right for you?",
+                "How will you do that?",
+                "What support do you need?",
+                "How committed are you to doing that?"
+              ],
+              "coach_role": "Help the coachee determine a way forward and commit to best actions. Help the coachee determine a way forward. Identify possible obstacles to overcome. Work out what they are actually going to do. Work out what support they need. Convert the discussion to a decision."
+            }
+          ]
+        }
+      }
+    }
+  },
+  "tools": {
+    "title": "MY TOOLS in Engaging Employees",
+    "available_tools": [
+      {
+        "tool_name": "Code of Conduct and Workplace Principles 2018",
+        "description": "Company rules and regulations governing employee behavior and conduct"
+      },
+      {
+        "tool_name": "Performance Evaluation Form (Mancom & Supervisors)",
+        "description": "Form for evaluating performance of managerial and supervisory staff"
+      },
+      {
+        "tool_name": "Performance Evaluation Form (R&F)",
+        "description": "Form for evaluating performance of rank and file employees"
+      },
+      {
+        "tool_name": "PIP I Template (English Version)",
+        "description": "Performance Improvement Plan template for initial performance intervention"
+      },
+      {
+        "tool_name": "PIP I Template (Tagalog Version)",
+        "description": "Performance Improvement Plan template in Tagalog for initial performance intervention"
+      },
+      {
+        "tool_name": "PIP II Template (English Version)",
+        "description": "Performance Improvement Plan template for final performance intervention"
+      },
+      {
+        "tool_name": "PIP II Template (Tagalog Version)",
+        "description": "Performance Improvement Plan template in Tagalog for final performance intervention"
+      }
+    ],
+    "note": "Click the items to access the tools"
+  },
+  "faqs": {
+    "title": "FAQs",
+    "questions": [
+      {
+        "question": "What is the difference between employee recognition and rewards?",
+        "answer": "Recognition is relational and has an emotional value attached to it, focusing on acknowledging contributions and exemplary performance. Rewards are transactional and have monetary value attached to them, serving as extra encouragement by supplementing employees' salaries or providing tangible benefits."
+      },
+      {
+        "question": "How often should performance evaluations be conducted?",
+        "answer": "Probationary employees should be formally evaluated on the fourth month of probation. Regular employees are evaluated fully annually every January covering the previous year. Special evaluations may be conducted when considering employees for promotion, regularization, or when undergoing Performance Improvement Plans."
+      },
+      {
+        "question": "What is the purpose of a Performance Improvement Plan (PIP)?",
+        "answer": "A PIP gives employees with performance deficiencies the opportunity to succeed by providing a formal document stating recurring performance issues along with specific goals, steps, and timelines for improvement. It facilitates constructive discussion between manager and employee and provides complete documentation of agreements and progress."
+      },
+      {
+        "question": "What are the consequences of being placed under a PIP?",
+        "answer": "While under PIP, the employee's incentive during the covered period is suspended. Consistent failure to meet performance expectations within the PIP period may lead to disciplinary action, up to and including termination. Successful completion requires maintaining acceptable performance levels."
+      },
+      {
+        "question": "How does employee discipline work at FSI?",
+        "answer": "FSI follows a progressive disciplinary policy with violations classified from Class 1 (most severe) to Class 5 (minor). Disciplinary actions range from written warnings to suspension and dismissal, depending on the severity and frequency of violations. The process ensures due process with notice, investigation, and opportunity for employee response."
+      }
+    ]
+  }
+}

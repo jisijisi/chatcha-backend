@@ -7,7 +7,7 @@ import { MessageManager } from './messages.js';
 import { ModalManager } from './modal.js';
 import { UIManager } from './ui.js';
 import { ChatManager } from './chat.js';
-import { SheetsManager } from './sheets.js';
+// import { SheetsManager } from './sheets.js'; // REMOVED
 import { getDynamicGreeting } from './utils.js';
 
 class ChatApp {
@@ -16,7 +16,7 @@ class ChatApp {
     this.storageManager = new StorageManager();
     this.apiManager = new APIManager();
     this.markdownParser = new MarkdownParser();
-    this.sheetsManager = new SheetsManager();
+    // this.sheetsManager = new SheetsManager(); // REMOVED
     
     // Pass markdown parser to API manager for streaming updates
     this.apiManager.setMarkdownParser(this.markdownParser);
@@ -82,7 +82,7 @@ class ChatApp {
   }
 
   async init() {
-    console.log('Initializing ChatJisi HR Assistant...');
+    console.log('Initializing ChatCHA CDO Assistant...'); // No change needed
     
     await this.loadHRKnowledge();
     
@@ -92,12 +92,7 @@ class ChatApp {
     // HR knowledge base is now handled server-side via RAG
     console.log('Server-side RAG system initialized');
     
-    // Check if Sheets integration is enabled
-    if (this.sheetsManager.isSheetsEnabled()) {
-      console.log('Google Sheets integration enabled');
-    } else {
-      console.log('Google Sheets integration disabled - no script URL configured');
-    }
+    // Check if Sheets integration is enabled - REMOVED
     
     if (!this.userName) {
       this.modalManager.showWelcomeModal((name) => {
@@ -140,8 +135,8 @@ class ChatApp {
       this.uiManager.scrollToStartOfResponse(messageElement);
     });
     
-    console.log('ChatJisi HR Assistant initialized successfully!');
-    this.showToast('Ready to assist with HR and Recruitment!', 'success');
+    console.log('ChatCHA CDO Assistant initialized successfully!'); // No change needed
+    this.showToast('Ready to assist with your CDO questions!', 'success');
   }
 
   async loadHRKnowledge() {
@@ -261,34 +256,27 @@ class ChatApp {
   }
 
   addSuggestedQuestions() {
+    // UPDATED: Changed questions to be more general for a company assistant
     const questionCategories = {
-      recruitment: [
-        "What are the best practices for writing effective job descriptions?",
-        "How can I improve our interview process?",
-        "What are common red flags during candidate interviews?",
-        "How do I create a structured interview guide?",
-        "What metrics should I track for recruitment success?"
-      ],
-      talentAcquisition: [
-        "How can we build a strong employer brand?",
-        "What strategies work best for passive candidate sourcing?",
-        "How do I reduce time-to-hire without compromising quality?",
-        "What are effective ways to assess cultural fit?",
-        "How can we improve our candidate experience?"
+      companyInfo: [
+        "Tell me about the history of CDO.",
+        "What are CDO's main products?",
+        "What is the company's mission or vision?",
       ],
       hrPolicies: [
-        "What should be included in a remote work policy?",
-        "How do I create an effective onboarding program?",
-        "What are key elements of a good performance review system?",
-        "How can we improve employee retention?",
-        "What should our diversity and inclusion policy cover?"
+        "What is the company policy on remote work?",
+        "How do I file for a vacation leave?",
+        "What are the company holidays?",
       ],
       employeeRelations: [
-        "How do I handle difficult conversations with employees?",
-        "What's the best approach to conflict resolution?",
-        "How can we boost employee engagement?",
-        "What are effective recognition and rewards programs?",
-        "How do I address performance issues professionally?"
+        "How do I handle a conflict with a coworker?",
+        "What are the steps for a performance review?",
+        "Where can I find information on employee benefits?",
+      ],
+      general: [
+        "Who is the founder of CDO?",
+        "What brands does CDO own?",
+        "Explain the process for internal job applications."
       ]
     };
 
@@ -311,6 +299,12 @@ class ChatApp {
       
       container.appendChild(button);
     });
+    
+    // Clear existing questions before adding new ones
+    const existingContainer = this.elements.welcomeDiv.querySelector('.suggested-questions');
+    if (existingContainer) {
+      existingContainer.remove();
+    }
     
     this.elements.welcomeDiv.appendChild(container);
   }

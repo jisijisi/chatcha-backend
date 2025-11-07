@@ -35,7 +35,7 @@
 .input-area input:focus {
   outline: none;
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(78, 90, 247, 0.1);
+  box-shadow: 0 0 0 3px rgba(215, 25, 33, 0.1); /* MODIFIED */
 }
 
 /* Send Button */
@@ -53,7 +53,7 @@
   justify-content: center;
   transition: var(--transition);
   flex-shrink: 0;
-  box-shadow: 0 2px 8px rgba(78, 90, 247, 0.25);
+  box-shadow: 0 2px 8px rgba(215, 25, 33, 0.25); /* MODIFIED */
   position: relative;
   overflow: hidden;
   margin-left: 8px;
@@ -77,13 +77,13 @@
 
 .input-area button:hover,
 .input-area button:focus {
-  box-shadow: 0 4px 16px rgba(78, 90, 247, 0.4);
+  box-shadow: 0 4px 16px rgba(215, 25, 33, 0.4); /* MODIFIED */
   transform: translateY(-2px) translateZ(0);
 }
 
 .input-area button:active {
   transform: translateY(0) scale(0.95);
-  box-shadow: 0 2px 8px rgba(78, 90, 247, 0.3);
+  box-shadow: 0 2px 8px rgba(215, 25, 33, 0.3); /* MODIFIED */
 }
 
 .input-area button .arrow {

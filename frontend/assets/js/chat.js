@@ -1,6 +1,7 @@
 // Chat and Conversation Management
 import { CONFIG } from './config.js';
 import { escapeHtml } from './utils.js';
+import { ResponseQuality } from './response-quality.js'; // ADD THIS LINE
 
 export class ChatManager {
   constructor(chatApp) {
@@ -52,8 +53,17 @@ export class ChatManager {
         this.app.userName,
         thinkingDiv
       );
+
+      console.log("=== CHAT.JS RECEIVED ===");
+      console.log("Answer:", answer);
+      console.log("Answer length:", answer?.length);
+      console.log("=== END ===");
       
       console.log('Received response:', answer ? 'Success' : 'Empty response');
+      
+      // Optional: Log response quality for debugging
+      const quality = ResponseQuality.checkResponseQuality(answer, question);
+      console.log('Response Quality Score:', quality.score, 'Issues:', quality.issues);
       
       // Create bot response message
       const responseMessage = this.createMessageElement("bot", answer);
@@ -79,10 +89,10 @@ export class ChatManager {
       this.app.currentConversation.push({ question, answer });
       this.saveConversation();
       
-      // Archive the Q&A pair to Google Sheets
-      await this.archiveMessageToSheets(question, answer);
+      // Archive the Q&A pair to Google Sheets - REMOVED
+      // await this.archiveMessageToSheets(question, answer);
       
-      this.app.showToast('Response received', 'success');
+      // REMOVED: this.app.showToast('Response received', 'success');
     } catch (error) {
       console.error("AI Response Error:", error);
       
@@ -178,8 +188,8 @@ export class ChatManager {
       this.app.currentConversation[conversationIndex].answer = answer;
       this.saveConversation();
       
-      // Archive the EDITED Q&A pair to Google Sheets
-      await this.archiveMessageToSheets(question, answer);
+      // Archive the EDITED Q&A pair to Google Sheets - REMOVED
+      // await this.archiveMessageToSheets(question, answer);
     } catch (error) {
       console.error('Get new response error:', error);
       if (error.name !== 'AbortError') {
@@ -255,8 +265,8 @@ export class ChatManager {
       this.app.currentConversation[conversationIndex].answer = answer;
       this.saveConversation();
       
-      // Archive the EDITED Q&A pair to Google Sheets
-      await this.archiveMessageToSheets(question, answer);
+      // Archive the EDITED Q&A pair to Google Sheets - REMOVED
+      // await this.archiveMessageToSheets(question, answer);
     } catch (error) {
       console.error('Create new bot response error:', error);
       if (error.name !== 'AbortError') {
@@ -296,28 +306,10 @@ export class ChatManager {
   }
 
   async archiveMessageToSheets(question, answer) {
-    try {
-      // Get the title of the currently active chat
-      const chatTitle = (this.app.activeChatIndex !== null && this.app.chats[this.app.activeChatIndex])
-        ? this.app.chats[this.app.activeChatIndex].title
-        : 'Current Chat'; // Fallback title
-
-      const messageData = {
-        type: 'message',
-        timestamp: new Date().toISOString(),
-        userName: this.app.userName || 'You',
-        question: question,
-        answer: answer,
-        chatTitle: chatTitle
-      };
-
-      const success = await this.app.sheetsManager.archiveMessage(messageData);
-      if (!success) {
-        console.warn('Failed to archive message to Google Sheets');
-      }
-    } catch (error) {
-      console.error('Error archiving message to Sheets:', error);
-    }
+    // This function is now a no-op but is kept to avoid errors
+    // if it were hypothetically called from somewhere else.
+    // The actual calls in this file have been removed.
+    return;
   }
 
   saveConversation() {
@@ -429,11 +421,11 @@ export class ChatManager {
     } else {
       const avatar = document.createElement("img");
       avatar.src = isThinking ? "assets/images/avatar-thinking.png" : "assets/images/avatar.png";
-      avatar.alt = isThinking ? "Jisi is thinking" : "Jisi";
+      avatar.alt = isThinking ? "CHA is thinking" : "CHA"; // UPDATED
       avatar.className = isThinking ? "bot-avatar thinking" : "bot-avatar";
       
       const nameSpan = document.createElement("span");
-      nameSpan.textContent = isThinking ? "Jisi is thinking..." : "Jisi";
+      nameSpan.textContent = isThinking ? "CHA is thinking..." : "CHA"; // UPDATED
       nameSpan.className = "bot-name";
       
       headerDiv.appendChild(avatar);
@@ -469,11 +461,11 @@ export class ChatManager {
     
     const avatar = document.createElement("img");
     avatar.src = "assets/images/avatar-thinking.png";
-    avatar.alt = "Jisi is thinking";
+    avatar.alt = "CHA is thinking"; // UPDATED
     avatar.className = "bot-avatar thinking";
     
     const nameSpan = document.createElement("span");
-    nameSpan.textContent = "Jisi is thinking...";
+    nameSpan.textContent = "CHA is thinking..."; // UPDATED
     nameSpan.className = "bot-name";
     
     headerDiv.appendChild(avatar);
@@ -481,7 +473,7 @@ export class ChatManager {
     
     const contentDiv = document.createElement("div");
     contentDiv.className = "message-content";
-    contentDiv.innerHTML = `<div class="typing" aria-label="Jisi is typing"><span></span><span></span><span></span></div>`;
+    contentDiv.innerHTML = `<div class="typing" aria-label="CHA is typing"><span></span><span></span><span></span></div>`; // UPDATED
     
     messageDiv.appendChild(headerDiv);
     messageDiv.appendChild(contentDiv);
@@ -494,14 +486,14 @@ export class ChatManager {
     errorDiv.className = 'message bot error';
     errorDiv.innerHTML = `
       <div class="message-header">
-        <img src="assets/images/avatar.png" alt="Jisi" class="bot-avatar">
-        <span class="bot-name">Jisi</span>
+        <img src="assets/images/avatar.png" alt="CHA" class="bot-avatar">
+        <span class="bot-name">CHA</span>
       </div>
       <div class="message-content">
         <p>${message}</p>
         <button class="retry-btn">Try Again</button>
       </div>
-    `;
+`; // UPDATED
     
     const retryBtn = errorDiv.querySelector('.retry-btn');
     retryBtn.addEventListener('click', () => {
