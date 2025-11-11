@@ -11,12 +11,36 @@
 }
 
 body {
-  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: var(--font-family);
   background-color: #f5f6fa;
   color: #333;
   height: 100vh;
   height: 100dvh;
   overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Typography - Bold Text and Headings */
+h1, h2, h3, h4, h5, h6 {
+  color: var(--primary-color);
+}
+
+h1 {
+  font-weight: 800;
+}
+
+h2 {
+  font-weight: 700;
+}
+
+h3, h4, h5, h6 {
+  font-weight: 600;
+}
+
+strong, b {
+  color: var(--primary-color);
+  font-weight: 700;
 }
 
 /* App Layout */

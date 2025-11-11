@@ -382,60 +382,69 @@ export class MessageManager {
     });
   }
 
+  // --- REVISED LOGIC FOR RELEVANT FOLLOW-UP SUGGESTIONS ---
   generateFollowUpSuggestions(question, answer) {
     const suggestions = [];
     const lowerAnswer = answer.toLowerCase();
     const lowerQuestion = question.toLowerCase();
+
+    // Keywords in the answer that suggest specific follow-up needs
+    const policyKeywords = ['policy', 'guideline', 'document', 'handbook', 'procedure'];
+    const hiringKeywords = ['interview', 'stage', 'process', 'steps', 'candidacy', 'evaluation', 'hr'];
+    const benefitsKeywords = ['benefit', 'leave', 'vacation', 'sick', 'health', 'incentive'];
+    const locationKeywords = ['address', 'branch', 'store', 'location', 'operating hours', 'contact'];
     
-    if (lowerQuestion.startsWith('what')) {
-      if (lowerAnswer.includes('experience') || lowerAnswer.includes('worked')) {
-        suggestions.push("Can you share a specific example?");
-        suggestions.push("What challenges did you overcome?");
-      } else if (lowerAnswer.includes('skill') || lowerAnswer.includes('technology')) {
-        suggestions.push("How proficient are you with this?");
-        suggestions.push("Where have you applied this skill?");
-      } else {
-        suggestions.push("Can you elaborate on that?");
-        suggestions.push("How does this apply to real projects?");
-      }
-    } else if (lowerQuestion.startsWith('how')) {
-      suggestions.push("What were the results of this approach?");
-      suggestions.push("Have you used this in recent projects?");
-      suggestions.push("What alternatives did you consider?");
-    } else if (lowerQuestion.startsWith('why')) {
-      suggestions.push("How did this decision impact the outcome?");
-      suggestions.push("Would you make the same choice again?");
-      suggestions.push("What did you learn from this?");
-    } else if (lowerQuestion.includes('tell me') || lowerQuestion.includes('describe')) {
-      if (lowerAnswer.includes('project')) {
-        suggestions.push("What was your specific role?");
-        suggestions.push("What technologies were used?");
-        suggestions.push("What were the key achievements?");
-      } else if (lowerAnswer.includes('team') || lowerAnswer.includes('collaborate')) {
-        suggestions.push("How large was the team?");
-        suggestions.push("How did you handle conflicts?");
-        suggestions.push("What was your leadership style?");
-      } else {
-        suggestions.push("What was the most challenging aspect?");
-        suggestions.push("How did you measure success?");
-        suggestions.push("What would you do differently?");
-      }
-    } else {
-      if (lowerAnswer.includes('project') || lowerAnswer.includes('developed')) {
-        suggestions.push("What technologies were involved?");
-        suggestions.push("What challenges did you face?");
-        suggestions.push("What were the outcomes?");
-      } else if (lowerAnswer.includes('team') || lowerAnswer.includes('collaborative')) {
-        suggestions.push("How did you contribute to the team?");
-        suggestions.push("What was your role?");
-        suggestions.push("How did you handle disagreements?");
-      } else {
-        suggestions.push("Can you give me an example?");
-        suggestions.push("How does this relate to your experience?");
-        suggestions.push("What makes you particularly strong in this area?");
-      }
+    // Initial set of suggestions based on question type (if simple)
+    if (lowerQuestion.startsWith('what is') || lowerQuestion.startsWith('tell me')) {
+        suggestions.push("Can you elaborate on that point?");
+        suggestions.push("How does that policy affect my role?");
     }
     
+    // --- Prioritized Suggestions based on Answer Content ---
+    
+    // 1. Hiring/Recruitment Process
+    if (hiringKeywords.some(key => lowerAnswer.includes(key))) {
+        if (lowerAnswer.includes('stage') || lowerAnswer.includes('steps') || lowerAnswer.includes('process')) {
+            suggestions.push("What is the next stage in the process?");
+            suggestions.push("Where can I find the official *Recruitment Flowchart*?");
+        }
+        if (lowerAnswer.includes('interview')) {
+            suggestions.push("What topics are covered in the second interview?");
+            suggestions.push("Who conducts the final panel interview?");
+        }
+        if (lowerAnswer.includes('hr')) {
+            suggestions.push("What is the contact number for the HR department?");
+        }
+    }
+
+    // 2. Policy/Documentation Details
+    if (policyKeywords.some(key => lowerAnswer.includes(key))) {
+        suggestions.push("Where can I find the full text of that policy?");
+        suggestions.push("What are the conditions for compliance?");
+        suggestions.push("Is there an official document reference for that?");
+    }
+    
+    // 3. Benefits/Leave Information
+    if (benefitsKeywords.some(key => lowerAnswer.includes(key))) {
+        if (lowerAnswer.includes('leave') || lowerAnswer.includes('vacation')) {
+            suggestions.push("How many vacation leaves am I entitled to this year?");
+        }
+        if (lowerAnswer.includes('health') || lowerAnswer.includes('insurance')) {
+            suggestions.push("What are the key features of the company health plan?");
+        }
+    }
+
+    // 4. Location/Company Structure
+    if (locationKeywords.some(key => lowerAnswer.includes(key))) {
+        suggestions.push("Can you provide the address for the head office?");
+        suggestions.push("What are the operating hours for the Marulas branch?");
+        suggestions.push("Is the Fairview branch currently hiring?");
+    }
+    
+    // 5. General Next Steps (Always good to include)
+    suggestions.push("Can you summarize the main points in three bullet points?");
+    
+    // Filter out duplicates and limit to a maximum of 3 unique, relevant questions
     return [...new Set(suggestions)].slice(0, 3);
   }
 

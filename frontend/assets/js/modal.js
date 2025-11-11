@@ -10,7 +10,7 @@ export class ModalManager {
   showWelcomeModal(onConfirm) {
     this.showModal({
       title: "Welcome to ChatCHA! ✨", // No change needed
-      message: "I'm CHA, your AI assistant for CDO Foodsphere! I'm here to help with questions about company policies, history, products, and more.\n\nWhat should I call you?", // UPDATED
+      message: "I'm Cindy, your AI assistant for CDO Foodsphere! I'm here to help with questions about company policies, history, products, and more.\n\nWhat should I call you?", // UPDATED
       inputValue: "",
       confirmText: "Let's Get Started! 🚀",
       confirmClass: "",
@@ -181,6 +181,7 @@ export class ModalManager {
     element._tooltipHandlers = { showTooltip, hideTooltip };
   }
 
+  // --- THIS FUNCTION IS NOW FIXED ---
   positionTooltip(tooltip, element, position) {
     const elementRect = element.getBoundingClientRect();
     const tooltipRect = tooltip.getBoundingClientRect();
@@ -218,6 +219,7 @@ export class ModalManager {
     left = Math.max(10, Math.min(left, viewport.width - tooltipRect.width - 10));
     top = Math.max(10, Math.min(top, viewport.height - tooltipRect.height - 10));
     
+    // Set the calculated fixed positions
     tooltip.style.top = `${top}px`;
     tooltip.style.left = `${left}px`;
   }

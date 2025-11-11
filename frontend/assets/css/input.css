@@ -23,13 +23,17 @@
 
 .input-area input {
   width: 100%;
-  padding: 12px 60px 12px 18px;
+  padding: 12px 60px 12px 55px; 
   border-radius: 25px;
   border: 1px solid #ccc;
   font-size: 1rem;
   transition: var(--transition);
   background: #fff;
   box-sizing: border-box;
+  /* --- THESE TWO LINES ARE NOW REMOVED --- */
+  /* position: relative; */
+  /* z-index: 1; */
+  /* --- END OF FIX --- */
 }
 
 .input-area input:focus {
@@ -40,7 +44,7 @@
 
 /* Send Button */
 .input-area button {
-  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%);
+  background: #D71921;
   border: none;
   color: #fff;
   font-size: 1.1rem;
@@ -53,7 +57,7 @@
   justify-content: center;
   transition: var(--transition);
   flex-shrink: 0;
-  box-shadow: 0 2px 8px rgba(215, 25, 33, 0.25); /* MODIFIED */
+  box-shadow: 0 2px 8px rgba(215, 25, 33, 0.3);
   position: relative;
   overflow: hidden;
   margin-left: 8px;
@@ -77,13 +81,13 @@
 
 .input-area button:hover,
 .input-area button:focus {
-  box-shadow: 0 4px 16px rgba(215, 25, 33, 0.4); /* MODIFIED */
+  box-shadow: 0 4px 16px rgba(215, 25, 33, 0.4);
   transform: translateY(-2px) translateZ(0);
 }
 
 .input-area button:active {
   transform: translateY(0) scale(0.95);
-  box-shadow: 0 2px 8px rgba(215, 25, 33, 0.3); /* MODIFIED */
+  box-shadow: 0 2px 8px rgba(215, 25, 33, 0.35);
 }
 
 .input-area button .arrow {
@@ -101,7 +105,7 @@
 
 /* Stop Button */
 .input-area button.stop-mode {
-  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%);
+  background: #D71921;
   animation: pulse-stop 2s ease-in-out infinite;
 }
 
@@ -164,6 +168,7 @@
 #chat-container.centered .input-area input {
   max-width: min(500px, 90vw);
   padding-right: 60px !important;
+  padding-left: 55px !important;
 }
 
 #chat-container.centered .input-counter {
@@ -174,6 +179,7 @@
 @media (max-width: 768px) {
   .input-area input {
     padding-right: 55px;
+    padding-left: 55px;
   }
   
   .input-counter {
@@ -182,9 +188,73 @@
   
   #chat-container.centered .input-area input {
     padding-right: 55px !important;
+    padding-left: 55px !important;
   }
   
   #chat-container.centered .input-counter {
     right: 8px !important; /* Force same position */
   }
+}
+
+/* === NEW RULES FOR MIC BUTTON === */
+.input-area #mic-btn {
+  background: transparent;
+  border: none;
+  color: #888; /* Muted gray color */
+  border-radius: 50%;
+  width: 42px;
+  height: 42px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+  flex-shrink: 0;
+  box-shadow: none; /* No shadow by default */
+  margin-left: 0;
+  margin-right: -5px; /* Pull it closer to the input */
+  z-index: 5;
+  
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.input-area #mic-btn:hover {
+  background: #f0f0f0;
+  color: var(--primary-color);
+  transform: translateY(-50%); /* Keep it centered */
+}
+
+.input-area #mic-btn svg {
+  width: 22px;
+  height: 22px;
+}
+
+/* "Recording" state for the button */
+.input-area #mic-btn.recording {
+  color: #fff;
+  background: var(--primary-color); /* Use your brand red */
+  animation: pulse-stop 1.5s ease-in-out infinite;
+}
+
+/* === MODIFIED: Adjust wrapper to handle absolute mic button === */
+.input-area .input-wrapper {
+  position: relative;
+  flex: 1;
+  max-width: 700px;
+  display: flex;
+  align-items: center;
+}
+
+/* "Speaking" state for the button */
+.input-area #mic-btn.speaking-mode {
+  color: #fff;
+  background: var(--primary-color); /* Use brand red */
+}
+
+.input-area #mic-btn.speaking-mode:hover {
+  background: var(--primary-hover); /* Use brand orange on hover */
+  transform: translateY(-50%); /* Keep it centered */
 }

@@ -63,20 +63,28 @@
     width: 280px;
     position: fixed;
     top: 0;
-    left: -100%;
+    left: 0;
     height: 100%;
+    height: 100dvh;
     z-index: 20;
     border-right: none;
     border-bottom: 2px solid var(--sidebar-border);
-    transition: left 0.3s ease;
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.2);
+    transform: translateX(-100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   #sidebar.show {
-    left: 0;
+    transform: translateX(0);
   }
 
   #sidebar.minimized {
     width: 280px;
+    transform: translateX(-100%);
+  }
+  
+  #sidebar.minimized.show {
+    transform: translateX(0);
   }
 
   #sidebar.minimized .sidebar-header h1,
@@ -171,7 +179,7 @@
   .message .message-actions {
     opacity: 1;
     pointer-events: auto;
-    z-index: 1; /* <-- THIS IS THE FIX */
+    z-index: 5; /* Was 1. This needs to be > 1 to overlap the next message */
   }
   /* ======================================== */
 
@@ -185,7 +193,8 @@
   }
 
   .input-area input {
-    padding: 12px 55px 12px 18px;
+    /* === MODIFIED: Adjusted left padding === */
+    padding: 12px 55px 12px 55px;
   }
 
   .input-area button {
@@ -242,23 +251,63 @@
     font-size: 0.85rem;
     min-height: 55px;
   }
+}
 
-  .toast-container {
-    top: 80px;
-    right: 10px;
-    left: 10px;
-    max-width: none;
+/* Specific fix for 540px width dimension */
+@media (max-width: 540px) and (min-width: 481px) {
+  .welcome-avatar-container {
+    width: 120px;
+    height: 100px;
+    margin-bottom: 20px;
   }
 
-  .toast {
-    max-width: none;
+  #welcome-message .welcome-avatar {
+    width: 70px;
+    height: 70px;
+  }
+
+  .welcome-avatar-border {
+    width: 120px;
+    height: 100px;
+  }
+
+  #welcome-message h2 {
+    font-size: 1.4rem;
+    margin-bottom: 10px;
+  }
+
+  #welcome-message p {
     font-size: 0.9rem;
-    padding: 10px 14px;
+    max-width: 90vw;
+    line-height: 1.5;
+  }
+
+  .suggested-questions {
+    grid-template-columns: 1fr;
+    max-width: 90vw;
+    gap: 8px;
+  }
+
+  .suggested-question {
+    padding: 10px 12px;
+    font-size: 0.82rem;
+    min-height: 50px;
+  }
+
+  #chat-container.centered .input-area {
+    max-width: min(450px, 90vw);
+    padding: 15px 10px 10px 10px;
+  }
+
+  /* Add safe area support for notched devices */
+  #welcome-message {
+    padding-left: max(15px, env(safe-area-inset-left));
+    padding-right: max(15px, env(safe-area-inset-right));
   }
 }
 
-/* Small mobile devices */
-@media (max-width: 480px) {
+/* Small mobile devices - 375px to 480px */
+@media (max-width: 480px) and (min-width: 376px) {
   #sidebar {
     width: 100%;
     max-width: 300px;
@@ -284,16 +333,16 @@
   }
 
   #welcome-message h2 {
-    font-size: 1.4rem;
+    font-size: 1.3rem;
   }
 
   #welcome-message p {
-    font-size: 0.9rem;
+    font-size: 0.85rem;
   }
 
   #chat {
     padding: 16px 12px;
-    gap: 8px; /* Consistent reduced gap */
+    gap: 8px;
   }
 
   .message {
@@ -306,7 +355,7 @@
   }
 
   .message-content {
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     padding: 12px 14px;
   }
 
@@ -315,10 +364,10 @@
   }
 
   .input-area input {
-    padding: 10px 55px 10px 14px;
+    /* === MODIFIED: Adjusted left padding === */
+    padding: 10px 55px 10px 55px;
   }
 
-  /* Fixed counter positioning for very small screens */
   .input-counter {
     right: 8px !important;
     font-size: 0.65rem;
@@ -348,8 +397,161 @@
 
   .suggested-question {
     padding: 10px 12px;
+    font-size: 0.78rem;
+    min-height: 48px;
+  }
+
+  /* Small mobile devices - Welcome Avatar Fix */
+  .welcome-avatar-container {
+    width: 100px;
+    height: 85px;
+    margin-bottom: 16px;
+  }
+
+  #welcome-message .welcome-avatar {
+    width: 55px;
+    height: 55px;
+  }
+
+  .welcome-avatar-border {
+    width: 100px;
+    height: 85px;
+  }
+}
+
+/* Very small mobile devices - 375px and below */
+@media (max-width: 375px) {
+  #sidebar {
+    width: 100%;
+    max-width: 280px;
+  }
+
+  .mobile-header {
+    height: 52px;
+    padding: 0 10px;
+  }
+
+  .mobile-header-title {
+    font-size: 0.95rem;
+  }
+
+  .mobile-header .mobile-menu-toggle {
+    padding: 6px;
+  }
+
+  #chat-container {
+    padding-top: 52px;
+    height: calc(100vh - 52px);
+    height: calc(100dvh - 52px);
+  }
+
+  #welcome-message h2 {
+    font-size: 1.2rem;
+    margin-bottom: 8px;
+  }
+
+  #welcome-message p {
     font-size: 0.8rem;
-    min-height: 50px;
+    max-width: 92vw;
+    line-height: 1.4;
+  }
+
+  #chat {
+    padding: 14px 10px;
+    gap: 6px;
+  }
+
+  .message {
+    max-width: 100%;
+  }
+
+  .message.user {
+    max-width: 92%;
+    margin-right: 4%;
+  }
+
+  .message-content {
+    font-size: 0.8rem;
+    padding: 10px 12px;
+  }
+
+  .input-area {
+    padding: 8px;
+  }
+
+  .input-area input {
+    /* === MODIFIED: Adjusted left padding === */
+    padding: 8px 50px 8px 55px;
+    font-size: 0.9rem;
+  }
+
+  .input-area button {
+    width: 36px;
+    height: 36px;
+  }
+
+  .input-area button .arrow {
+    width: 16px;
+    height: 16px;
+  }
+
+  .input-counter {
+    right: 6px !important;
+    font-size: 0.6rem;
+    padding: 1px 4px;
+  }
+
+  .modal-btn {
+    padding: 7px 18px;
+    font-size: 0.85rem;
+  }
+
+  .scroll-to-bottom {
+    bottom: 60px;
+    right: 10px;
+    width: 30px;
+    height: 30px;
+  }
+
+  .scroll-to-bottom svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .suggested-questions {
+    gap: 4px;
+    margin-top: 10px;
+    max-width: 92vw;
+    padding: 0 6px;
+  }
+
+  .suggested-question {
+    padding: 8px 10px;
+    font-size: 0.75rem;
+    min-height: 44px;
+    line-height: 1.3;
+  }
+
+  /* Very small mobile devices - Welcome Avatar Fix */
+  .welcome-avatar-container {
+    width: 90px;
+    height: 75px;
+    margin-bottom: 14px;
+  }
+
+  #welcome-message .welcome-avatar {
+    width: 50px;
+    height: 50px;
+  }
+
+  .welcome-avatar-border {
+    width: 90px;
+    height: 75px;
+  }
+
+  /* Ensure proper spacing for 375x667 */
+  #welcome-message {
+    padding: 0 max(10px, env(safe-area-inset-left, 10px), env(safe-area-inset-right, 10px));
   }
 }
 
@@ -370,7 +572,7 @@
   
   #chat {
     padding: 20px 16px;
-    gap: 8px; /* Consistent reduced gap */
+    gap: 8px;
   }
 
   .suggested-questions {
@@ -413,4 +615,216 @@
   .mobile-menu-toggle {
     display: none;
   }
+}
+
+/* Extra small mobile devices (very small phones) */
+@media (max-width: 360px) {
+  .welcome-avatar-container {
+    width: 85px;
+    height: 70px;
+    margin-bottom: 12px;
+  }
+
+  #welcome-message .welcome-avatar {
+    width: 45px;
+    height: 45px;
+  }
+
+  .welcome-avatar-border {
+    width: 85px;
+    height: 70px;
+  }
+
+  #welcome-message h2 {
+    font-size: 1.1rem;
+    margin-bottom: 6px;
+  }
+
+  #welcome-message p {
+    font-size: 0.75rem;
+    max-width: 92vw;
+    line-height: 1.3;
+  }
+
+  .suggested-questions {
+    gap: 3px;
+    margin-top: 8px;
+    max-width: 92vw;
+  }
+
+  .suggested-question {
+    padding: 7px 9px;
+    font-size: 0.7rem;
+    min-height: 40px;
+    line-height: 1.2;
+  }
+
+  #chat-container.centered .input-area {
+    padding: 12px 8px 8px 8px;
+  }
+}
+
+/* Specific height adjustment for 720px height */
+@media (max-height: 720px) and (max-width: 540px) {
+  #welcome-message {
+    padding-top: 10px;
+  }
+  
+  .welcome-avatar-container {
+    margin-bottom: 12px;
+  }
+  
+  #welcome-message h2 {
+    margin-bottom: 8px;
+  }
+  
+  .suggested-questions {
+    margin-top: 16px;
+  }
+  
+  #chat-container.centered .input-area {
+    padding: 15px 10px 10px 10px;
+  }
+}
+
+/* Specific height adjustment for 667px height (iPhone 6/7/8) */
+@media (max-height: 667px) and (max-width: 375px) {
+  #welcome-message {
+    padding-top: 8px;
+  }
+  
+  .welcome-avatar-container {
+    margin-bottom: 10px;
+  }
+  
+  #welcome-message h2 {
+    margin-bottom: 6px;
+    font-size: 1.15rem;
+  }
+  
+  #welcome-message p {
+    margin-bottom: 8px;
+  }
+  
+  .suggested-questions {
+    margin-top: 8px;
+    gap: 3px;
+  }
+  
+  .suggested-question {
+    padding: 6px 8px;
+    min-height: 42px;
+    font-size: 0.72rem;
+  }
+  
+  #chat-container.centered .input-area {
+    padding: 10px 8px 8px 8px;
+  }
+}
+
+/* Very small height screens */
+@media (max-height: 600px) {
+  #welcome-message {
+    padding-top: 5px;
+    transform: scale(0.9);
+    transform-origin: center top;
+  }
+}
+
+/* --- Mobile Header Styles --- */
+
+/* * This is the DEFAULT state (Conversation View)
+ * It applies when the welcome screen is NOT visible.
+*/
+
+#mobile-header {
+  background: white;
+  border-bottom: 1px solid #e8e8e8; /* Adds a clean separator line */
+  box-shadow: none; /* Removes any existing shadow */
+}
+
+.mobile-menu-toggle.in-header {
+  background: transparent;
+  box-shadow: none;
+  border: none;
+}
+
+/* 1. Hide the logo by default */
+#mobile-header-logo {
+  display: none;
+}
+
+/* 2. Style the chat title (Request 2) */
+#mobile-header-title .title-text {
+  color: #D71921;
+  font-weight: 600;
+  font-size: 1rem;
+  content: none; /* Clear any CSS-driven content */
+}
+
+/* 3. Show the dropdown icon and color it */
+#mobile-header-title .dropdown-icon {
+  display: block;
+  stroke: #D71921;
+}
+
+/* * This is the WELCOME PAGE state (Request 1)
+ * It uses :has() to check if the #chat-container.centered class exists.
+*/
+
+/* 1. Show the logo on the welcome page */
+body:has(#chat-container.centered) #mobile-header-logo {
+  display: block;
+  /* Using sizes from your sidebar.css for consistency */
+  width: 55px;
+  height: 55px;
+}
+
+/* 2. Center the logo and title text */
+body:has(#chat-container.centered) .mobile-header-center {
+  justify-content: center;
+  gap: 8px;
+}
+
+/* 3. Style the title text on the welcome page */
+body:has(#chat-container.centered) #mobile-header-title .title-text {
+  /* JavaScript now sets the text, CSS just styles it */
+  font-size: 1.3rem; /* Match sidebar h1 */
+  font-weight: 700;  /* Match sidebar h1 */
+  color: var(--primary-color); /* Match sidebar h1 */
+}
+
+/* 4. Hide the dropdown icon on the welcome page */
+body:has(#chat-container.centered) #mobile-header-title .dropdown-icon {
+  display: none;
+}
+
+/* 5. Make the title un-clickable on the welcome page */
+body:has(#chat-container.centered) #mobile-header-title {
+  pointer-events: none;
+  gap: 0; 
+}
+
+/* --- Mobile Menu Toggle (Welcome Screen) Style --- */
+
+/* This targets the floating button on the welcome screen */
+#mobile-menu-toggle {
+  background-color: #D71921; /* App's primary red */
+  border-radius: 50%;        /* Make it a circle */
+  width: 35px;               /* Set fixed width */
+  height: 35px;              /* Set fixed height */
+  padding: 0;                /* Remove default padding */
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* Adjust shadow */
+  margin-top: -5px;
+}
+
+/* Make the hamburger lines white */
+#mobile-menu-toggle .hamburger span {
+  background-color: white;
+}
+
+/* Center the hamburger inside the circle */
+#mobile-menu-toggle .hamburger {
+  width: 20px; 
+  height: 16px;
 }

@@ -36,6 +36,33 @@ class ChatApp {
     this.currentFollowUpElement = null;
     this._scrollTimeout = null;
     this.greetingInterval = null;
+    this.voices = []; 
+    this.isVoiceInput = false; 
+    this.suggestedQuestionsInterval = null; 
+
+    // --- NEW: Moved question categories here ---
+    this.questionCategories = {
+      companyInfo: [
+        "Tell me about the history of CDO.",
+        "What are CDO's main products?",
+        "What is the company's mission or vision?",
+      ],
+      hrPolicies: [
+        "What is the company policy on remote work?",
+        "How do I file for a vacation leave?",
+        "What are the company holidays?",
+      ],
+      employeeRelations: [
+        "How do I handle a conflict with a coworker?",
+        "What are the steps for a performance review?",
+        "Where can I find information on employee benefits?",
+      ],
+      general: [
+        "Who is the founder of CDO?",
+        "What brands does CDO own?",
+        "Explain the process for internal job applications."
+      ]
+    };
 
     // Cache DOM elements
     this.elements = {
@@ -66,7 +93,8 @@ class ChatApp {
       mobileHeaderLogo: document.getElementById("mobile-header-logo"),
       mobileHeaderDropdown: document.getElementById("mobile-header-dropdown"),
       mobileRenameOption: document.getElementById("mobile-rename-option"),
-      mobileDeleteOption: document.getElementById("mobile-delete-option")
+      mobileDeleteOption: document.getElementById("mobile-delete-option"),
+      micBtn: document.getElementById("mic-btn") 
     };
 
     // Initialize other managers (that need this.elements)
@@ -76,13 +104,14 @@ class ChatApp {
     this.chatManager = new ChatManager(this);
 
     this.mediaQuery = window.matchMedia('(max-width: 768px)');
-    
+    this.scrollPosition = 0;
+
     this.startGreetingUpdateInterval();
     this.init();
   }
 
   async init() {
-    console.log('Initializing ChatCHA CDO Assistant...'); // No change needed
+    console.log('Initializing Cindy CDO Assistant...');
     
     await this.loadHRKnowledge();
     
@@ -92,7 +121,7 @@ class ChatApp {
     // HR knowledge base is now handled server-side via RAG
     console.log('Server-side RAG system initialized');
     
-    // Check if Sheets integration is enabled - REMOVED
+    this.loadVoices(); 
     
     if (!this.userName) {
       this.modalManager.showWelcomeModal((name) => {
@@ -110,8 +139,10 @@ class ChatApp {
     this.uiManager.render();
     
     this.uiManager.initScrollToBottom();
+    
     this.initCharacterCounter();
     this.addSuggestedQuestions();
+    this.startSuggestedQuestionsInterval(); 
     
     // Initialize message manager with immediate action button setup
     this.messageManager.initMessageActionButtons();
@@ -135,7 +166,7 @@ class ChatApp {
       this.uiManager.scrollToStartOfResponse(messageElement);
     });
     
-    console.log('ChatCHA CDO Assistant initialized successfully!'); // No change needed
+    console.log('Cindy CDO Assistant initialized successfully!');
     this.showToast('Ready to assist with your CDO questions!', 'success');
   }
 
@@ -177,10 +208,14 @@ class ChatApp {
 
   // Delegate methods to appropriate managers
   askQuestion() {
-    return this.chatManager.askQuestion();
+    this.stopSuggestedQuestionsInterval(); 
+    const wasVoiceInput = this.isVoiceInput;
+    this.isVoiceInput = false; // Reset flag immediately
+    return this.chatManager.askQuestion(wasVoiceInput);
   }
 
   loadChat(index) {
+    this.stopSuggestedQuestionsInterval(); 
     return this.chatManager.loadChat(index);
   }
 
@@ -195,6 +230,11 @@ class ChatApp {
   stopGeneration() {
     console.log('Stopping generation...');
     this.apiManager.stopGeneration();
+    
+    if (window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+      this.uiManager.hideMicStopSpeakingMode(); 
+    }
     
     const typingIndicator = this.elements.chatDiv.querySelector('.message.bot:last-child .typing');
     if (typingIndicator) {
@@ -214,8 +254,14 @@ class ChatApp {
     inputWrapper.className = 'input-wrapper';
     
     const input = this.elements.chatInput;
+    const micBtn = this.elements.micBtn; // Get mic button
+    
     input.parentNode.insertBefore(inputWrapper, input);
-    inputWrapper.appendChild(input);
+    
+    if (micBtn) { // Move mic button inside wrapper
+      inputWrapper.appendChild(micBtn);
+    }
+    inputWrapper.appendChild(input); // Move input inside wrapper
     
     const existingCounter = this.elements.inputForm.querySelector('.input-counter');
     if (existingCounter) {
@@ -256,34 +302,11 @@ class ChatApp {
   }
 
   addSuggestedQuestions() {
-    // UPDATED: Changed questions to be more general for a company assistant
-    const questionCategories = {
-      companyInfo: [
-        "Tell me about the history of CDO.",
-        "What are CDO's main products?",
-        "What is the company's mission or vision?",
-      ],
-      hrPolicies: [
-        "What is the company policy on remote work?",
-        "How do I file for a vacation leave?",
-        "What are the company holidays?",
-      ],
-      employeeRelations: [
-        "How do I handle a conflict with a coworker?",
-        "What are the steps for a performance review?",
-        "Where can I find information on employee benefits?",
-      ],
-      general: [
-        "Who is the founder of CDO?",
-        "What brands does CDO own?",
-        "Explain the process for internal job applications."
-      ]
-    };
-
     const container = document.createElement('div');
     container.className = 'suggested-questions';
     
-    const selectedQuestions = this.getRandomQuestions(questionCategories, 6);
+    // Use the class property
+    const selectedQuestions = this.getRandomQuestions(this.questionCategories, 6);
     
     selectedQuestions.forEach(question => {
       const button = document.createElement('button');
@@ -294,6 +317,7 @@ class ChatApp {
       button.addEventListener('click', () => {
         this.elements.chatInput.value = question;
         this.updateCharacterCount();
+        this.isVoiceInput = false; 
         this.askQuestion();
       });
       
@@ -307,6 +331,62 @@ class ChatApp {
     }
     
     this.elements.welcomeDiv.appendChild(container);
+  }
+
+  // --- NEW: Function to rotate questions ---
+  rotateSuggestedQuestions() {
+    const container = this.elements.welcomeDiv.querySelector('.suggested-questions');
+    if (!container) return; // Failsafe
+
+    container.classList.add('fading'); // Start fade-out
+
+    setTimeout(() => {
+      // 1. Get new questions
+      const selectedQuestions = this.getRandomQuestions(this.questionCategories, 6);
+      
+      // 2. Clear old buttons
+      container.innerHTML = ''; 
+
+      // 3. Create new buttons
+      selectedQuestions.forEach(question => {
+        const button = document.createElement('button');
+        button.className = 'suggested-question';
+        button.textContent = question;
+        button.type = 'button';
+        
+        button.addEventListener('click', () => {
+          this.elements.chatInput.value = question;
+          this.updateCharacterCount();
+          this.askQuestion();
+        });
+        
+        container.appendChild(button);
+      });
+
+      // 4. Fade back in
+      container.classList.remove('fading');
+    }, 500); // This MUST match the CSS transition duration (0.5s)
+  }
+
+  // --- NEW: Function to start the timer ---
+  startSuggestedQuestionsInterval() {
+    // Clear any existing one first
+    this.stopSuggestedQuestionsInterval();
+    // Start a new one
+    this.suggestedQuestionsInterval = setInterval(() => {
+      // Only rotate if we are on the welcome screen
+      if (!this.hasConversation) {
+        this.rotateSuggestedQuestions();
+      }
+    }, 10000); // 10 seconds
+  }
+
+  // --- NEW: Function to stop the timer ---
+  stopSuggestedQuestionsInterval() {
+    if (this.suggestedQuestionsInterval) {
+      clearInterval(this.suggestedQuestionsInterval);
+      this.suggestedQuestionsInterval = null;
+    }
   }
 
   getRandomQuestions(categories, count) {
@@ -445,12 +525,33 @@ class ChatApp {
     }
   }
 
+  lockBodyScroll() {
+      if (window.innerWidth <= 768) {
+        this.scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
+        document.body.style.overflow = 'hidden';
+        document.body.style.position = 'fixed';
+        document.body.style.top = `-${this.scrollPosition}px`;
+        document.body.style.width = '100%';
+      }
+    }
+
+    unlockBodyScroll() {
+      if (window.innerWidth <= 768) {
+        document.body.style.removeProperty('overflow');
+        document.body.style.removeProperty('position');
+        document.body.style.removeProperty('top');
+        document.body.style.removeProperty('width');
+        window.scrollTo(0, this.scrollPosition);
+    }
+  }
+
   setupEventListeners() {
-    const { chatInput, sendBtn, newChatBtn, sidebarToggle, mobileMenuToggle, overlay, inputForm } = this.elements;
+    const { chatInput, sendBtn, newChatBtn, sidebarToggle, mobileMenuToggle, overlay, inputForm, micBtn } = this.elements;
 
     // Form submission
     inputForm.addEventListener("submit", (e) => {
       e.preventDefault();
+      this.isVoiceInput = false; 
       this.askQuestion();
     });
 
@@ -460,6 +561,7 @@ class ChatApp {
       if (this.isLoading) {
         this.stopGeneration();
       } else {
+        this.isVoiceInput = false; 
         this.askQuestion();
       }
     });
@@ -469,6 +571,7 @@ class ChatApp {
       if (e.key === "Enter" && !e.shiftKey) {
         e.preventDefault();
         if (!this.isLoading) {
+          this.isVoiceInput = false; 
           this.askQuestion();
         }
       }
@@ -476,6 +579,11 @@ class ChatApp {
 
     // New chat button
     newChatBtn.addEventListener("click", () => {
+      if (window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+        this.uiManager.hideMicStopSpeakingMode(); 
+      }
+      
       this.currentConversation = [];
       this.hasConversation = false;
       this.activeChatIndex = null;
@@ -490,22 +598,27 @@ class ChatApp {
       this.uiManager.closeMobileSidebar();
       this.uiManager.updateScrollButton();
       this.showToast('Started new chat', 'success');
+      this.startSuggestedQuestionsInterval(); 
     });
 
-    // Sidebar toggle (desktop)
+    // === MODIFIED: Sidebar toggle (desktop) ===
     if (sidebarToggle) {
       sidebarToggle.addEventListener("click", () => {
         if (window.innerWidth > 768) {
           this.elements.sidebar.classList.toggle("minimized");
           const isMinimized = this.elements.sidebar.classList.contains("minimized");
+          
+          // Update ARIA label
           sidebarToggle.setAttribute("aria-label", isMinimized ? "Expand sidebar" : "Minimize sidebar");
           
+          // Tooltip logic (still valid)
           const existingTooltip = sidebarToggle.querySelector('.tooltip');
           if (existingTooltip) existingTooltip.remove();
           this.modalManager.addTooltip(sidebarToggle, isMinimized ? 'Expand sidebar' : 'Minimize sidebar', 'right');
           
           if (!isMinimized) {
             this.modalManager.removeSidebarTooltips();
+            this.uiManager.closeHistoryDropdown(); 
           } else {
             this.uiManager.addButtonTooltips();
           }
@@ -513,19 +626,33 @@ class ChatApp {
       });
     }
 
-    // Logo click to expand when minimized
+    // === MODIFIED: Logo click to expand when minimized ===
     const logoContainer = document.querySelector(".logo-container");
     if (logoContainer) {
-      logoContainer.addEventListener("click", () => {
+      logoContainer.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
         if (window.innerWidth > 768 && this.elements.sidebar.classList.contains("minimized")) {
           this.elements.sidebar.classList.remove("minimized");
+          this.uiManager.closeHistoryDropdown(); 
+          
           if (sidebarToggle) {
             sidebarToggle.setAttribute("aria-label", "Minimize sidebar");
+            
+            // Tooltip logic (still valid)
             const existingTooltip = sidebarToggle.querySelector('.tooltip');
             if (existingTooltip) existingTooltip.remove();
             this.modalManager.addTooltip(sidebarToggle, 'Minimize sidebar', 'right');
           }
+          
           this.modalManager.removeSidebarTooltips();
+          
+          // Add subtle animation feedback
+          logoContainer.style.transform = 'scale(0.95)';
+          setTimeout(() => {
+            logoContainer.style.transform = '';
+          }, 150);
         }
       });
     }
@@ -537,6 +664,13 @@ class ChatApp {
         this.elements.overlay.classList.toggle("active");
         mobileMenuToggle.setAttribute("aria-expanded", isShowing.toString());
         this.uiManager.closeAllDropdowns();
+        
+        // ADD THESE LINES:
+        if (isShowing) {
+          this.lockBodyScroll();
+        } else {
+          this.unlockBodyScroll();
+        }
       });
     }
 
@@ -547,6 +681,12 @@ class ChatApp {
         this.elements.overlay.classList.toggle("active");
         this.elements.mobileHeaderToggle.setAttribute("aria-expanded", isShowing.toString());
         this.uiManager.closeAllDropdowns();
+        
+        if (isShowing) {
+          this.lockBodyScroll();
+        } else {
+          this.unlockBodyScroll();
+        }
       });
     }
 
@@ -583,6 +723,7 @@ class ChatApp {
         this.elements.mobileHeaderToggle.setAttribute("aria-expanded", "false");
       }
       this.uiManager.closeAllDropdowns();
+      this.unlockBodyScroll();
     });
 
     // Modal event listeners
@@ -636,7 +777,7 @@ class ChatApp {
       }
     });
 
-    // Resize handling
+    // === MODIFIED: Resize handling ===
     let resizeTimeout;
     window.addEventListener("resize", () => {
       clearTimeout(resizeTimeout);
@@ -651,6 +792,7 @@ class ChatApp {
           
           if (isTablet && this.elements.sidebar.classList.contains("minimized")) {
             this.elements.sidebar.classList.remove("minimized");
+            
             if (sidebarToggle) {
               sidebarToggle.setAttribute("aria-label", "Minimize sidebar");
             }
@@ -690,6 +832,86 @@ class ChatApp {
         this.uiManager.updateMobileHeader();
       }, 100);
     });
+
+    // === REVISED: SPEECH RECOGNITION LOGIC ===
+    if (micBtn) {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      
+      if (SpeechRecognition) {
+        const recognition = new SpeechRecognition();
+        recognition.continuous = false;
+        recognition.interimResults = false;
+        recognition.lang = 'en-US'; 
+        let isRecognizing = false;
+
+        // When speech is recognized
+        recognition.onresult = (event) => {
+          let transcript = event.results[0][0].transcript;
+          
+          // --- APPLY CORRECTION ---
+          transcript = this.capitalizeAndPunctuate(transcript);
+          
+          chatInput.value = transcript;
+          this.updateCharacterCount();
+          this.showToast('Voice captured! Sending...', 'success', 2000);
+          
+          this.isVoiceInput = true; // <-- SET THE FLAG
+          this.askQuestion();
+        };
+
+        // Handle errors
+        recognition.onerror = (event) => {
+          console.error('Speech recognition error:', event.error);
+          this.showToast(`Voice error: ${event.error}`, 'error');
+        };
+        
+        // When recognition ends (for any reason)
+        recognition.onend = () => {
+          isRecognizing = false;
+          micBtn.classList.remove('recording');
+          micBtn.setAttribute('aria-label', 'Use voice input');
+        };
+
+        // Handle the button click
+        micBtn.addEventListener('click', () => {
+          
+          // --- NEW: State 3 - AI is speaking, user wants to stop it ---
+          if (micBtn.classList.contains('speaking-mode')) {
+            if (window.speechSynthesis) {
+              window.speechSynthesis.cancel();
+            }
+            // Manually trigger the 'onend' logic to reset the UI
+            this.uiManager.hideMicStopSpeakingMode();
+            return;
+          }
+
+          // --- State 2: User is listening, user wants to stop ---
+          if (isRecognizing) {
+            recognition.stop();
+          } else {
+            // --- State 1: Idle, user wants to start listening ---
+            if (this.isLoading) {
+              this.showToast('Please wait for the current response', 'warning');
+              return;
+            }
+            if (window.speechSynthesis) {
+              window.speechSynthesis.cancel();
+            }
+            
+            recognition.start();
+            isRecognizing = true;
+            micBtn.classList.add('recording');
+            micBtn.setAttribute('aria-label', 'Stop listening');
+            this.showToast('Listening...', 'info', 2000);
+          }
+        });
+
+      } else {
+        // If browser is not supported, hide the button
+        micBtn.style.display = 'none';
+        console.warn('Web Speech API not supported in this browser.');
+      }
+    }
   }
 
   toggleMobileHeaderDropdown() {
@@ -749,6 +971,53 @@ class ChatApp {
         }
       }
     });
+  }
+  
+  loadVoices() {
+    if ('speechSynthesis' in window) {
+      const setVoices = () => {
+        this.voices = window.speechSynthesis.getVoices();
+        if (this.voices.length > 0) {
+          console.log("Speech voices loaded successfully:", this.voices.length);
+        } else {
+          // This can happen on some browsers, they load asynchronously
+          console.warn("Voices list empty, will try again on use.");
+        }
+      };
+      
+      // This event is crucial for many browsers
+      window.speechSynthesis.onvoiceschanged = setVoices;
+      
+      // Initial attempt (for browsers that load them immediately)
+      setVoices();
+    }
+  }
+
+  // --- NEW: Helper function for grammar ---
+  capitalizeAndPunctuate(text) {
+    if (!text) return "";
+  
+    // 1. Trim whitespace
+    let correctedText = text.trim();
+  
+    // 2. Capitalize the first letter
+    correctedText = correctedText.charAt(0).toUpperCase() + correctedText.slice(1);
+  
+    // 3. Add punctuation if it's missing
+    const lastChar = correctedText.slice(-1);
+    if (lastChar !== '.' && lastChar !== '?' && lastChar !== '!') {
+      // Simple check for a question
+      const questionWords = ['what', 'who', 'where', 'when', 'why', 'how', 'is', 'are', 'do', 'does', 'can', 'could', 'should', 'would', 'will'];
+      const firstWord = correctedText.split(' ')[0].toLowerCase();
+      
+      if (questionWords.includes(firstWord)) {
+        correctedText += '?';
+      } else {
+        correctedText += '.';
+      }
+    }
+  
+    return correctedText;
   }
 }
 

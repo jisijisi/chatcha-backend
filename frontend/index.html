@@ -3,10 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ChatCHA - AI HR Assistant</title>
-  <meta name="description" content="Chat with CHA - Your AI HR and Recruitment Assistant">
+  <title>ChatCDO - Company AI Assistant</title>
+  <meta name="description" content="Chat with Cindy - Your Company AI Assistant">
 
   <link rel="icon" type="image/png" href="assets/images/logo.png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   
   <link rel="stylesheet" href="assets/css/main.css">
   
@@ -17,24 +21,18 @@
   <div id="app">
     <aside id="sidebar" aria-label="Chat navigation">
       <div class="sidebar-header">
-        <button id="sidebar-toggle" class="sidebar-toggle" aria-label="Toggle sidebar" aria-expanded="true">
-          <span class="hamburger">
-            <span></span>
-            <span></span>
-            <span></span>
-          </span>
-        </button>
         <div class="logo-container">
-          <img src="assets/images/logo.png" alt="ChatCHA Logo" class="logo">
-          <div class="logo-hamburger-overlay">
-            <span class="hamburger">
-              <span></span>
-              <span></span>
-              <span></span>
-            </span>
-          </div>
+          <img src="assets/images/logo.png" alt="ChatCDO Logo" class="logo">
+            <div class="logo-hamburger-overlay">
+              <img src="assets/images/left_panel_open_24dp_1F1F1F_FILL0_wght400_GRAD0_opsz24.png" alt="Expand sidebar">
+            </div>
         </div>
-        <h1>ChatCHA</h1>
+        <h1>ChatCDO</h1>
+        
+        <button id="sidebar-toggle" class="sidebar-toggle" aria-label="Minimize sidebar" aria-expanded="true">
+          <img src="assets/images/left_panel_close_24dp_1F1F1F_FILL0_wght400_GRAD0_opsz24.png" alt="Minimize sidebar" class="toggle-icon icon-close">
+          <img src="assets/images/left_panel_open_24dp_1F1F1F_FILL0_wght400_GRAD0_opsz24.png" alt="Expand sidebar" class="toggle-icon icon-open">
+        </button>
       </div>
 
       <button id="new-chat" aria-label="Start new chat">
@@ -59,19 +57,28 @@
       </button>
 
       <section id="welcome-message" class="show" aria-live="polite">
-        <h2>Hi, I'm CHA</h2>
+        <h2>Hi, I'm Cindy</h2>
         <p>Welcome! I'm your AI HR and Recruitment Assistant. Ask me anything about hiring, recruitment, HR policies, or candidate evaluation.</p>
         </section>
 
       <div id="chat" role="log" aria-live="polite" aria-atomic="false"></div>
 
       <form class="input-area" role="search">
-        <label for="question" class="sr-only">Ask CHA</label>
+        <label for="question" class="sr-only">Ask Cindy</label>
+        
+        <button id="mic-btn" type="button" aria-label="Use voice input">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+            <line x1="12" y1="19" x2="12" y2="23"></line>
+            <line x1="8" y1="23" x2="16" y2="23"></line>
+          </svg>
+        </button>
         <input 
           id="question" 
           type="text"
-          placeholder="Ask CHA here" 
-          aria-label="Ask CHA here"
+          placeholder="Ask Cindy here" 
+          aria-label="Ask Cindy here"
           autocomplete="off"
           maxlength="500"
         />
@@ -119,9 +126,9 @@
       </span>
     </button>
     <div class="mobile-header-center">
-      <img src="assets/images/logo.png" alt="ChatCHA Logo" class="mobile-header-logo" id="mobile-header-logo">
+      <img src="assets/images/logo.png" alt="ChatCDO Logo" class="mobile-header-logo" id="mobile-header-logo">
       <button id="mobile-header-title" class="mobile-header-title" aria-label="Chat options">
-        <span class="title-text">ChatCHA</span>
+        <span class="title-text"></span>
         <svg class="dropdown-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <polyline points="6 9 12 15 18 9"></polyline>
         </svg>

@@ -13,6 +13,7 @@
   justify-content: center;
   align-items: center;
   text-align: center;
+  overflow: hidden;
 }
 
 #chat-container.centered #chat {
@@ -34,11 +35,123 @@
   text-align: center;
   opacity: 0;
   transition: opacity 0.5s ease;
+  position: relative;
+  z-index: 1;
+  max-width: 95vw;
+  padding: 0 max(15px, env(safe-area-inset-left, 15px), env(safe-area-inset-right, 15px));
+  box-sizing: border-box;
+  width: 100%;
+  margin: 0 auto;
 }
 
 #welcome-message.show {
   display: flex;
   opacity: 1;
+  transform: none;
+}
+
+/* --- Welcome Page Background Wave --- */
+
+#chat-container.centered::before,
+#chat-container.centered::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: clamp(175px, 13.9vw, 250px); /* This makes it responsive */
+  z-index: 0;
+  
+  /* This is a URL-encoded SVG data URI that creates the wave shape */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 200'%3E%3Cpath fill='%23FFC700' fill-opacity='1' d='M0,128C480,128,480,64,960,64C1440,64,1440,128,1440,128L1440,0L0,0Z'%3E%3C/path%3E%3C/svg%3E");
+  
+  background-repeat: no-repeat;
+  background-size: cover;
+
+  /* Reset any properties from the old circle method */
+  border-radius: 0;
+  opacity: 1;
+}
+
+/* Top wave */
+#chat-container.centered::before {
+  top: 0;
+  /* Reset old positioning */
+  left: 0;
+  right: auto; 
+}
+
+/* Bottom wave */
+#chat-container.centered::after {
+  bottom: 0;
+  transform: rotate(180deg); /* Flips the same wave for the bottom */
+  /* Reset old positioning */
+  left: 0;
+  right: auto;
+  top: auto; 
+}
+
+/* Wave background adjustment for medium-small screens */
+@media (max-width: 540px) {
+  #chat-container.centered::before,
+  #chat-container.centered::after {
+    height: clamp(150px, 12vw, 200px);
+  }
+}
+
+/* Wave background adjustment for very small screens */
+@media (max-width: 375px) {
+  #chat-container.centered::before,
+  #chat-container.centered::after {
+    height: clamp(120px, 10vw, 180px);
+  }
+}
+
+/* --- Mobile Wave & Input Fix --- */
+
+/*
+ * This rule remains the same.
+ * It lifts the input area in front of the waves.
+*/
+.input-area {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+}
+
+/*
+ * This targets the input area ONLY on the welcome screen.
+ * We make the background transparent and just add padding
+ * to create space.
+*/
+#chat-container.centered .input-area {
+  background-color: transparent;
+  padding: 20px max(10px, env(safe-area-inset-left, 10px), env(safe-area-inset-right, 10px)) 15px;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: min(500px, 92vw);
+  margin: 0 auto;
+  position: relative;
+}
+
+/*
+ * This adds the "floating" 3D effect to the
+ * text input field itself.
+*/
+#chat-container.centered #question {
+  background-color: white; /* Give it a solid white background */
+  border: 1px solid #e8e8e8; /* A very light border */
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1); /* The "floating" shadow */
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/*
+ * We add a matching shadow to the send button
+ * to make it "float" as well.
+*/
+#chat-container.centered #send-btn {
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  border: 1px solid white;
 }
 
 #welcome-message .welcome-avatar {
@@ -48,14 +161,55 @@
   object-fit: cover;
   margin-bottom: 24px;
   box-shadow: 0 8px 24px rgba(215, 25, 33, 0.15); /* MODIFIED */
-  animation: floatIn 0.8s ease-out;
+  /* animation: floatIn 0.8s ease-out; */
+}
+
+.welcome-avatar-container {
+  position: relative;
+  width: 180px; /* Was 150px */
+  height: 155px; /* Was 130px */
+  margin-bottom: 24px;
+}
+
+.welcome-avatar-border {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 2;
+  pointer-events: none;
+  background-image: url('../images/cdo-border-yellow.png'); /* Default yellow border */
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  transition: background-image 0.2s ease-in-out; /* Smooth fade effect */
+}
+
+.welcome-avatar-container:hover .welcome-avatar-border {
+  background-image: url('../images/cdo-border-red.png'); /* Red border on hover */
+}
+
+#welcome-message .welcome-avatar {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 85px;
+  height: 85px;
+  border-radius: 50%;
+  object-fit: cover;
+  box-shadow: none;
+  /* animation: floatIn 0.8s ease-out; */
+  z-index: 1;
+  margin: 0;
 }
 
 #welcome-message h2 {
-  font-size: clamp(1.6rem, 4vw, 2rem);
+  font-size: clamp(2rem, 5vw, 2.5rem);
   margin-bottom: 12px;
   font-weight: 700;
-  color: #1a1a1a;
+  color: #D71921;
   animation: slideUpWelcome 0.6s ease-out 0.2s both;
 }
 
@@ -83,7 +237,7 @@
   scroll-behavior: smooth;
   gap: 4px; /* Reduced gap between messages */
   -webkit-overflow-scrolling: touch;
-  background: #fafafa;
+  background: #f5f6fa;
   align-items: center;
 }
 
@@ -178,17 +332,18 @@
 }
 
 .message.user .message-content {
-  background-color: var(--user-msg-bg);
-  color: #1a202c;
-  border: 1px solid var(--user-msg-border); /* MODIFIED */
+  background-color: var(--user-msg-bg); /* This is your #FEEBEA */
+  color: #333; /* Softer text color */
+  border: 1px solid var(--user-msg-border); /* This is your #F8BABA */
   text-align: left;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); /* Adds a soft shadow */
 }
 
 .message.bot .message-content {
-  background-color: var(--bot-msg-bg);
+  background-color: #ffffff; /* Pure white card */
   color: #2d3748;
-  border: 1px solid var(--bot-msg-border);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e8e8e8; /* Lighter border */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07); /* A bit more shadow */
 }
 
 /* * --- THIS IS THE FIX (AGAIN) ---
@@ -545,6 +700,13 @@
   font-weight: 700;
 }
 
+/* --- NEW: Fix for "Sources" --- */
+.message.bot .message-content p + ul {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--bot-msg-border); /* Adds a clean separator */
+}
+
 /* Code Blocks */
 .message-content pre {
   background-color: #f6f8fa;
@@ -696,32 +858,43 @@
   width: 100%;
   padding: 0 16px;
   box-sizing: border-box;
+  /* --- NEW: Added animation properties --- */
+  opacity: 1;
+  transition: opacity 0.5s ease-in-out;
+}
+
+/* --- NEW: Fading class for animation --- */
+.suggested-questions.fading {
+  opacity: 0;
 }
 
 .suggested-question {
-  background: white;
-  border: 1px solid #e0e0e0;
-  border-radius: 12px;
-  padding: 14px 16px;
+  background: #f7f7f7; /* Soft fill color */
+  border: 1px solid #eee; /* Subtle border */
+  border-radius: 30px; /* Pill shape */
+  padding: 14px 20px; /* A bit more horizontal padding */
   cursor: pointer;
   transition: all 0.2s ease;
-  text-align: left;
-  font-size: clamp(0.85rem, 2vw, 0.95rem);
+  text-align: left; /* Keep text left-aligned */
+  font-size: clamp(0.85rem, 2vw, 0.9rem); /* Slightly smaller/cleaner */
   color: #333;
+  font-weight: 500; /* Slightly bolder */
   line-height: 1.4;
   word-wrap: break-word;
   overflow-wrap: break-word;
   min-height: 60px;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start; /* Changed from center to left-align */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04); /* Subtle shadow */
 }
 
 .suggested-question:hover {
-  border-color: var(--primary-hover); /* MODIFIED */
-  background: #f8f9ff;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  background: #D71921; /* Brand Red */
+  color: #ffffff; /* White font */
+  border-color: #D71921; /* Match background color */
+  transform: translateY(-3px); /* Keep the lift */
+  box-shadow: 0 5px 15px rgba(215, 25, 33, 0.3); /* Add a red shadow */
 }
 
 /* Scroll to Bottom Button */

@@ -1,0 +1,163 @@
+{
+  "page_metadata": {
+    "title": "CDO Foodstores",
+    "url": "https://www.cdo.com.ph/cdo-foodstores/",
+    "company": "CDO Foodsphere",
+    "content_type": "store_locations"
+  },
+  "stores": [
+    {
+      "name": "PASO DE BLAS",
+      "address": "Paso De Blas Public Market, Paso De Blas, Valenzuela City",
+      "phone": "021 6363 6910",
+      "operating_hours": "Mon-Sun 7:00am-7:00pm",
+      "delivery": "Delivery Channel"
+    },
+    {
+      "name": "MARULAS",
+      "address": "19 MacArthur Highway, Marulas, Valenzuela City",
+      "phone": "021 6363 6910",
+      "operating_hours": "Mon-Sun 7:00am-7:00pm",
+      "delivery": "Delivery Channel"
+    },
+    {
+      "name": "FAIRVIEW",
+      "address": "3 Commonwealth Avenue, Fairview Park West, Brgy. Fairview, Quezon City",
+      "phone": "021 7471 9512",
+      "operating_hours": "Mon-Sun 7:00am-7:00pm",
+      "delivery": "Delivery Channel"
+    },
+    {
+      "name": "ROAD 8",
+      "address": "121 Road 8, Brgy. Pagong Putik Uno, Quezon City",
+      "phone": "021 6363 6710",
+      "operating_hours": "Mon-Sun 7:00am-7:00pm",
+      "delivery": "Delivery Channel"
+    },
+    {
+      "name": "MONUMENTO",
+      "address": "Rizal S Aquirre's Building, Money Lover Compound, No. 717 Rizal Avenue Extension, Caloocan City",
+      "phone": "021 6363 6610",
+      "operating_hours": "Mon-Sun 7:00am-7:00pm",
+      "delivery": "Delivery Channel"
+    },
+    {
+      "name": "SAMPALOC",
+      "address": "3511 Juan Luna St., Tomas De Guzman St., Sampaloc, Manila City",
+      "phone": "021 7471 9622",
+      "operating_hours": "Mon-Sun 7:00am-7:00pm",
+      "delivery": "Delivery Channel"
+    },
+    {
+      "name": "BACLACAN",
+      "address": "19 Kabiton Ave., Arancon, Malabanan City",
+      "phone": "021 6363 6710",
+      "operating_hours": "Mon-Sun 7:00am-7:00pm",
+      "delivery": "Delivery Channel"
+    },
+    {
+      "name": "LOWER BICUTAN",
+      "address": "1118 Dr. Sixto, St. Phase 11, New Lower Bicutan, Taguig City",
+      "phone": "021 6363 6710",
+      "operating_hours": "Mon-Sun 7:00am-7:00pm",
+      "delivery": "Delivery Channel"
+    },
+    {
+      "name": "LAS PIÑAS",
+      "address": "Kalaw Street, Pamplona II Agdao Building, Talon Uno, Las Piñas City",
+      "phone": "021 6363 6710",
+      "operating_hours": "Mon-Sun 7:00am-7:00pm",
+      "delivery": "Delivery Channel"
+    },
+    {
+      "name": "SAN FERNANDO PAMPANGA",
+      "address": "Purok 2 Sydney Hwy, Brgy. Malinao, San Fernando, Pampanga",
+      "phone": "021 7471 9332",
+      "operating_hours": "Mon-Sun 7:00am-7:00pm",
+      "delivery": "Delivery Channel"
+    },
+    {
+      "name": "CEBU",
+      "address": "Villa Rey Baluno St., Brgy. Kaoshid Boulevard, Cebu",
+      "phone": "032 412 2133",
+      "operating_hours": "Mon-Sun 8:00am-8:00pm",
+      "delivery": "Delivery Channel"
+    },
+    {
+      "name": "MALANDAY",
+      "address": "43 Belen St, Malanday, Marikina, Valenzuela City",
+      "phone": "021 6363 6910",
+      "operating_hours": "Mon-Sun 7:00am-7:00pm",
+      "delivery": "Delivery Channel"
+    },
+    {
+      "name": "DELMONTE",
+      "address": "Unit B-03 Munoz Bldg, Brgy. Masaya, Quezon City",
+      "phone": "021 6363 6710",
+      "operating_hours": "Mon-Sun 7:00am-7:00pm",
+      "delivery": "Delivery Channel"
+    },
+    {
+      "name": "FARMERS",
+      "address": "M10932-03 Farmers Market, Cubao, Quezon City",
+      "phone": "021 6363 7313",
+      "operating_hours": "Mon-Sun 7:00am-7:00pm",
+      "delivery": "Delivery Channel"
+    },
+    {
+      "name": "DEPARO",
+      "address": "Phase 5, Lots 1-3, Phase 1, Maruhachi Subdivision, Kabanklan Road, Deparo, Caloocan City",
+      "phone": "021 6363 6710",
+      "operating_hours": "Mon-Sun 7:00am-7:00pm",
+      "delivery": "Delivery Channel"
+    },
+    {
+      "name": "GAGALANGIN TONDO",
+      "address": "1868 Juan Dela Way, Old Zone 15, Tondo, Manila City",
+      "phone": "021 6363 6710",
+      "operating_hours": "Mon-Sun 7:00am-7:00pm",
+      "delivery": "Delivery Channel"
+    },
+    {
+      "name": "SHAW BLVD",
+      "address": "Arch A-13B Habs, Boulevard, Maphatag Bldg, Sitta, Mandaluyong City",
+      "phone": "021 6363 6710",
+      "operating_hours": "Mon-Sun 7:00am-7:00pm",
+      "delivery": "Delivery Channel"
+    },
+    {
+      "name": "SUCAT",
+      "address": "Lot 11, Block 3, Road Lot 3, Presidents Ave, Transfer Village, 88 Paranoz, Paranaque City",
+      "phone": "021 6363 6710",
+      "operating_hours": "Mon-Sun 7:00am-7:00pm",
+      "delivery": "Delivery Channel"
+    },
+    {
+      "name": "MUNTINLUPA",
+      "address": "Turez Building, Batangas Road, Paslipano, Muntinlupa City",
+      "phone": "021 6363 6710",
+      "operating_hours": "Mon-Sun 7:00am-7:00pm",
+      "delivery": "Delivery Channel"
+    },
+    {
+      "name": "STO NIÑO MEYCAUAYAN",
+      "address": "Avior Compunet Building, Quirino Highway, Brgy. Brgy. Sto Niño, Meycauayan, Bulacan",
+      "phone": "021 6363 6710",
+      "operating_hours": "Mon-Sun 7:00am-7:00pm",
+      "delivery": "Delivery Channel"
+    },
+    {
+      "name": "MALVAR",
+      "address": "J. Rizal, Batangas, Malvar, Batangas",
+      "phone": "021 6363 6710",
+      "operating_hours": "Mon-Sun 7:00am-7:00pm",
+      "delivery": "Delivery Channel"
+    },
+    {
+      "name": "OTHER VISAYAS AREAS & MINDANAO",
+      "description": "For inquiries and assistance in other Visayas areas and in Mindanao, contact our CDO Hotline during:",
+      "phone": "1-800-1888-2222",
+      "operating_hours": "Mon-Sat 8:00am-5:00pm"
+    }
+  ]
+}

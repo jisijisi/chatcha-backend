@@ -1,0 +1,53 @@
+{
+  "page_metadata": {
+    "title": "About Us - CDO",
+    "url": "https://www.cdo.com.ph/about-us/",
+    "company": "CDO Foodsphere",
+    "content_type": "company_information"
+  },
+  "header": {
+    "title": "A Delicious Story of Success",
+    "description": "From a simple dream of providing delicious food for families, the CDO story has swelled into a delicious smorgasbord of products, flavoured with high-quality meats and filling taste profiles."
+  },
+  "mission": {
+    "title": "Mission",
+    "statement": "We disseminate healthier and safer families through food that nails them home. We live to bring them the flavors they deserve. We exist to nourish them to be their best selves."
+  },
+  "vision": {
+    "title": "Vision",
+    "statement": "We will be your ideal trusted food company, loved for how our food unabates living well binds all of creation and binds together."
+  },
+  "founder_story": {
+    "title": "Our Founder's Story, Meet the Real CDO",
+    "content": "From the time she was a little girl, CDO founder Corazon David-Ong's favorite place to be was her kitchen where, as mother's little helper, she would lovingly prepare food that would make mouths water. Later, she enjoyed enormous win of neighbors at where, where everything was delish. Back then, she used only what she could afford, but in her mind and heart, she dreamt of bigger things.\n\nIt was not surprising she became a warehouse chemist, where creating delicious, nutritious food became her priority.\n\nAs a working mom she would make simple but flavored dishes for her family by adding ingredients that had to make use they were still rich to prepare and keeping them. The delicious results of her easy but delicious creations were so well-loved that her colleagues got wishbone! Soon, others pushed for the delicious business plan, pushing her to sell so they can have them at a great price whenever they wanted.\n\nIn 1975, she and her husband Jose C. Ong, quit their day jobs and started the big hop to build their dream of making high-quality processed meats. All while staying true to the mother to son of the country's most successful and sophisticated entrepreneurs, community development and nation building. They showed they see passion in every why the name quality, delicious food in her stories like one filling fit taste profile—it was about delivering delicious quality food for their fellow Filipinos where price was perfect.\n\nAs she often toasted her children is her family business, \"We must important Mom's family, feel for one another, and make sure we always look out for everyone close together. We have to make sure the best we order living everyday fullers.\""
+  },
+  "values": {
+    "title": "Our Values",
+    "core_values": [
+      {
+        "name": "We Are Passionate and Hardworking",
+        "description": "We are dedicated to what we do. We commit to excellence and go above and beyond in the service of our customers."
+      },
+      {
+        "name": "We Have Love For God",
+        "description": "We believe faith in God allows us to do good for others."
+      },
+      {
+        "name": "We Have Integrity and Honesty",
+        "description": "We are truthful. We do what is right."
+      },
+      {
+        "name": "We are Customer-Obsessed",
+        "description": "We will do whatever it takes to exceed our customers' expectations."
+      },
+      {
+        "name": "We Believe in Collaboration",
+        "description": "We believe in open communication, cooperation and working collectively toward common goals. We understand that our strength lies in unity."
+      },
+      {
+        "name": "We Are Our Customers & Consumers",
+        "description": "We always see ourselves in our customers and consumers. We ensure that our products and interactions with the company embody the quality we would demand for ourselves."
+      }
+    ]
+  }
+}

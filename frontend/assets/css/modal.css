@@ -150,7 +150,9 @@
   font-size: 0.85rem;
   white-space: nowrap;
   opacity: 0;
-  transition: opacity 0.2s ease, transform 0.2s ease;
+  /* === THIS IS THE FIX === */
+  transition: opacity 0.2s ease;
+  /* === END OF FIX === */
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   font-weight: 500;
   max-width: 200px;
@@ -186,16 +188,6 @@
   transform: translateX(-50%);
   border-width: 5px 5px 0 5px;
   border-color: #2c2c45 transparent transparent transparent;
-}
-
-.tooltip.right {
-  left: calc(100% + 12px);
-  top: 50%;
-  transform: translateY(-50%) translateX(-5px);
-}
-
-.tooltip.right.show {
-  transform: translateY(-50%) translateX(0);
 }
 
 .tooltip.right::before {

@@ -1,8 +1,8 @@
 /* Sidebar Styles */
 #sidebar {
-  width: 260px;
+  width: 280px; /* MODIFIED: Was 260px */
   background-color: var(--sidebar-bg);
-  color: white;
+  color: #333;
   display: flex;
   flex-direction: column;
   padding: 0;
@@ -10,7 +10,7 @@
   transition: width 0.3s ease, padding 0.3s ease;
   position: relative;
   z-index: 20;
-  overflow: hidden;
+  overflow: visible;
 }
 
 #sidebar.minimized {
@@ -39,7 +39,7 @@
   padding: 16px 20px;
   border-bottom: 1px solid var(--sidebar-border);
   gap: 12px;
-  background-color: rgba(0, 0, 0, 0.1);
+  background-color: rgba(0, 0, 0, 0.03);
   transition: padding 0.3s ease;
   position: relative;
 }
@@ -48,14 +48,15 @@
   margin: 0;
   font-size: 1.3rem;
   text-align: left;
-  flex: 1;
-  font-weight: 600;
+  flex: 1; /* This will push the toggle button to the right */
+  font-weight: 700;
   letter-spacing: -0.5px;
   white-space: nowrap;
   transition: opacity 0.2s ease, visibility 0.2s ease;
+  color: var(--primary-color);
 }
 
-/* Sidebar Toggle */
+/* Styles for the toggle button in the header */
 .sidebar-toggle {
   background: transparent;
   border: none;
@@ -67,23 +68,58 @@
   transition: all 0.3s ease;
   border-radius: 6px;
   flex-shrink: 0;
-  order: -1;
-  margin-right: 0;
+  position: relative;
 }
 
 .sidebar-toggle:hover {
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+/* Styles for the toggle icon images */
+.sidebar-toggle .toggle-icon {
+  width: 20px;
+  height: 20px;
+  transition: filter 0.3s ease;
+}
+
+.sidebar-toggle:hover .toggle-icon {
+  filter: brightness(0) saturate(100%) invert(42%) sepia(93%) saturate(2576%) hue-rotate(349deg) brightness(94%) contrast(94%);
 }
 
 #sidebar.minimized .sidebar-header {
-  justify-content: flex-start;
+  justify-content: center;
   padding: 16px 10px;
   gap: 0;
+}
+
+#sidebar.minimized .sidebar-header h1 {
+  flex: 0;
+  width: 0;
+  margin: 0;
 }
 
 #sidebar.minimized .sidebar-toggle {
   display: none;
 }
+
+/* === MODIFIED: Replaced rotate rule with display swap === */
+/* Default state (expanded): Show close icon, hide open icon */
+.sidebar-toggle .icon-open {
+  display: none;
+}
+.sidebar-toggle .icon-close {
+  display: block;
+}
+
+/* Minimized state: Hide close icon, show open icon */
+#sidebar.minimized .sidebar-toggle .icon-open {
+  display: block;
+}
+#sidebar.minimized .sidebar-toggle .icon-close {
+  display: none;
+}
+/* ======================================================= */
+
 
 /* Logo Container */
 .logo-container {
@@ -94,8 +130,8 @@
   padding: 4px;
   position: relative;
   z-index: 2;
-  width: 44px;
-  height: 44px;
+  width: 48px;
+  height: 48px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -113,12 +149,12 @@
 }
 
 #sidebar.minimized .logo-container:hover {
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: rgba(0, 0, 0, 0.05);
 }
 
 .logo {
-  width: 50px;
-  height: 50px;
+  width: 55px;
+  height: 55px;
   display: block;
   object-fit: contain;
   border-radius: 6px;
@@ -134,22 +170,17 @@
   opacity: 0;
   transition: opacity 0.3s ease;
   pointer-events: none;
-}
-
-.logo-hamburger-overlay .hamburger {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
-  width: 20px;
-  height: 16px;
+  align-items: center;
+  justify-content: center;
 }
 
-.logo-hamburger-overlay .hamburger span {
+.logo-hamburger-overlay img {
+  width: 24px;
+  height: 24px;
   display: block;
-  width: 100%;
-  height: 2px;
-  background-color: white;
-  border-radius: 2px;
+  transition: filter 0.3s ease;
+  filter: brightness(0) saturate(100%) invert(42%) sepia(93%) saturate(2576%) hue-rotate(349deg) brightness(94%) contrast(94%);
 }
 
 #sidebar.minimized .logo-container:hover .logo {
@@ -179,7 +210,7 @@
 }
 
 .mobile-menu-toggle:hover {
-  background-color: #252538;
+  background-color: #f0f0f0;
   transform: scale(1.05);
 }
 
@@ -199,40 +230,43 @@
   display: block;
   width: 100%;
   height: 2px;
-  background-color: white;
+  background-color: #333;
   border-radius: 2px;
   transition: all 0.3s ease;
 }
 
-/* New Chat Button */
+/* New Chat Button - Modern AI Chatbot Style */
 #sidebar button#new-chat {
-  background-color: transparent;
-  color: white;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  padding: 10px 16px;
-  border-radius: 8px;
+  background: #FFC700; /* Wave Yellow */
+  color: #D71921; 
+  border: none;
+  padding: 12px 18px;
+  border-radius: 10px;
   cursor: pointer;
   transition: all 0.3s ease;
   margin: 16px 20px;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   display: flex;
   align-items: center;
-  justify-content: flex-start;
-  gap: 8px;
-  font-weight: 500;
+  justify-content: center;
+  gap: 10px;
+  font-weight: 600;
   white-space: nowrap;
   position: relative;
   overflow: visible;
-  min-height: 40px;
+  min-height: 44px;
+  box-shadow: 0 4px 12px rgba(255, 199, 0, 0.3); /* Yellow shadow */
+  letter-spacing: 0.3px;
 }
 
 #sidebar button#new-chat svg {
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   flex-shrink: 0;
-  transition: none;
+  transition: transform 0.3s ease;
   position: relative;
   z-index: 1;
+  stroke-width: 2.5;
 }
 
 #sidebar button#new-chat span {
@@ -242,30 +276,58 @@
   text-align: left;
 }
 
+/* --- THIS IS THE FIX --- */
+/* We remove the transform: translateY(-2px) to prevent the stacking context bug */
 #sidebar button#new-chat:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.3);
+  box-shadow: 0 6px 16px rgba(255, 199, 0, 0.4); /* Yellow shadow */
+}
+/* --- END OF FIX --- */
+
+#sidebar button#new-chat:hover svg {
+  transform: rotate(90deg);
 }
 
 #sidebar button#new-chat:active {
-  background-color: rgba(255, 255, 255, 0.15);
-  transform: scale(0.98);
+  transform: translateY(0px);
+  box-shadow: 0 2px 8px rgba(255, 199, 0, 0.35); /* Yellow shadow */
 }
 
 #sidebar.minimized button#new-chat {
-  padding: 10px;
+  padding: 12px;
   justify-content: center;
   margin: 16px 10px;
   gap: 0;
   width: 45px;
-  min-height: 40px;
+  min-height: 44px;
   overflow: visible;
+  border-radius: 12px;
+}
+
+#sidebar.minimized button#new-chat:hover svg {
+  transform: rotate(90deg) scale(1.1);
 }
 
 #sidebar.minimized button#new-chat span {
   opacity: 0;
   width: 0;
   visibility: hidden;
+}
+
+/* === NEW RULE: Change New Chat button color for Welcome Page === */
+body:has(#chat-container.centered) #sidebar button#new-chat {
+  background: #D71921; /* CDO Red - Welcome State */
+  color: #ffffff; 
+  /* Update shadow to match new red color */
+  box-shadow: 0 4px 12px rgba(215, 25, 33, 0.3);
+}
+
+/* Update hover/active shadows for Welcome State */
+body:has(#chat-container.centered) #sidebar button#new-chat:hover {
+  box-shadow: 0 6px 16px rgba(215, 25, 33, 0.4);
+}
+
+body:has(#chat-container.centered) #sidebar button#new-chat:active {
+  box-shadow: 0 2px 8px rgba(215, 25, 33, 0.35);
 }
 
 /* History Header */
@@ -283,10 +345,10 @@
   font-size: 0.85rem;
   margin: 0;
   padding: 0;
-  color: var(--text-muted);
+  color: var(--primary-color);
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  font-weight: 600;
+  font-weight: 700;
   white-space: nowrap;
   flex: 1;
   transition: opacity 0.2s ease, visibility 0.2s ease;
@@ -302,13 +364,13 @@
   justify-content: center;
   transition: all 0.3s ease;
   border-radius: 4px;
-  color: var(--text-muted);
+  color: #777;
   flex-shrink: 0;
 }
 
 .history-toggle:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-  color: white;
+  background-color: rgba(0, 0, 0, 0.05);
+  color: #000;
 }
 
 .history-toggle svg {
@@ -347,16 +409,18 @@
   list-style: none;
   flex-grow: 1;
   overflow-y: auto;
+  overflow-x: visible;
   scrollbar-width: thin;
-  scrollbar-color: #555 var(--sidebar-bg);
+  scrollbar-color: #ccc var(--sidebar-bg);
   padding: 0 20px 20px;
   /* === MODIFICATION START === */
-  transition: opacity 0.3s ease, max-height 0.3s ease, padding 0.3s ease, margin 0.3s ease;
-  max-height: 1000px; /* Set a large height for the expanded state */
+  transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.3s ease 0.1s,
+              padding 0.3s ease;
+  max-height: 600px; /* Reduced from 1000px for smoother animation */
   opacity: 1;
   /* === MODIFICATION END === */
 }
-
 /* === NEW RULE START === */
 #chat-history.collapsed {
   max-height: 0;
@@ -365,6 +429,9 @@
   padding-top: 0;
   padding-bottom: 0;
   margin-bottom: 0;
+  transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.2s ease,
+              padding 0.3s ease;
 }
 /* === NEW RULE END === */
 
@@ -378,12 +445,12 @@
 }
 
 #chat-history::-webkit-scrollbar-thumb {
-  background: #555;
+  background: #ccc;
   border-radius: 3px;
 }
 
 #chat-history::-webkit-scrollbar-thumb:hover {
-  background: #777;
+  background: #aaa;
 }
 
 #chat-history li {
@@ -392,7 +459,7 @@
   cursor: pointer;
   margin-bottom: 4px;
   background-color: transparent;
-  color: var(--text-light);
+  color: #333;
   font-size: 0.85rem;
   font-weight: 500;
   display: flex;
@@ -405,12 +472,13 @@
 
 #chat-history li:hover,
 #chat-history li:focus {
-  background-color: rgba(255, 255, 255, 0.05);
+  background-color: rgba(0, 0, 0, 0.03);
 }
 
 #chat-history li.active {
-  background-color: var(--chat-bg);
-  box-shadow: 0 2px 8px rgba(215, 25, 33, 0.15); /* MODIFIED */
+  background: #D71921;
+  color: white;
+  border-left: 4px solid #B01519;
 }
 
 /* Ellipsis visibility - FIXED */
@@ -446,7 +514,7 @@
 /* Date Separator */
 .date-separator {
   padding: 12px 20px 8px;
-  color: var(--text-muted);
+  color: #777;
   font-size: 0.75rem;
   font-weight: 600;
   text-transform: uppercase;
@@ -456,16 +524,16 @@
   top: 0;
   background: var(--sidebar-bg);
   z-index: 1;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
   margin-bottom: 4px;
 }
 
 /* Rename Input */
 #chat-history li .rename-input {
   flex: 1;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.05);
   border: 1px solid var(--primary-color);
-  color: white;
+  color: #333;
   padding: 4px 8px;
   border-radius: 4px;
   font-size: 0.85rem;
@@ -476,20 +544,20 @@
 }
 
 #chat-history li .rename-input:focus {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(0, 0, 0, 0.08);
   box-shadow: 0 0 0 2px rgba(215, 25, 33, 0.3); /* MODIFIED */
 }
 
 /* Dropdown and Ellipsis */
 .dropdown {
   position: fixed;
-  background: var(--chat-bg);
+  background: #ffffff;
   border-radius: var(--radius-sm);
   display: none;
   padding: 6px 0;
-  z-index: 1003;
-  box-shadow: var(--shadow);
-  border: 1px solid #444;
+  z-index: 1010;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.1); /* Enhanced shadow */
+  border: 1px solid #ddd;
   min-width: 120px;
 }
 
@@ -499,7 +567,7 @@
 }
 
 .dropdown-option {
-  color: var(--text-light);
+  color: #333;
   cursor: pointer;
   font-size: 0.85rem;
   transition: var(--transition);
@@ -512,12 +580,12 @@
 }
 
 .dropdown-option:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: white;
+  background: rgba(0, 0, 0, 0.05);
+  color: #000;
 }
 
 .ellipsis {
-  color: var(--text-light);
+  color: #777;
   cursor: pointer;
   font-size: 1.4rem;
   line-height: 1;
@@ -531,8 +599,8 @@
 }
 
 .ellipsis:hover {
-  color: white;
-  background: rgba(255, 255, 255, 0.1);
+  color: #000;
+  background: rgba(0, 0, 0, 0.05);
 }
 
 /* History Dropdown */
@@ -545,7 +613,7 @@
   border: 1px solid var(--sidebar-border);
   width: 280px;
   max-height: 400px;
-  z-index: 1002;
+  z-index: 100;
   overflow: hidden;
   flex-direction: column;
   opacity: 0;
@@ -563,23 +631,23 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: rgba(0, 0, 0, 0.2);
+  background-color: rgba(0, 0, 0, 0.03);
 }
 
 .history-dropdown-header h3 {
   margin: 0;
   font-size: 0.9rem;
-  color: var(--text-muted);
+  color: var(--primary-color);
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 #history-dropdown-list {
   list-style: none;
   overflow-y: auto;
   scrollbar-width: thin;
-  scrollbar-color: #555 var(--sidebar-bg);
+  scrollbar-color: #ccc var(--sidebar-bg);
   padding: 8px;
   flex: 1;
   max-height: 350px;
@@ -591,7 +659,7 @@
   cursor: pointer;
   margin-bottom: 4px;
   background-color: transparent;
-  color: var(--text-light);
+  color: #333;
   font-size: 0.85rem;
   font-weight: 500;
   display: flex;
@@ -601,12 +669,12 @@
 }
 
 #history-dropdown-list li:hover {
-  background-color: rgba(255, 255, 255, 0.05);
+  background-color: rgba(0, 0, 0, 0.03);
 }
 
 #history-dropdown-list li.active {
-  background-color: var(--chat-bg);
-  box-shadow: 0 2px 8px rgba(215, 25, 33, 0.15); /* MODIFIED */
+  background: #D71921;
+  color: white;
 }
 
 /* Ellipsis in history dropdown - always visible */
@@ -621,7 +689,7 @@
 }
 
 #sidebar.minimized .history-toggle.dropdown-open svg {
-  transform: rotate(180deg);
+  transform: rotate(90deg);
 }
 
 /* Sidebar Overlay */
@@ -632,11 +700,14 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  z-index: 15;
-  backdrop-filter: blur(2px);
+  background: rgba(0, 0, 0, 0);
+  z-index: 19;
+  backdrop-filter: blur(0px);
+  transition: background 0.3s ease, backdrop-filter 0.3s ease;
 }
 
 #sidebar-overlay.active {
   display: block;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(2px);
 }

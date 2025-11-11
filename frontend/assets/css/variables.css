@@ -3,8 +3,8 @@
   /* Colors */
   --primary-color: #D71921; /* CDO Logo Red */
   --primary-hover: #F58220; /* CDO Logo Orange */
-  --sidebar-bg: #1e1e2f;
-  --sidebar-border: #2e2e42;
+  --sidebar-bg: #ffffff;
+  --sidebar-border: #e0e0e0;
   --chat-bg: #2c2c45;
   --chat-hover: #3a3a5c;
   --text-light: #ddd;
@@ -15,6 +15,9 @@
   --bot-msg-border: #e5e5e5;
   --code-bg: #f4f4f4;
   --code-border: #e0e0e0;
+  
+  /* Typography */
+  --font-family: 'Gotham', 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
   
   /* Effects */
   --shadow: 0 2px 8px rgba(0, 0, 0, 0.1);

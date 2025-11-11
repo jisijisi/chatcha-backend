@@ -5,6 +5,14 @@ import { CONFIG } from './config.js';
 export class UIManager {
   constructor(chatApp) {
     this.app = chatApp;
+    // --- MODIFIED: Changed speaker icon to stop icon ---
+    this.originalMicIcon = this.app.elements.micBtn ? this.app.elements.micBtn.innerHTML : '';
+    this.stopIcon = `
+      <svg class="stop-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" width="20" height="20">
+        <rect x="6" y="6" width="12" height="12" rx="2"/>
+      </svg>
+    `;
+    // --- END MODIFICATION ---
   }
 
   render() {
@@ -42,25 +50,34 @@ export class UIManager {
     }
     
     if (p) {
-      p.textContent = "I'm CHA, your company AI assistant. How can I help you today?"; // UPDATED
+      p.textContent = "I'm Cindy, your company AI assistant. How can I help you today?"; // UPDATED
     }
   }
 
   addWelcomeAvatar() {
     const welcomeDiv = this.app.elements.welcomeDiv;
     
-    if (welcomeDiv.querySelector('.welcome-avatar')) {
+    if (welcomeDiv.querySelector('.welcome-avatar-container')) {
       return;
     }
     
+    const container = document.createElement('div');
+    container.className = 'welcome-avatar-container';
+    
+    const border = document.createElement('div');
+    border.className = 'welcome-avatar-border';
+    
     const avatar = document.createElement('img');
     avatar.src = 'assets/images/avatar-welcome.png';
-    avatar.alt = 'CHA waving hello'; // UPDATED
+    avatar.alt = 'Cindy waving hello';
     avatar.className = 'welcome-avatar';
+    
+    container.appendChild(border);
+    container.appendChild(avatar);
     
     const h2 = welcomeDiv.querySelector('h2');
     if (h2) {
-      welcomeDiv.insertBefore(avatar, h2);
+      welcomeDiv.insertBefore(container, h2);
     }
   }
 
@@ -157,10 +174,14 @@ export class UIManager {
     titleSpan.style.cssText = "flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;";
     
     // === MODIFICATION START ===
-    // Moved click listener from titleSpan to li
+    // Improved click handler with better checks
     li.addEventListener("click", (e) => {
-      // Don't load chat if clicking on options or rename input
-      if (e.target.closest('.ellipsis') || e.target.closest('.rename-input')) {
+      // Don't load chat if clicking on specific interactive elements
+      if (
+        e.target.closest('.ellipsis') ||
+        e.target.closest('.dropdown') ||
+        e.target.closest('.rename-input')
+      ) {
         return;
       }
       
@@ -289,7 +310,7 @@ export class UIManager {
       
       // Always use fixed positioning for consistent behavior
       dropdown.style.position = 'fixed';
-      dropdown.style.zIndex = '1005'; // Higher than history dropdown (1002)
+      dropdown.style.zIndex = '1010';
       
       if (isInHistoryDropdown) {
         // For items in the history dropdown (when sidebar is minimized)
@@ -410,7 +431,7 @@ export class UIManager {
         }
       } else {
         const titleText = mobileHeaderTitle.querySelector('.title-text');
-        titleText.textContent = "ChatCHA"; // No change needed
+        titleText.textContent = "ChatCDO"; // No change needed
         mobileHeaderTitle.classList.remove('clickable');
         mobileHeaderTitle.classList.remove('dropdown-active');
         mobileHeaderTitle.setAttribute('aria-label', '');
@@ -864,6 +885,26 @@ export class UIManager {
       if (tooltip) {
         tooltip.style.display = '';
       }
+    }
+  }
+
+  // --- NEW: Functions to manage Mic Button state ---
+  showMicStopSpeakingMode() {
+    const { micBtn } = this.app.elements;
+    if (micBtn) {
+      micBtn.innerHTML = this.stopIcon; // <-- MODIFIED
+      micBtn.classList.add('speaking-mode');
+      micBtn.classList.remove('recording'); // Ensure it's not also "recording"
+      micBtn.setAttribute('aria-label', 'Stop speaking');
+    }
+  }
+
+  hideMicStopSpeakingMode() {
+    const { micBtn } = this.app.elements;
+    if (micBtn) {
+      micBtn.innerHTML = this.originalMicIcon;
+      micBtn.classList.remove('speaking-mode');
+      micBtn.setAttribute('aria-label', 'Use voice input');
     }
   }
 }

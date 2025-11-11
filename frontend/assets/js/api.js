@@ -208,12 +208,12 @@ export class APIManager {
   }
   
   /**
-   * Simple CDO info check (minimal implementation)
+   * Simple company info check (minimal implementation)
    */
   needsCDOInfo(question) {
     const lowerQuestion = question.toLowerCase();
-    const cdoKeywords = ['cdo', 'foodsphere', 'company', 'history', 'founder', 'about us'];
-    return cdoKeywords.some(keyword => lowerQuestion.includes(keyword));
+    const companyKeywords = ['cdo', 'foodsphere', 'company', 'history', 'founder', 'about us'];
+    return companyKeywords.some(keyword => lowerQuestion.includes(keyword));
   }
 
   /**
@@ -240,10 +240,10 @@ export class APIManager {
   }
 
   async initializeCDOCache() {
-    console.log('CDO cache handled by server RAG');
+    console.log('Company info cache handled by server RAG');
   }
 
   async getCDOInfo() {
-    return ''; // Let server handle CDO info through RAG
+    return ''; // Let server handle company info through RAG
   }
 }

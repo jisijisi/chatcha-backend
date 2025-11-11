@@ -1,14 +1,14 @@
 // Chat and Conversation Management
 import { CONFIG } from './config.js';
 import { escapeHtml } from './utils.js';
-import { ResponseQuality } from './response-quality.js'; // ADD THIS LINE
+import { ResponseQuality } from './response-quality.js';
 
 export class ChatManager {
   constructor(chatApp) {
     this.app = chatApp;
   }
 
-  async askQuestion() {
+  async askQuestion(wasVoiceInput = false) { // <-- MODIFIED: Accept flag
     if (this.app.isLoading) return;
 
     const question = this.app.elements.chatInput.value.trim();
@@ -32,6 +32,19 @@ export class ChatManager {
     this.app.elements.chatInput.value = "";
     this.app.updateCharacterCount();
 
+    // Scroll immediately after adding messages
+    requestAnimationFrame(() => {
+      this.app.uiManager.scrollToBottom();
+      // Force action buttons to be added for user message
+      this.app.messageManager.ensureActionButtons(userMessage);
+    });
+
+    // Call the new submit function
+    await this.submitQuestion(question, wasVoiceInput); // <-- MODIFIED: Pass flag
+  }
+
+  // This function contains all the logic that was in askQuestion
+  async submitQuestion(question, wasVoiceInput = false) { // <-- MODIFIED: Accept flag
     // Add typing indicator
     const thinkingDiv = this.createTypingIndicator();
     this.app.elements.chatDiv.appendChild(thinkingDiv);
@@ -39,8 +52,6 @@ export class ChatManager {
     // Scroll immediately after adding messages
     requestAnimationFrame(() => {
       this.app.uiManager.scrollToBottom();
-      // Force action buttons to be added for user message
-      this.app.messageManager.ensureActionButtons(userMessage);
     });
 
     try {
@@ -74,6 +85,34 @@ export class ChatManager {
       } else {
         this.app.elements.chatDiv.appendChild(responseMessage);
       }
+
+      // --- MODIFIED: SPEAK THE RESPONSE (conditionally) ---
+      if (wasVoiceInput) {
+        const contentDivForSpeech = responseMessage.querySelector('.message-content');
+        if (contentDivForSpeech) {
+          // Clone the node to avoid modifying the DOM
+          const clone = contentDivForSpeech.cloneNode(true);
+          
+          // Find the last <ul> element
+          const lastList = clone.querySelector('ul:last-of-type');
+          
+          if (lastList) {
+            // Check if the element before it is a <p> containing "Sources"
+            const heading = lastList.previousElementSibling;
+            if (heading && heading.tagName === 'P' && heading.textContent.toLowerCase().includes('sources')) {
+              // It's the sources list. Remove it and its heading.
+              heading.remove();
+              lastList.remove();
+            }
+          }
+          
+          const textToSpeak = (clone.textContent || clone.innerText).trim();
+          if (textToSpeak) {
+            this.speakResponse(textToSpeak);
+          }
+        }
+      }
+      // --- END SPEAK ---
       
       const contentDiv = responseMessage.querySelector('.message-content');
       if (contentDiv) {
@@ -89,10 +128,6 @@ export class ChatManager {
       this.app.currentConversation.push({ question, answer });
       this.saveConversation();
       
-      // Archive the Q&A pair to Google Sheets - REMOVED
-      // await this.archiveMessageToSheets(question, answer);
-      
-      // REMOVED: this.app.showToast('Response received', 'success');
     } catch (error) {
       console.error("AI Response Error:", error);
       
@@ -171,6 +206,8 @@ export class ChatManager {
       
       const responseMessage = this.createMessageElement("bot", answer);
       thinkingDiv.replaceWith(responseMessage);
+
+      // --- REMOVED speakResponse CALL ---
       
       const responseContentDiv = responseMessage.querySelector('.message-content');
       if (responseContentDiv) {
@@ -188,11 +225,9 @@ export class ChatManager {
       this.app.currentConversation[conversationIndex].answer = answer;
       this.saveConversation();
       
-      // Archive the EDITED Q&A pair to Google Sheets - REMOVED
-      // await this.archiveMessageToSheets(question, answer);
     } catch (error) {
       console.error('Get new response error:', error);
-      if (error.name !== 'AbortError') {
+      if (error.name !== 'AbortError') { 
         this.app.showToast('Failed to get new response', 'error');
         
         const errorMessage = "Sorry, I failed to get a new response. Please try editing your message again.";
@@ -248,6 +283,8 @@ export class ChatManager {
       
       const responseMessage = this.createMessageElement("bot", answer);
       thinkingDiv.replaceWith(responseMessage);
+
+      // --- REMOVED speakResponse CALL ---
       
       const responseContentDiv = responseMessage.querySelector('.message-content');
       if (responseContentDiv) {
@@ -265,8 +302,6 @@ export class ChatManager {
       this.app.currentConversation[conversationIndex].answer = answer;
       this.saveConversation();
       
-      // Archive the EDITED Q&A pair to Google Sheets - REMOVED
-      // await this.archiveMessageToSheets(question, answer);
     } catch (error) {
       console.error('Create new bot response error:', error);
       if (error.name !== 'AbortError') {
@@ -421,11 +456,11 @@ export class ChatManager {
     } else {
       const avatar = document.createElement("img");
       avatar.src = isThinking ? "assets/images/avatar-thinking.png" : "assets/images/avatar.png";
-      avatar.alt = isThinking ? "CHA is thinking" : "CHA"; // UPDATED
+      avatar.alt = isThinking ? "Cindy is thinking" : "Cindy";
       avatar.className = isThinking ? "bot-avatar thinking" : "bot-avatar";
       
       const nameSpan = document.createElement("span");
-      nameSpan.textContent = isThinking ? "CHA is thinking..." : "CHA"; // UPDATED
+      nameSpan.textContent = isThinking ? "Cindy is thinking..." : "Cindy";
       nameSpan.className = "bot-name";
       
       headerDiv.appendChild(avatar);
@@ -461,11 +496,11 @@ export class ChatManager {
     
     const avatar = document.createElement("img");
     avatar.src = "assets/images/avatar-thinking.png";
-    avatar.alt = "CHA is thinking"; // UPDATED
+    avatar.alt = "Cindy is thinking";
     avatar.className = "bot-avatar thinking";
     
     const nameSpan = document.createElement("span");
-    nameSpan.textContent = "CHA is thinking..."; // UPDATED
+    nameSpan.textContent = "Cindy is thinking...";
     nameSpan.className = "bot-name";
     
     headerDiv.appendChild(avatar);
@@ -473,7 +508,7 @@ export class ChatManager {
     
     const contentDiv = document.createElement("div");
     contentDiv.className = "message-content";
-    contentDiv.innerHTML = `<div class="typing" aria-label="CHA is typing"><span></span><span></span><span></span></div>`; // UPDATED
+    contentDiv.innerHTML = `<div class="typing" aria-label="Cindy is typing"><span></span><span></span><span></span></div>`;
     
     messageDiv.appendChild(headerDiv);
     messageDiv.appendChild(contentDiv);
@@ -486,20 +521,29 @@ export class ChatManager {
     errorDiv.className = 'message bot error';
     errorDiv.innerHTML = `
       <div class="message-header">
-        <img src="assets/images/avatar.png" alt="CHA" class="bot-avatar">
-        <span class="bot-name">CHA</span>
+        <img src="assets/images/avatar.png" alt="Cindy" class="bot-avatar">
+        <span class.name="bot-name">Cindy</span>
       </div>
       <div class="message-content">
         <p>${message}</p>
         <button class="retry-btn">Try Again</button>
       </div>
-`; // UPDATED
+`;
     
     const retryBtn = errorDiv.querySelector('.retry-btn');
-    retryBtn.addEventListener('click', () => {
+    retryBtn.addEventListener('click', async () => {
+      // 1. Remove the error message
       errorDiv.remove();
-      this.app.elements.chatInput.value = originalQuestion;
-      this.askQuestion();
+      
+      // 2. Set the loading state (this is important!)
+      this.app.isLoading = true;
+      this.app.uiManager.toggleSendButton(true);
+      this.app.elements.chatInput.disabled = true;
+      this.app.messageManager.disableFollowUpSuggestions();
+      
+      // 3. Call our new function with the original question
+      // --- MODIFIED: Pass 'false' for voice input on retry ---
+      await this.submitQuestion(originalQuestion, false);
     });
     
     this.app.elements.chatDiv.appendChild(errorDiv);
@@ -542,5 +586,73 @@ export class ChatManager {
     }, 0);
     
     this.app.uiManager.scrollToBottom();
+  }
+
+  // --- REVISED FUNCTION TO FIND A BETTER FEMALE VOICE ---
+  speakResponse(text) {
+    if ('speechSynthesis' in window && text) {
+      // Stop any speech that is currently active
+      window.speechSynthesis.cancel();
+      
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'en-US';
+      utterance.rate = 1.0; // Normal speed
+      
+      // Use the pre-loaded voices from the app
+      let voices = this.app.voices || [];
+      if (voices.length === 0) {
+        // Fallback if voices haven't loaded for some reason
+        voices = window.speechSynthesis.getVoices();
+      }
+      
+      if (voices.length > 0) {
+        let selectedVoice = null;
+        
+        // --- New Voice Selection Logic ---
+        const voicePreferences = [
+          // 1. High-quality English Neural voices
+          v => v.lang.startsWith('en-') && v.name.toLowerCase().includes('neural'),
+          // 2. High-quality Google voices
+          v => v.lang.startsWith('en-') && v.name.toLowerCase().includes('google'),
+          // 3. Known good US voices (Zira, Susan, Samantha)
+          v => v.lang === 'en-US' && (v.name.toLowerCase().includes('zira') || v.name.toLowerCase().includes('susan') || v.name.toLowerCase().includes('samantha')),
+          // 4. Any English-speaking "female" voice
+          v => v.lang.startsWith('en-') && v.name.toLowerCase().includes('female'),
+          // 5. Any US-English "female" voice
+          v => v.lang === 'en-US' && v.name.toLowerCase().includes('female'),
+          // 6. Any US-English default voice
+          v => v.lang === 'en-US'
+        ];
+        
+        for (const condition of voicePreferences) {
+          selectedVoice = voices.find(condition);
+          if (selectedVoice) break;
+        }
+        // --- End of New Logic ---
+
+        if (selectedVoice) {
+          utterance.voice = selectedVoice;
+          console.log("Using preferred voice:", selectedVoice.name);
+        } else {
+          console.warn("Could not find a preferred female voice, using browser default.");
+        }
+      } else {
+        console.warn("Voices list is empty, using browser default.");
+      }
+      
+      // --- MODIFIED: Use the correct function names ---
+      utterance.onstart = () => {
+        this.app.uiManager.showMicStopSpeakingMode();
+      };
+      utterance.onend = () => {
+        this.app.uiManager.hideMicStopSpeakingMode();
+      };
+      utterance.onerror = () => {
+        this.app.uiManager.hideMicStopSpeakingMode();
+      };
+      // --- END MODIFICATION ---
+      
+      window.speechSynthesis.speak(utterance);
+    }
   }
 }
