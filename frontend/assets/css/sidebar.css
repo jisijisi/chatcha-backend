@@ -6,8 +6,11 @@
   display: flex;
   flex-direction: column;
   padding: 0;
-  border-right: 2px solid var(--sidebar-border);
-  transition: width 0.3s ease, padding 0.3s ease;
+  /* MODIFIED: Changed solid border to a subtle shadow for a modern look */
+  border-right: none; 
+  box-shadow: 1px 0 5px rgba(0, 0, 0, 0.05); 
+  /* MODIFIED: Slower, smoother transition for the width */
+  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s ease;
   position: relative;
   z-index: 20;
   overflow: visible;
@@ -17,14 +20,26 @@
   width: 65px;
 }
 
+/* --- FIX: Smoother animation for internal elements --- */
 #sidebar.minimized .sidebar-header h1,
 #sidebar.minimized #chat-history,
+#sidebar.minimized #new-chat span, /* Target the span text specifically */
+#sidebar.minimized .history-header h2,
+#sidebar.minimized .date-separator,
+#sidebar.minimized #chat-history li,
 #sidebar.minimized h2 {
   opacity: 0;
   visibility: hidden;
-  transition: opacity 0.2s ease, visibility 0.2s ease;
+  /* NEW: Use transform for smooth scaling down/in */
+  transform: scaleX(0.95);
+  transform-origin: left center;
+  /* Delayed and fast opacity change to avoid abrupt jump */
+  transition: opacity 0.15s ease, 
+              visibility 0.15s ease,
+              transform 0.3s ease-out 0.1s; /* Delay transform slightly */
   pointer-events: none;
 }
+/* --- END FIX --- */
 
 #sidebar.minimized #chat-history {
   height: 0;
@@ -39,20 +54,22 @@
   padding: 16px 20px;
   border-bottom: 1px solid var(--sidebar-border);
   gap: 12px;
-  background-color: rgba(0, 0, 0, 0.03);
+  background-color: transparent; /* Cleaner background */
   transition: padding 0.3s ease;
   position: relative;
+  /* MODIFIED: Add subtle internal shadow */
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
 }
 
 .sidebar-header h1 {
   margin: 0;
   font-size: 1.3rem;
   text-align: left;
-  flex: 1; /* This will push the toggle button to the right */
+  flex: 1;
   font-weight: 700;
   letter-spacing: -0.5px;
   white-space: nowrap;
-  transition: opacity 0.2s ease, visibility 0.2s ease;
+  /* Original transition removed here, moved to the group selector above */
   color: var(--primary-color);
 }
 
@@ -102,7 +119,6 @@
   display: none;
 }
 
-/* === MODIFIED: Replaced rotate rule with display swap === */
 /* Default state (expanded): Show close icon, hide open icon */
 .sidebar-toggle .icon-open {
   display: none;
@@ -118,7 +134,6 @@
 #sidebar.minimized .sidebar-toggle .icon-close {
   display: none;
 }
-/* ======================================================= */
 
 
 /* Logo Container */
@@ -150,6 +165,7 @@
 
 #sidebar.minimized .logo-container:hover {
   background-color: rgba(0, 0, 0, 0.05);
+  animation: soft-pulse 0.6s ease-out; /* NEW: Subtle pulse on hover */
 }
 
 .logo {
@@ -237,8 +253,8 @@
 
 /* New Chat Button - Modern AI Chatbot Style */
 #sidebar button#new-chat {
-  background: #FFC700; /* Wave Yellow */
-  color: #D71921; 
+  background: #FFC700; /* Wave Yellow (Conversation State) */
+  color: #D71921; /* Red Text (Conversation State) */
   border: none;
   padding: 12px 18px;
   border-radius: 10px;
@@ -263,7 +279,8 @@
   width: 18px;
   height: 18px;
   flex-shrink: 0;
-  transition: transform 0.3s ease;
+  /* MODIFIED: Slower transition for the icon */
+  transition: transform 0.4s ease;
   position: relative;
   z-index: 1;
   stroke-width: 2.5;
@@ -276,12 +293,11 @@
   text-align: left;
 }
 
-/* --- THIS IS THE FIX --- */
-/* We remove the transform: translateY(-2px) to prevent the stacking context bug */
+/* --- FIX: Removed transform to fix tooltip alignment --- */
 #sidebar button#new-chat:hover {
-  box-shadow: 0 6px 16px rgba(255, 199, 0, 0.4); /* Yellow shadow */
+  box-shadow: 0 6px 16px rgba(255, 199, 0, 0.4); /* Stronger Yellow shadow on hover */
 }
-/* --- END OF FIX --- */
+/* --- END FIX --- */
 
 #sidebar button#new-chat:hover svg {
   transform: rotate(90deg);
@@ -289,7 +305,7 @@
 
 #sidebar button#new-chat:active {
   transform: translateY(0px);
-  box-shadow: 0 2px 8px rgba(255, 199, 0, 0.35); /* Yellow shadow */
+  box-shadow: 0 2px 8px rgba(255, 199, 0, 0.35); /* Smaller shadow on click */
 }
 
 #sidebar.minimized button#new-chat {
@@ -300,24 +316,24 @@
   width: 45px;
   min-height: 44px;
   overflow: visible;
-  border-radius: 12px;
 }
 
 #sidebar.minimized button#new-chat:hover svg {
   transform: rotate(90deg) scale(1.1);
 }
 
+/* The inner span is hidden immediately when minimized */
 #sidebar.minimized button#new-chat span {
   opacity: 0;
   width: 0;
   visibility: hidden;
+  /* REMOVED transition: opacity 0.2s ease, width 0.2s ease; */
 }
 
-/* === NEW RULE: Change New Chat button color for Welcome Page === */
+/* === Welcome Page State (Red Button) === */
 body:has(#chat-container.centered) #sidebar button#new-chat {
   background: #D71921; /* CDO Red - Welcome State */
   color: #ffffff; 
-  /* Update shadow to match new red color */
   box-shadow: 0 4px 12px rgba(215, 25, 33, 0.3);
 }
 
@@ -351,7 +367,7 @@ body:has(#chat-container.centered) #sidebar button#new-chat:active {
   font-weight: 700;
   white-space: nowrap;
   flex: 1;
-  transition: opacity 0.2s ease, visibility 0.2s ease;
+  /* Original transition removed here, moved to the group selector above */
 }
 
 .history-toggle {
@@ -397,6 +413,7 @@ body:has(#chat-container.centered) #sidebar button#new-chat:active {
   margin-left: -65px;
 }
 
+/* The header text is affected by the general minimized text rule at the top */
 #sidebar.minimized .history-header h2 {
   opacity: 0;
   visibility: hidden;
@@ -413,15 +430,13 @@ body:has(#chat-container.centered) #sidebar button#new-chat:active {
   scrollbar-width: thin;
   scrollbar-color: #ccc var(--sidebar-bg);
   padding: 0 20px 20px;
-  /* === MODIFICATION START === */
   transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1),
               opacity 0.3s ease 0.1s,
               padding 0.3s ease;
-  max-height: 600px; /* Reduced from 1000px for smoother animation */
+  max-height: 600px; 
   opacity: 1;
-  /* === MODIFICATION END === */
 }
-/* === NEW RULE START === */
+
 #chat-history.collapsed {
   max-height: 0;
   opacity: 0;
@@ -433,7 +448,6 @@ body:has(#chat-container.centered) #sidebar button#new-chat:active {
               opacity 0.2s ease,
               padding 0.3s ease;
 }
-/* === NEW RULE END === */
 
 
 #chat-history::-webkit-scrollbar {
