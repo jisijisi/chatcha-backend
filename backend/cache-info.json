@@ -1,6 +1,11 @@
 {
-  "timestamp": "2025-11-10T13:51:15.798Z",
+  "timestamp": "2025-11-11T01:50:16.340Z",
   "files": {
+    "hr-knowledge/cdo-norms/cdo-norms.json": {
+      "size": 10051,
+      "modified": "2025-11-11T01:47:53.827Z",
+      "hash": "-qoyegw"
+    },
     "hr-knowledge/code-of-conduct/code-of-conduct.json": {
       "size": 106134,
       "modified": "2025-11-07T08:17:29.626Z",
@@ -47,9 +52,9 @@
       "hash": "uv1jo0"
     }
   },
-  "totalSize": 297720,
-  "fileCount": 9,
-  "signature": "7xsuwr",
-  "cacheGenerated": "2025-11-10T13:51:15.821Z",
-  "cacheSize": 5883497
+  "totalSize": 307771,
+  "fileCount": 10,
+  "signature": "-5a7dxo",
+  "cacheGenerated": "2025-11-11T01:50:16.372Z",
+  "cacheSize": 6111566
 }

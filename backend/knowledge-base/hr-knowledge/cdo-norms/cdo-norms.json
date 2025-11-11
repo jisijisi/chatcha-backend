@@ -1,0 +1,231 @@
+{
+  "document_metadata": {
+    "title": "LEADERSHIP SUMMIT CDO NORMS 2025",
+    "source": "Copy of v1_LS Norms 2025 (3).pptx.pdf",
+    "content_type": "leadership_norms_presentation"
+  },
+  "objectives": [
+    {
+      "name": "Define and Align",
+      "icon": "🎯",
+      "description": "To achieve a common understanding of our work norms and align manager behaviors to foster a workplace environment that drives productivity and high engagement necessary for long-term goal attainment."
+    },
+    {
+      "name": "Commit and Champion",
+      "icon": "🗣",
+      "description": "To establish a collective commitment among managers to visibly model and actively champion the new work norms, creating a safe and supportive environment that encourages all team members to fully embody these behaviors in their daily work."
+    },
+    {
+      "name": "Own and Measure",
+      "icon": "📈",
+      "description": "To take ownership of the outcomes by committing to the successful adoption of the new norms and to monitor and measure the resulting positive changes in employee engagement, satisfaction, and observable behaviors over the next year."
+    }
+  ],
+  "new_cdo_norms": {
+    "summary": [
+      "Mag-Usap, Mag-angat, Makinig: Speak Up, Lift Up",
+      "Lahat Kasama: One Dream, One Team",
+      "The Entrepreneur's Edge: Own It, Win Big"
+    ],
+    "norms": [
+      {
+        "name": "Mag-usap, Mag-angat, Makinig: Speak Up, Lift Up",
+        "description": "This is about fostering a safe environment for open communication, where team members can fearlessly express ideas and respectfully challenge the status quo to reach the best outcomes.",
+        "behaviors": [
+          {
+            "name": "Listen to Understand, Not Just to Reply",
+            "description": "Practice active listening to fully grasp others' perspectives."
+          },
+          {
+            "name": "Promote Healthy Conflict",
+            "description": "Focus on the issue, not the person, to have productive disagreements."
+          },
+          {
+            "name": "Respectful Feedback",
+            "description": "Focus on facts and data. Praise in public to celebrate success and provide private feedback for constructive criticism."
+          }
+        ],
+        "systems": [
+          "Town Hall Meetings",
+          "Organizational Climate Survey",
+          "Kapehan with ExCom"
+        ]
+      },
+      {
+        "name": "The Entrepreneur's Edge: Own It, Win Big",
+        "description": "This is about acting like a business owner, embracing a mindset of courageous innovation, agility, and rapid scaling to achieve significant wins.",
+        "behaviors": [
+          {
+            "name": "Be a Business Guardian",
+            "description": "Make decisions with a deep commitment to the business's best interests, ensuring its long-term health and growth by being intentional and strategic in the use of resources like time, equipment, and manpower, maximizing their value as if they were your own."
+          },
+          {
+            "name": "Innovate and Scale Courageously",
+            "description": "Proactively seek new ideas and better ways of working, embracing an agile approach to scale ideas and solutions quickly."
+          },
+          {
+            "name": "Level Up Every Day",
+            "description": "Use every experience as a chance to learn from mistakes and drive continuous improvement, fueled by an entrepreneurial mindset."
+          }
+        ],
+        "systems": [
+          "Balanced Scorecard",
+          "Performance Management System",
+          "Celebrate Wins (Informal and Sincere)"
+        ]
+      }
+    ]
+  },
+  "communication_materials": {
+    "posters": "POSTERS",
+    "email_templates": "EMAIL TEMPLATES",
+    "tuesday_tips": "Tuesday Tips!"
+  },
+  "old_version_norms": {
+    "title": "OLD VERSION OF NORMS FROM LEADERSHIP SUMMIT",
+    "norms_list": [
+      "Plan it, Win it",
+      "Speak Freely, Challenge Politely",
+      "No One Left Behind",
+      "Finish Strong, Finish Right"
+    ],
+    "detailed_norms": [
+      {
+        "norm_number": "NORM 1",
+        "name": "Plan It, Win It",
+        "description": "This norm emphasizes a proactive, goal-oriented approach to work, focusing on clear planning, execution, and success.",
+        "behaviors": [
+          {
+            "name": "Set and commit to goals and metrics",
+            "description": "Establish clear, measurable objectives for the team."
+          },
+          {
+            "name": "Prioritize goals and create timelines",
+            "description": "Determine which goals are most important and create a schedule for achieving them."
+          },
+          {
+            "name": "Clarify before action",
+            "description": "Ensure everyone understands the plan and their role before starting a task."
+          },
+          {
+            "name": "Track progress regularly",
+            "description": "Monitor performance against goals to stay on course."
+          },
+          {
+            "name": "Leverage data and insight",
+            "description": "Use information to inform decisions and anticipate needs."
+          }
+        ],
+        "systems": [
+          "Town Hall Meetings",
+          "Organizational Climate Survey",
+          "Open-Door Policy and \"Speak-Up\" System",
+          "Facilitator Training (Managing Meetings and Handling Conflict)",
+          "Conflict Resolution Protocol"
+        ]
+      },
+      {
+        "norm_number": "NORM 2",
+        "name": "Speak Freely, Challenge Politely",
+        "description": "This norm is about fostering an environment of open communication and constructive feedback, where team members feel safe to share ideas and disagree respectfully.",
+        "behaviors": [
+          {
+            "name": "Active listening (listen to understand)",
+            "description": "Focus fully on what others are saying before responding."
+          },
+          {
+            "name": "Promote healthy conflict, no artificial harmony",
+            "description": "Encourage honest, productive discussions and disagreements."
+          },
+          {
+            "name": "Focus on the issue, not the person",
+            "description": "Keep discussions objective and avoid personal attacks."
+          },
+          {
+            "name": "Everyone gets an uninterrupted turn to speak",
+            "description": "Ensure all voices are heard and no one is cut off."
+          },
+          {
+            "name": "Praise in public, reprimand in private",
+            "description": "Acknowledge successes openly while handling corrective feedback discreetly."
+          }
+        ],
+        "systems": [
+          "Town Hall Meetings",
+          "Organizational Climate Survey",
+          "Open-Door Policy and \"Speak-Up\" System",
+          "Facilitator Training (Managing Meetings and Handling Conflict)",
+          "Conflict Resolution Protocol"
+        ]
+      },
+      {
+        "norm_number": "NORM 3",
+        "name": "No One Left Behind",
+        "description": "This norm focuses on creating a supportive, collaborative culture where team members look out for one another and help each other succeed.",
+        "behaviors": [
+          {
+            "name": "Offer to help a colleague with their workload",
+            "description": "Provide assistance when a teammate is struggling."
+          },
+          {
+            "name": "Include everyone in discussions",
+            "description": "Make sure all team members are part of important conversations and decisions."
+          },
+          {
+            "name": "Collaborative problem-solving",
+            "description": "Work together to find solutions to challenges."
+          },
+          {
+            "name": "Invite quieter individuals to share their thoughts",
+            "description": "Proactively seek input from those who are less likely to speak up."
+          },
+          {
+            "name": "Share knowledge and resources",
+            "description": "Ensure that information and tools are accessible to everyone on the team."
+          }
+        ],
+        "systems": [
+          "Town Hall Meetings",
+          "Organizational Climate Survey",
+          "Open-Door Policy and \"Speak-Up\" System",
+          "Facilitator Training (Managing Meetings and Handling Conflict)",
+          "Conflict Resolution Protocol"
+        ]
+      },
+      {
+        "norm_number": "NORM 4",
+        "name": "Finish Strong, Finish Right",
+        "description": "This norm highlights the importance of accountability and quality, ensuring that commitments are met with high standards.",
+        "behaviors": [
+          {
+            "name": "Set clear and agreed-upon SMART objectives",
+            "description": "Define specific, measurable, achievable, relevant, and time-bound goals."
+          },
+          {
+            "name": "Holding each other accountable",
+            "description": "Take ownership of commitments and ensure policies are followed."
+          },
+          {
+            "name": "Cross the finish line",
+            "description": "See tasks through to completion."
+          },
+          {
+            "name": "Attention to details",
+            "description": "Ensure that work is meticulous and meets quality standards."
+          },
+          {
+            "name": "Regularly update and analyze lead & lag measures",
+            "description": "Continuously monitor progress to ensure quality outputs are met."
+          }
+        ],
+        "systems": [
+          "Town Hall Meetings",
+          "Organizational Climate Survey",
+          "Open-Door Policy and \"Speak-Up\" System",
+          "Facilitator Training (Managing Meetings and Handling Conflict)",
+          "Conflict Resolution Protocol"
+        ]
+      }
+    ]
+  }
+}
