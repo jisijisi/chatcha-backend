@@ -905,34 +905,33 @@ class MultiFolderSemanticRAG {
                 return;
             }
             
-            // Check if cache is valid before loading
-            const cacheValid = cacheManager ? cacheManager.isCacheValid() : false;
+            // ===========================================================
+            // START: MODIFIED CODE BLOCK FOR RENDER FREE TIER
+            // ===========================================================
             
-            if (cacheValid) {
-                const cacheLoaded = await this.loadEmbeddingsCache();
-                if (cacheLoaded) {
-                    console.log("✅ Loaded valid cache");
-                    this.isInitialized = true;
-                    return;
-                } else {
-                    console.log("🔄 Cache file corrupted, regenerating...");
-                }
-            } else {
-                console.log("🔄 Cache invalid or missing, generating embeddings...");
+            // On Render's free tier, we assume the committed cache is the source of truth.
+            // We will skip validation and regeneration to ensure fast cold starts.
+            
+            console.log("📦 Attempting to load committed cache files...");
+            const cacheLoaded = await this.loadEmbeddingsCache();
+            
+            if (cacheLoaded) {
+                console.log("✅ Successfully loaded embeddings from committed cache.");
+                this.isInitialized = true;
+                return;
             }
             
-            // Generate new embeddings
-            await this.generateAllEmbeddings();
-            await this.saveEmbeddingsCache();
+            // If loading fails, log a critical error and stop.
+            // This prevents the 10-minute regeneration.
+            console.error("❌ CRITICAL: Failed to load 'embeddings-cache.json' from repo.");
+            console.error("❌ The server will run, but RAG will not have any knowledge.");
+            this.isInitialized = false; // Mark as not initialized
+            return;
             
-            // Save cache info if cache manager is available
-            if (cacheManager) {
-                const signature = cacheManager.generateCacheSignature();
-                cacheManager.saveCacheInfo(signature);
-            }
-            
-            this.isInitialized = true;
-            console.log("✅ Universal Multi-Folder Semantic RAG System Ready!");
+            // ===========================================================
+            // END: MODIFIED CODE BLOCK FOR RENDER FREE TIER
+            // ===========================================================
+
         } catch (error) {
             console.error("❌ Failed to initialize RAG:", error);
             this.isInitialized = false;
@@ -1077,11 +1076,9 @@ class MultiFolderSemanticRAG {
         // Ensure embeddings and chunks are aligned
         if (this.embeddings.length !== this.chunks.length) {
             console.error(`❌ Mismatch! Chunks: ${this.chunks.length}, Embeddings: ${this.embeddings.length}. Regenerating cache.`);
-            await this.initializeRAG(new CacheManager()); // Pass a new cacheManager instance
-            if (this.embeddings.length !== this.chunks.length) {
-                 console.error("❌ Failed to regenerate cache correctly. Aborting search.");
-                 return [];
-            }
+            // Note: We removed auto-regeneration, so this is a critical error
+            console.error("❌ CRITICAL: Cache mismatch detected. RAG will fail.");
+            return [];
         }
         
         const results = this.chunks.map((chunk, index) => {
