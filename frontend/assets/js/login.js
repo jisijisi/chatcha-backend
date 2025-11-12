@@ -241,3 +241,19 @@ if (document.readyState === 'loading') {
 } else {
   new LoginManager();
 }
+
+// In handleGoogleSignIn method, after successful login:
+this.showToast('Login successful! Redirecting...', 'success');
+
+// Redirect to index.html
+setTimeout(() => {
+  window.location.href = 'index.html';
+}, 1000);
+
+// In handleGuestLogin method, after successful login:
+this.showToast('Continuing as guest...', 'info');
+
+// Redirect to index.html
+setTimeout(() => {
+  window.location.href = 'index.html';
+}, 800);

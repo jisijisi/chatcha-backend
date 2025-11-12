@@ -1,6 +1,6 @@
 // Main Application Entry Point
 import { CONFIG } from './config.js';
-import { DataSyncManager } from './data-sync.js'; // RENAMED
+import { DataSyncManager } from './data-sync.js';
 import { APIManager } from './api.js';
 import { MarkdownParser } from './markdown.js';
 import { MessageManager } from './messages.js';
@@ -8,7 +8,6 @@ import { ModalManager } from './modal.js';
 import { UIManager } from './ui.js';
 import { ChatManager } from './chat.js';
 import { AuthManager } from './auth.js';
-// import { SheetsManager } from './sheets.js'; // REMOVED
 import { getDynamicGreeting } from './utils.js';
 
 class ChatApp {
@@ -16,19 +15,39 @@ class ChatApp {
     // Initialize auth manager first
     this.authManager = new AuthManager();
     
-    // Check authentication - redirect to login if not authenticated
-    if (!this.authManager.requireAuth()) {
-      return; // Stop initialization if not authenticated
+    // Check if we're on the login page
+    const isLoginPage = window.location.pathname.includes('login.html') || 
+                       (window.location.pathname === '/' && !this.authManager.isAuthenticated());
+    
+    if (isLoginPage) {
+      // If user is already authenticated and somehow reached login page, redirect to app
+      if (this.authManager.isAuthenticated()) {
+        window.location.href = 'index.html';
+        return;
+      }
+      // Otherwise, stay on login page (it will handle its own logic)
+      return;
     }
     
+    // If we're on index.html but not authenticated, redirect to login
+    if (!this.authManager.isAuthenticated()) {
+      console.log('🚫 Not authenticated, redirecting to login...');
+      window.location.href = 'login.html';
+      return;
+    }
+    
+    // Continue with initialization for authenticated users
+    this.initializeApp();
+  }
+
+  initializeApp() {
     // Initialize managers (pass authManager to DataSyncManager)
     this.apiManager = new APIManager();
-    this.apiManager.setAuthManager(this.authManager); // NEW: Pass AuthManager to API
+    this.apiManager.setAuthManager(this.authManager);
     
-    this.dataSyncManager = new DataSyncManager(this.authManager, this.apiManager); // RENAMED & MODIFIED
+    this.dataSyncManager = new DataSyncManager(this.authManager, this.apiManager);
     
     this.markdownParser = new MarkdownParser();
-    // this.sheetsManager = new SheetsManager(); // REMOVED
     
     // Pass markdown parser to API manager for streaming updates
     this.apiManager.setMarkdownParser(this.markdownParser);
@@ -51,7 +70,7 @@ class ChatApp {
     this.isVoiceInput = false; 
     this.suggestedQuestionsInterval = null; 
 
-    // --- NEW: Moved question categories here ---
+    // --- Question categories ---
     this.questionCategories = {
       companyInfo: [
         "Tell me about the history of CDO.",
@@ -216,7 +235,7 @@ class ChatApp {
   }
 
   saveToStorage() {
-    this.dataSyncManager.saveToStorage({ // RENAMED
+    this.dataSyncManager.saveToStorage({
       currentConversation: this.currentConversation,
       chats: this.chats,
       activeChatIndex: this.activeChatIndex,

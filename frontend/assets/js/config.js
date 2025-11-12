@@ -1,16 +1,20 @@
 // config.js - Updated to handle local testing and production environments
 
 // --- Environment Flag ---
-// Set to 'false' for local development, 'true' for production builds/deployment
-const IS_PRODUCTION = true; // <<< CHANGE THIS TO TRUE FOR THE RENDER DEPLOYMENT
+// Auto-detect production environment
+const IS_PRODUCTION = window.location.hostname !== 'localhost' && 
+                      window.location.hostname !== '127.0.0.1' && 
+                      !window.location.hostname.includes('netlify.app');
 
 // --- Dynamic URLs ---
 const LOCAL_API_BASE = "http://localhost:3000";
-const PROD_API_BASE = "https://chatcha-backend.onrender.com";
+const PROD_API_BASE = "https://chatcha-backend.onrender.com"; // Your actual backend URL
 
 const API_BASE = IS_PRODUCTION ? PROD_API_BASE : LOCAL_API_BASE;
 
 export const CONFIG = {
+  IS_PRODUCTION,
+  API_BASE,
   // Core AI Endpoint
   API_URL: `${API_BASE}/ask`,
   
@@ -36,6 +40,6 @@ export const CONFIG = {
   RAG_CONFIG: {
     ENABLED: true,
     SEARCH_TOP_K: 12,
-    TIMEOUT_MS: 10000
+    TIMEOUT_MS: 30000 // Increased timeout for production
   }
 };
