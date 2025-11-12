@@ -1,11 +1,23 @@
-// config.js - Updated for new backend
+// config.js - Updated to handle local testing and production environments
+
+// --- Environment Flag ---
+// Set to 'false' for local development, 'true' for production builds/deployment
+const IS_PRODUCTION = true; // <<< CHANGE THIS TO TRUE FOR THE RENDER DEPLOYMENT
+
+// --- Dynamic URLs ---
+const LOCAL_API_BASE = "http://localhost:3000";
+const PROD_API_BASE = "https://chatcha-backend.onrender.com";
+
+const API_BASE = IS_PRODUCTION ? PROD_API_BASE : LOCAL_API_BASE;
+
 export const CONFIG = {
-  // Change this line - remove the port and use the Render domain
-  API_URL: "https://chatcha-backend.onrender.com/ask",
-  //API_URL: "http://localhost:3000/ask",
+  // Core AI Endpoint
+  API_URL: `${API_BASE}/ask`,
+  
+  // History Persistence Endpoints
+  HISTORY_API_URL_BASE: `${API_BASE}/chats`, // Use this base URL for /load and /save
   
   // Rest of your config...
-  // Google Sheets integration removed by blanking this URL
   GOOGLE_SCRIPT_URL: "",
   
   STORAGE_KEYS: {

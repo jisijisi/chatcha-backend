@@ -1,37 +1,48 @@
 // Main Application Entry Point
 import { CONFIG } from './config.js';
-import { StorageManager } from './storage.js';
+import { DataSyncManager } from './data-sync.js'; // RENAMED
 import { APIManager } from './api.js';
 import { MarkdownParser } from './markdown.js';
 import { MessageManager } from './messages.js';
 import { ModalManager } from './modal.js';
 import { UIManager } from './ui.js';
 import { ChatManager } from './chat.js';
+import { AuthManager } from './auth.js';
 // import { SheetsManager } from './sheets.js'; // REMOVED
 import { getDynamicGreeting } from './utils.js';
 
 class ChatApp {
   constructor() {
-    // Initialize managers
-    this.storageManager = new StorageManager();
+    // Initialize auth manager first
+    this.authManager = new AuthManager();
+    
+    // Check authentication - redirect to login if not authenticated
+    if (!this.authManager.requireAuth()) {
+      return; // Stop initialization if not authenticated
+    }
+    
+    // Initialize managers (pass authManager to DataSyncManager)
     this.apiManager = new APIManager();
+    this.apiManager.setAuthManager(this.authManager); // NEW: Pass AuthManager to API
+    
+    this.dataSyncManager = new DataSyncManager(this.authManager, this.apiManager); // RENAMED & MODIFIED
+    
     this.markdownParser = new MarkdownParser();
     // this.sheetsManager = new SheetsManager(); // REMOVED
     
     // Pass markdown parser to API manager for streaming updates
     this.apiManager.setMarkdownParser(this.markdownParser);
     
-    // Load data from storage
-    const storedData = this.storageManager.loadAll();
-    this.chats = storedData.chats;
-    this.currentConversation = storedData.currentConversation;
-    this.activeChatIndex = storedData.activeChatIndex;
-    this.historyCollapsed = storedData.historyCollapsed;
-    this.userName = storedData.userName;
+    // Initialize state to safe defaults (data is loaded in init())
+    this.chats = [];
+    this.currentConversation = [];
+    this.activeChatIndex = null;
+    this.historyCollapsed = false;
+    this.userName = null;
     
     // State - Changed from resumeData to hrKnowledgeBase
     this.hrKnowledgeBase = {};
-    this.hasConversation = this.currentConversation.length > 0;
+    this.hasConversation = false;
     this.isLoading = false;
     this.currentFollowUpElement = null;
     this._scrollTimeout = null;
@@ -94,7 +105,10 @@ class ChatApp {
       mobileHeaderDropdown: document.getElementById("mobile-header-dropdown"),
       mobileRenameOption: document.getElementById("mobile-rename-option"),
       mobileDeleteOption: document.getElementById("mobile-delete-option"),
-      micBtn: document.getElementById("mic-btn") 
+      micBtn: document.getElementById("mic-btn"),
+      logoutBtn: document.getElementById("logout-btn"),
+      userDisplayName: document.getElementById("user-display-name"),
+      userTypeLabel: document.getElementById("user-type-label")
     };
 
     // Initialize other managers (that need this.elements)
@@ -107,11 +121,17 @@ class ChatApp {
     this.scrollPosition = 0;
 
     this.startGreetingUpdateInterval();
-    this.init();
+    this.init(); // Start the async initialization
   }
 
   async init() {
     console.log('Initializing Cindy CDO Assistant...');
+    
+    // NEW: Load data from the appropriate source (API or LocalStorage)
+    await this.loadInitialData();
+
+    // Update user info display
+    this.updateUserInfo();
     
     await this.loadHRKnowledge();
     
@@ -124,8 +144,11 @@ class ChatApp {
     this.loadVoices(); 
     
     if (!this.userName) {
+      // Get default name based on authentication
+      const defaultName = this.authManager.getDefaultDisplayName();
+      
       this.modalManager.showWelcomeModal((name) => {
-        this.userName = name || "You";
+        this.userName = name || defaultName;
         this.saveToStorage();
         this.uiManager.updateWelcomeMessage();
         this.showToast(`Welcome, ${this.userName}!`, 'success');
@@ -170,6 +193,17 @@ class ChatApp {
     this.showToast('Ready to assist with your CDO questions!', 'success');
   }
 
+  // NEW ASYNC LOAD METHOD
+  async loadInitialData() {
+      const storedData = await this.dataSyncManager.loadAll();
+      this.chats = storedData.chats;
+      this.currentConversation = storedData.currentConversation;
+      this.activeChatIndex = storedData.activeChatIndex;
+      this.historyCollapsed = storedData.historyCollapsed;
+      this.userName = storedData.userName;
+      this.hasConversation = this.currentConversation.length > 0;
+  }
+
   async loadHRKnowledge() {
       try {
           // HR knowledge is now handled server-side
@@ -182,7 +216,7 @@ class ChatApp {
   }
 
   saveToStorage() {
-    this.storageManager.saveToStorage({
+    this.dataSyncManager.saveToStorage({ // RENAMED
       currentConversation: this.currentConversation,
       chats: this.chats,
       activeChatIndex: this.activeChatIndex,
@@ -190,7 +224,9 @@ class ChatApp {
       userName: this.userName
     });
   }
-
+  
+  // --- REST OF APP.JS (UNCHANGED LOGIC) ---
+  
   startGreetingUpdateInterval() {
     this.greetingInterval = setInterval(() => {
       if (!this.hasConversation) {
@@ -204,6 +240,79 @@ class ChatApp {
       clearInterval(this.greetingInterval);
       this.greetingInterval = null;
     }
+  }
+
+  updateUserInfo() {
+    const userType = this.authManager.getUserType();
+    const email = this.authManager.getUserEmail();
+    const username = this.authManager.getUsername();
+    
+    if (this.elements.userDisplayName && this.elements.userTypeLabel) {
+      if (userType === 'employee' && email) {
+        // Display email or username for employees
+        this.elements.userDisplayName.textContent = username || email;
+        this.elements.userTypeLabel.textContent = 'Employee';
+      } else {
+        // Guest user
+        this.elements.userDisplayName.textContent = 'Guest';
+        this.elements.userTypeLabel.textContent = 'Guest User';
+      }
+    }
+  }
+
+  
+  handleLogout() {
+    const userType = this.authManager.getUserType();
+    const isGuest = userType === 'guest';
+    
+    // Different message for guest vs employee
+    const message = isGuest 
+      ? "Are you sure you want to logout? All your chat history will be deleted permanently."
+      : "Are you sure you want to logout? Your chat history will be preserved for next time.";
+    
+    this.modalManager.showModal({
+      title: "Logout",
+      message: message,
+      inputValue: null,
+      confirmText: "Logout",
+      confirmClass: "delete",
+      onConfirm: () => {
+        // Show loading state in modal
+        const confirmBtn = this.elements.modalConfirm;
+        const originalText = confirmBtn.textContent;
+        confirmBtn.textContent = 'Logging out...';
+        confirmBtn.disabled = true;
+        
+        // Stop any ongoing speech
+        if (window.speechSynthesis) {
+          window.speechSynthesis.cancel();
+        }
+        
+        // Clear intervals
+        this.stopGreetingUpdateInterval();
+        this.stopSuggestedQuestionsInterval();
+        
+        // CRITICAL: Don't save to storage before logout for guests
+        if (isGuest) {
+          console.log('🚫 Skipping save to storage for guest logout');
+          // Don't call this.saveToStorage() for guests
+        }
+        
+        // Logout from auth manager (this will clear guest data automatically)
+        this.authManager.logout();
+        
+        // Show appropriate toast message
+        const toastMessage = isGuest 
+          ? 'Logged out. Guest data cleared.' 
+          : 'Logged out successfully';
+        
+        this.showToast(toastMessage, 'success');
+        
+        setTimeout(() => {
+          window.location.href = 'login.html';
+        }, 1000);
+      }
+    });
   }
 
   // Delegate methods to appropriate managers
@@ -546,7 +655,14 @@ class ChatApp {
   }
 
   setupEventListeners() {
-    const { chatInput, sendBtn, newChatBtn, sidebarToggle, mobileMenuToggle, overlay, inputForm, micBtn } = this.elements;
+    const { chatInput, sendBtn, newChatBtn, sidebarToggle, mobileMenuToggle, overlay, inputForm, micBtn, logoutBtn } = this.elements;
+
+    // Logout button
+    if (logoutBtn) {
+      logoutBtn.addEventListener("click", () => {
+        this.handleLogout();
+      });
+    }
 
     // Form submission
     inputForm.addEventListener("submit", (e) => {
@@ -833,7 +949,7 @@ class ChatApp {
       }, 100);
     });
 
-    // === REVISED: SPEECH RECOGNITION LOGIC ===
+    // === REVISED: SPEECH RECOGNITION LOGIC (UNCHANGED) ===
     if (micBtn) {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       

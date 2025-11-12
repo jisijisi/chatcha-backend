@@ -276,3 +276,11 @@
     50% { transform: scale(1.05); }
     100% { transform: scale(1); }
 }
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes spinner {
+  to { transform: rotate(360deg); }
+}

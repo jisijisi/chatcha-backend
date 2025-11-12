@@ -48,3 +48,6 @@ Thumbs.db
 # *.cache
 # npm-debug.log*
 # .DS_Store
+
+# Client ID and Client Secret
+client_secret.json

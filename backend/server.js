@@ -1,4 +1,4 @@
-// server.js - Enhanced with Universal Multi-Folder Semantic RAG and Wikipedia Integration
+// server.js - Enhanced with Universal Multi-Folder Semantic RAG and AIVEN MYSQL PERSISTENCE
 import express from "express";
 import fetch from "node-fetch";
 import dotenv from "dotenv";
@@ -7,8 +7,39 @@ import { fileURLToPath } from "url";
 import cors from "cors";
 import fs from "fs";
 import https from 'https';
+import mysql from 'mysql2/promise'; // === NEW: Import MySQL driver ===
 
 dotenv.config();
+
+// === NEW: AIVEN MYSQL CONNECTION POOL ===
+// This reads the Environment Variables you set in your Render dashboard
+const pool = mysql.createPool({
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+  port: process.env.DB_PORT,
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0,
+  // Required for Aiven's secure cloud connection
+  ssl: {
+    rejectUnauthorized: false
+  }
+});
+
+// Test the connection
+pool.getConnection()
+  .then(connection => {
+    console.log('✅ Aiven MySQL Database connected successfully!');
+    connection.release();
+  })
+  .catch(err => {
+    console.error('❌ CRITICAL: Failed to connect to Aiven MySQL Database.');
+    console.error(err.message);
+  });
+// === END: AIVEN MYSQL CONNECTION POOL ===
+
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -374,6 +405,7 @@ class CacheManager {
             const char = content.charCodeAt(i);
             hash = ((hash << 5) - hash) + char;
             hash = hash & hash;
+            // eslint-disable-next-line
         }
         return hash.toString(36);
     }
@@ -455,17 +487,117 @@ class CacheManager {
     }
 }
 
-// Middleware
-app.use(cors({
-  origin: '*',
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Accept', 'Authorization'],
-  credentials: true
-}));
+// =================================================================
+// START: CORS FIX AND PERSISTENCE ROUTE SETUP
+// =================================================================
 
-app.options('*', cors());
+// Define the allowed origins dynamically
+const ALLOWED_ORIGINS = [
+    'http://127.0.0.1:5500', // VS Code Live Server / Local Frontend
+    'http://localhost:5500', // Standard Localhost Frontend
+    // Add your production frontend domain here if it's different from the backend
+    // 'https://[your-prod-frontend].com'
+];
+
+const corsOptions = {
+    // Check if the request origin is in the allowed list, or allow * for non-browser/development requests
+    origin: (origin, callback) => {
+        if (!origin || ALLOWED_ORIGINS.includes(origin) || origin.startsWith('http://localhost')) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    // CRITICAL FIX: Allow the custom 'X-User-Email' header
+    allowedHeaders: ['Content-Type', 'Accept', 'Authorization', 'X-User-Email'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    credentials: true
+};
+
+// Middleware
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions)); // Handle preflight requests for all routes
+
 app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname, "../frontend")));
+
+// =================================================================
+// MODIFIED: CHAT PERSISTENCE ENDPOINTS (AIVEN MYSQL)
+// =================================================================
+
+// Load chat history for a user
+app.get("/chats/load", async (req, res) => { // === MODIFIED: Added async
+    const userEmail = req.header('X-User-Email') || req.query.email;
+    if (!userEmail) {
+        return res.status(400).json({ error: "Email header or query missing" });
+    }
+    
+    try {
+        // === MODIFIED: Fetch from Aiven MySQL ===
+        const sql = "SELECT chat_data FROM user_chats WHERE user_email = ?";
+        const [rows] = await pool.query(sql, [userEmail]);
+
+        if (rows.length > 0) {
+            // Data is stored as a JSON string, so we must parse it
+            const chatData = JSON.parse(rows[0].chat_data);
+            console.log(`[PERSISTENCE] Loaded data for ${userEmail}`);
+            res.json(chatData);
+        } else {
+            // No history found, return default empty data structure
+            console.log(`[PERSISTENCE] No data found for ${userEmail}, returning defaults.`);
+            res.json({
+                chats: [],
+                currentConversation: [],
+                activeChatIndex: null,
+                historyCollapsed: false,
+                userName: null
+            });
+        }
+    } catch (err) {
+        console.error('❌ Error loading chat history from Aiven:', err);
+        res.status(500).json({ error: 'Failed to load chat history' });
+    }
+});
+
+// Save chat history for a user
+app.post("/chats/save", async (req, res) => { // === MODIFIED: Added async
+    const userEmail = req.header('X-User-Email') || req.body.email;
+    if (!userEmail) {
+        return res.status(400).json({ error: "Email header or body missing" });
+    }
+
+    try {
+        // === MODIFIED: Save to Aiven MySQL ===
+        
+        // Destructure email out, save the rest of the chat data
+        const { email, ...chatData } = req.body;
+        
+        // Convert the chat data object into a JSON string for storage
+        const chatDataString = JSON.stringify(chatData);
+
+        // Use "UPSERT" logic: INSERT a new row, but if the email
+        // already exists, UPDATE the chat_data instead.
+        const sql = `
+          INSERT INTO user_chats (user_email, chat_data)
+          VALUES (?, ?)
+          ON DUPLICATE KEY UPDATE chat_data = ?
+        `;
+        
+        await pool.query(sql, [userEmail, chatDataString, chatDataString]);
+        
+        console.log(`[PERSISTENCE] Saved data for ${userEmail}.`);
+        res.json({ success: true, message: "Data saved successfully" });
+
+    } catch (err) {
+        console.error('❌ Error saving chat history to Aiven:', err);
+        res.status(500).json({ error: 'Failed to save chat history' });
+    }
+});
+
+// =================================================================
+// END: CHAT PERSISTENCE ENDPOINTS
+// =================================================================
+
 
 // Universal Multi-Folder Semantic RAG System
 class MultiFolderSemanticRAG {
@@ -663,7 +795,7 @@ class MultiFolderSemanticRAG {
      * REVISED: Universal Recursive Chunking Function
      * (Now includes fileName)
      */
-    _recursiveExtract(item, path, chunks, contextStack, source, fileName) { // Added fileName
+    _recursiveExtract(item, path, chunks, contextStack, source, fileName) { 
         
         // Base Case 1: Item is a simple string
         if (typeof item === 'string' && item.length > 2) {
@@ -673,7 +805,7 @@ class MultiFolderSemanticRAG {
                 context: contextStack.join(' - '),
                 parentContext: contextStack.slice(0, -1).join(' - ') || 'General',
                 source: source,
-                fileName: fileName // Store the fileName
+                fileName: fileName 
             });
             return;
         }
@@ -705,7 +837,7 @@ class MultiFolderSemanticRAG {
                             context: contextStack.join(' - '),
                             parentContext: contextStack.slice(0, -1).join(' - ') || 'General',
                             source: source,
-                            fileName: fileName, // Store the fileName
+                            fileName: fileName,
                             isAggregate: true 
                         });
                         return; 
@@ -736,7 +868,7 @@ class MultiFolderSemanticRAG {
                 context: contextStack.join(' - '),
                 parentContext: contextStack.slice(0, -1).join(' - ') || 'General',
                 source: source,
-                fileName: fileName // Store the fileName
+                fileName: fileName 
             });
             return; 
         }
@@ -764,7 +896,7 @@ class MultiFolderSemanticRAG {
                 context: newContextStack.join(' - '),
                 parentContext: newContextStack.slice(0, -1).join(' - ') || 'General',
                 source: source,
-                fileName: fileName // Store the fileName
+                fileName: fileName 
             });
         }
         
@@ -930,7 +1062,7 @@ class MultiFolderSemanticRAG {
             
             // ===========================================================
             // END: MODIFIED CODE BLOCK FOR RENDER FREE TIER
-            // ===========================================================
+            // ===========================================
 
         } catch (error) {
             console.error("❌ Failed to initialize RAG:", error);
@@ -1238,7 +1370,9 @@ app.get("/", (req, res) => {
             "/rag/status",
             "/cache/status",
             "/cache/regenerate",
-            "/cache/clear"
+            "/cache/clear",
+            "/chats/load",
+            "/chats/save"
         ]
     });
 });
@@ -1568,4 +1702,5 @@ app.listen(PORT, () => {
     console.log(`   POST /cache/regenerate - Manually regenerate cache`);
     console.log(`   POST /cache/clear      - Clear cache`);
     console.log(`🌐 Wikipedia Integration: Enabled with 24-hour caching`);
+    console.log(`💾 Persistence MOCK Active (Data lost on server restart)`);
 });

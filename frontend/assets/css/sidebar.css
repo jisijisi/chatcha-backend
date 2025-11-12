@@ -706,6 +706,148 @@ body:has(#chat-container.centered) #sidebar button#new-chat:active {
   transform: rotate(90deg);
 }
 
+/* Sidebar Footer - User Info & Logout */
+.sidebar-footer {
+  margin-top: auto;
+  padding: 15px 20px 20px;
+  border-top: 1px solid var(--sidebar-border);
+  background-color: rgba(0, 0, 0, 0.02);
+  transition: padding 0.3s ease;
+}
+
+#sidebar.minimized .sidebar-footer {
+  padding: 15px 10px 20px;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding: 10px;
+  border-radius: 8px;
+  background: rgba(215, 25, 33, 0.05);
+  transition: all 0.3s ease;
+}
+
+.user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--primary-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.3s ease;
+}
+
+.user-avatar svg {
+  width: 22px;
+  height: 22px;
+  color: #ffffff;
+}
+
+.user-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+.user-name {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #333;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.user-type {
+  font-size: 0.75rem;
+  color: #777;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 500;
+}
+
+#sidebar.minimized .user-info {
+  justify-content: center;
+  padding: 10px;
+}
+
+#sidebar.minimized .user-details {
+  opacity: 0;
+  visibility: hidden;
+  width: 0;
+  overflow: hidden;
+}
+
+#sidebar.minimized .user-avatar {
+  margin: 0;
+}
+
+/* Logout Button */
+.logout-btn {
+  width: 100%;
+  background: transparent;
+  color: #666;
+  border: 2px solid #e0e0e0;
+  padding: 10px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-weight: 600;
+  font-family: inherit;
+}
+
+.logout-btn svg {
+  width: 18px;
+  height: 18px;
+  transition: transform 0.3s ease;
+}
+
+.logout-btn span {
+  transition: opacity 0.2s ease, width 0.2s ease;
+  white-space: nowrap;
+}
+
+.logout-btn:hover {
+  background: #D71921;
+  color: #ffffff;
+  border-color: #D71921;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(215, 25, 33, 0.3);
+}
+
+.logout-btn:hover svg {
+  transform: translateX(3px);
+}
+
+.logout-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(215, 25, 33, 0.25);
+}
+
+#sidebar.minimized .logout-btn {
+  padding: 10px;
+  justify-content: center;
+}
+
+#sidebar.minimized .logout-btn span {
+  opacity: 0;
+  width: 0;
+  visibility: hidden;
+}
+
 /* Sidebar Overlay */
 #sidebar-overlay {
   display: none;
