@@ -532,6 +532,23 @@ const corsOptions = {
     credentials: true
 };
 
+// Enhanced CORS middleware with proper headers
+app.use((req, res, next) => {
+  // Allow credentials
+  res.header('Access-Control-Allow-Credentials', 'true');
+  
+  // Fix for Google OAuth popup issues
+  res.header('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
+  res.header('Cross-Origin-Embedder-Policy', 'unsafe-none');
+  
+  // Security headers
+  res.header('X-Frame-Options', 'SAMEORIGIN');
+  res.header('X-Content-Type-Options', 'nosniff');
+  res.header('Referrer-Policy', 'strict-origin-when-cross-origin');
+  
+  next();
+});
+
 // Middleware
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions)); // Handle preflight requests for all routes

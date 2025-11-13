@@ -1,9 +1,6 @@
-// login.js - Simplified Login Logic
-// Login Page Logic with Google OAuth
-
-// Import AuthManager for cleanup logic
+// login.js - Fixed Google OAuth Implementation
 import { AuthManager } from './auth.js'; 
-import { CONFIG } from './config.js'; // Import CONFIG for keys
+import { CONFIG } from './config.js';
 
 class LoginManager {
   constructor() {
@@ -16,37 +13,42 @@ class LoginManager {
 
     // Configuration
     this.config = {
-      // Add your allowed company domains here
+      // Add your allowed company domains here (leave empty to allow all)
       allowedDomains: ['cdo.com.ph'], // Replace with your company domains
+      clientId: '45685664065-92lsvsnth8ork4g6nr0nvhsmuk63f961.apps.googleusercontent.com'
     };
 
-    this.authManager = new AuthManager(); // Instantiate AuthManager
+    this.authManager = new AuthManager();
+    this.googleScriptLoaded = false;
+    this.googleInitialized = false;
     this.init();
   }
 
   init() {
+    console.log('🔐 Initializing Login Manager...');
+    
     // Check if user is already logged in
     this.checkExistingSession();
 
     // Setup event listeners
     this.setupEventListeners();
 
-    // Make handleGoogleSignIn available globally
-    window.handleGoogleSignIn = this.handleGoogleSignIn.bind(this);
+    // Load the Google GSI script dynamically
+    this.loadGoogleScript();
   }
 
   checkExistingSession() {
     const sessionData = this.getSessionData();
     if (sessionData) {
-      // User already logged in, redirect to main app
+      console.log('✅ Existing session found, redirecting...');
       window.location.href = 'index.html';
     }
   }
 
   setupEventListeners() {
-    // Google button - trigger hidden Google Sign-In
+    // Google button - trigger Google Sign-In
     this.elements.googleBtn.addEventListener('click', () => {
-      this.triggerGoogleSignIn();
+      this.handleGoogleButtonClick();
     });
 
     // Guest button
@@ -55,29 +57,143 @@ class LoginManager {
     });
   }
 
-  // Trigger the hidden Google Sign-In button
-  triggerGoogleSignIn() {
-    const googleSignInButton = this.elements.googleSigninContainer.querySelector('[role="button"]');
-    if (googleSignInButton) {
-      googleSignInButton.click();
-    } else {
-      // Fallback: Initialize Google Sign-In programmatically
-      if (window.google && window.google.accounts) {
-        window.google.accounts.id.prompt();
-      } else {
-        this.showToast('Google Sign-In is loading, please try again', 'warning');
+  /**
+   * Dynamically loads the Google GSI script
+   */
+  loadGoogleScript() {
+    console.log('📦 Loading Google GSI script...');
+    
+    const script = document.createElement('script');
+    script.src = 'https://accounts.google.com/gsi/client';
+    script.async = true;
+    script.defer = true;
+    
+    script.onload = () => {
+      console.log('✅ Google GSI script loaded successfully');
+      this.googleScriptLoaded = true;
+      this.initializeGoogleSignIn();
+    };
+    
+    script.onerror = () => {
+      console.error('❌ Failed to load Google GSI script');
+      this.showToast('Could not load Google Sign-In. Please check your connection.', 'error');
+      this.googleScriptLoaded = false;
+    };
+    
+    document.body.appendChild(script);
+  }
+
+  /**
+   * Initialize Google Sign-In after script loads
+   */
+  initializeGoogleSignIn() {
+    try {
+      if (!window.google || !window.google.accounts) {
+        throw new Error('Google accounts API not available');
       }
+
+      console.log('🔧 Initializing Google Sign-In...');
+      
+      window.google.accounts.id.initialize({
+        client_id: this.config.clientId,
+        callback: this.handleGoogleSignIn.bind(this),
+        auto_select: false,
+        cancel_on_tap_outside: true,
+        // Disable FedCM to avoid CORS issues
+        use_fedcm_for_prompt: false
+      });
+
+      this.googleInitialized = true;
+      console.log('✅ Google Sign-In initialized successfully');
+      
+      // Render the button in the hidden container
+      window.google.accounts.id.renderButton(
+        this.elements.googleSigninContainer.querySelector('.g_id_signin'),
+        { 
+          theme: "filled_black",
+          size: "large",
+          type: "standard",
+          shape: "rectangular",
+          text: "signin_with",
+          logo_alignment: "left"
+        }
+      );
+
+    } catch (error) {
+      console.error('❌ Failed to initialize Google Sign-In:', error);
+      this.showToast('Could not initialize Google Sign-In.', 'error');
+      this.googleInitialized = false;
     }
   }
 
-  // Google Sign-In callback
+  /**
+   * Handle Google button click
+   */
+  handleGoogleButtonClick() {
+    if (!this.googleScriptLoaded) {
+      this.showToast('Google Sign-In is still loading, please wait...', 'warning');
+      return;
+    }
+
+    if (!this.googleInitialized) {
+      this.showToast('Google Sign-In not ready. Please refresh the page.', 'error');
+      return;
+    }
+
+    try {
+      console.log('🔐 Triggering Google Sign-In...');
+      
+      // Show loading state
+      this.showLoading(this.elements.googleBtn, 'Opening Google Sign-In...');
+      
+      // Use the hidden button to trigger sign-in (most reliable method)
+      const googleSignInButton = this.elements.googleSigninContainer.querySelector('[role="button"]');
+      
+      if (googleSignInButton) {
+        console.log('✅ Using rendered button for sign-in');
+        googleSignInButton.click();
+        
+        // Hide loading after a short delay
+        setTimeout(() => {
+          this.hideLoading(this.elements.googleBtn);
+        }, 1000);
+      } else {
+        console.log('⚠️ Rendered button not found, using prompt()');
+        // Fallback to prompt if button not found
+        window.google.accounts.id.prompt();
+        
+        setTimeout(() => {
+          this.hideLoading(this.elements.googleBtn);
+        }, 1000);
+      }
+
+    } catch (error) {
+      console.error('❌ Error triggering Google Sign-In:', error);
+      this.hideLoading(this.elements.googleBtn);
+      this.showToast('Could not open Google Sign-In. Please try again.', 'error');
+    }
+  }
+
+  /**
+   * Google Sign-In callback (called after successful authentication)
+   */
   handleGoogleSignIn(response) {
     try {
+      console.log('✅ Google Sign-In response received');
+      
+      if (!response.credential) {
+        throw new Error('No credential received from Google');
+      }
+
       // Decode the JWT credential
       const credential = response.credential;
       const payload = this.parseJwt(credential);
       
-      console.log('Google Sign-In successful:', payload);
+      console.log('📋 User info:', {
+        email: payload.email,
+        name: payload.name,
+        verified: payload.email_verified
+      });
       
       const email = payload.email;
       const name = payload.name;
@@ -92,7 +208,8 @@ class LoginManager {
 
       // Check if email is from allowed domain
       if (!this.isAllowedDomain(email)) {
-        this.showToast('Please use your company email address', 'error');
+        const domain = email.split('@')[1];
+        this.showToast(`Please use your company email (@${this.config.allowedDomains.join(', @')})`, 'error');
         return;
       }
 
@@ -111,7 +228,7 @@ class LoginManager {
         loginTime: new Date().toISOString()
       });
 
-      this.showToast('Login successful! Redirecting...', 'success');
+      this.showToast('✅ Login successful! Redirecting...', 'success');
 
       // Redirect to main app
       setTimeout(() => {
@@ -119,16 +236,21 @@ class LoginManager {
       }, 1000);
 
     } catch (error) {
-      console.error('Google Sign-In error:', error);
+      console.error('❌ Google Sign-In error:', error);
       this.showToast('Sign-in failed. Please try again.', 'error');
     }
   }
 
+  /**
+   * Handle guest login
+   */
   handleGuestLogin() {
+    console.log('👤 Guest login initiated');
+    
     // Show loading state
     this.showLoading(this.elements.guestBtn, 'Loading...');
 
-    // CRITICAL: Clear any existing guest data BEFORE creating new session
+    // Clear any existing guest data BEFORE creating new session
     this.clearExistingGuestData();
 
     // Store guest session
@@ -150,33 +272,46 @@ class LoginManager {
     }, 500);
   }
 
-  // Helper: Parse JWT token
+  /**
+   * Parse JWT token
+   */
   parseJwt(token) {
     try {
       const base64Url = token.split('.')[1];
       const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-      const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
-        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-      }).join(''));
+      const jsonPayload = decodeURIComponent(
+        atob(base64)
+          .split('')
+          .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+          .join('')
+      );
       return JSON.parse(jsonPayload);
     } catch (error) {
-      console.error('Failed to parse JWT:', error);
+      console.error('❌ Failed to parse JWT:', error);
       throw error;
     }
   }
 
-  // Helper: Check if email domain is allowed
+  /**
+   * Check if email domain is allowed
+   */
   isAllowedDomain(email) {
     if (this.config.allowedDomains.length === 0) {
       return true; // Allow all domains if none specified
     }
     
     const domain = email.split('@')[1]?.toLowerCase();
-    return this.config.allowedDomains.some(allowed => 
+    const isAllowed = this.config.allowedDomains.some(allowed => 
       domain === allowed.toLowerCase()
     );
+    
+    console.log(`🔍 Domain check: ${domain} - ${isAllowed ? 'Allowed' : 'Blocked'}`);
+    return isAllowed;
   }
 
+  /**
+   * Show loading state on button
+   */
   showLoading(button, text) {
     button.disabled = true;
     const originalContent = button.innerHTML;
@@ -185,6 +320,9 @@ class LoginManager {
     return originalContent;
   }
 
+  /**
+   * Hide loading state on button
+   */
   hideLoading(button) {
     button.disabled = false;
     const originalContent = button.getAttribute('data-original-content');
@@ -193,34 +331,43 @@ class LoginManager {
     }
   }
 
+  /**
+   * Clear existing guest data
+   */
   clearExistingGuestData() {
-    console.log('🧹 Cleaning up guest data via AuthManager...');
-    
-    // Leverage the robust deletion logic we fixed in AuthManager
-    this.authManager.clearGuestData(); 
-
-    // Also manually delete the session key just in case it was missed
+    console.log('🧹 Cleaning up guest data...');
+    this.authManager.clearGuestData();
     localStorage.removeItem(this.authManager.sessionKey);
   }
 
+  /**
+   * Save session data to localStorage
+   */
   saveSessionData(data) {
     try {
       localStorage.setItem('chatcdo_session', JSON.stringify(data));
+      console.log('💾 Session data saved:', data.userType);
     } catch (error) {
-      console.error('Failed to save session:', error);
+      console.error('❌ Failed to save session:', error);
     }
   }
 
+  /**
+   * Get session data from localStorage
+   */
   getSessionData() {
     try {
       const data = localStorage.getItem('chatcdo_session');
       return data ? JSON.parse(data) : null;
     } catch (error) {
-      console.error('Failed to get session:', error);
+      console.error('❌ Failed to get session:', error);
       return null;
     }
   }
 
+  /**
+   * Show toast notification
+   */
   showToast(message, type = 'info') {
     const toast = this.elements.toast;
     toast.textContent = message;
@@ -236,24 +383,8 @@ class LoginManager {
 // Initialize login manager when DOM is ready
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
-    new LoginManager();
+    window.loginManager = new LoginManager();
   });
 } else {
-  new LoginManager();
+  window.loginManager = new LoginManager();
 }
-
-// In handleGoogleSignIn method, after successful login:
-this.showToast('Login successful! Redirecting...', 'success');
-
-// Redirect to index.html
-setTimeout(() => {
-  window.location.href = 'index.html';
-}, 1000);
-
-// In handleGuestLogin method, after successful login:
-this.showToast('Continuing as guest...', 'info');
-
-// Redirect to index.html
-setTimeout(() => {
-  window.location.href = 'index.html';
-}, 800);

@@ -14,8 +14,6 @@
   
   <link rel="stylesheet" href="assets/css/variables.css">
   <link rel="stylesheet" href="assets/css/login.css">
-  
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
   <div class="login-container">
@@ -53,12 +51,14 @@
           </button>
         </div>
 
-        <!-- Hidden Google Sign-In (for backend authentication) -->
-        <div id="google-signin-container" style="display: none;">
+        <!-- Hidden Google Sign-In Container -->
+        <div id="google-signin-container" style="position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden;">
           <div id="g_id_onload"
                data-client_id="45685664065-92lsvsnth8ork4g6nr0nvhsmuk63f961.apps.googleusercontent.com"
-               data-callback="handleGoogleSignIn"
-               data-auto_prompt="false">
+               data-context="signin"
+               data-ux_mode="popup"
+               data-auto_prompt="false"
+               data-use_fedcm_for_prompt="false">
           </div>
           <div class="g_id_signin"
                data-type="standard"
@@ -66,8 +66,7 @@
                data-theme="filled_black"
                data-text="signin_with"
                data-shape="rectangular"
-               data-logo_alignment="left"
-               data-width="100%">
+               data-logo_alignment="left">
           </div>
         </div>
       </div>
