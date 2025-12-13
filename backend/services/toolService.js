@@ -48,13 +48,14 @@ export class ToolService {
                     if (tool.source_type === 'google_sheet') {
                         functionDeclarations.push({
                             name: `query_live_data_${tool.id}`,
-                            description: `${contextPrefix}${tool.description}. ACTION: Run SQL query. Use '?' as table name (NOT backticks). Column names are snake_case.`,
+                            // UPDATED: Added explicit instructions for LIKE operator and data handling
+                            description: `${contextPrefix}${tool.description}. ACTION: Run SQL query. Use '?' as table name. Column names are snake_case. IMPORTANT: Use 'LIKE' operator with wildcards (%) for text filters (e.g., status LIKE '%Deployed%', frequency LIKE '%Any%Time%') to handle potential data formatting inconsistencies/spaces.`,
                             parameters: {
                                 type: "OBJECT",
                                 properties: {
                                     sql_query: { 
                                         type: "STRING", 
-                                        description: "Standard SQL query. Use '?' as table name (e.g., SELECT * FROM ? WHERE status = 'Deployed'). Column names are snake_case (spaces replaced with underscores)." 
+                                        description: "Standard SQL query. Use '?' as table name. Columns are snake_case. PREFER 'LIKE' over '=' for text columns." 
                                     },
                                     tab_name: { type: "STRING", description: "Specific tab name if known." }
                                 },

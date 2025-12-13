@@ -274,9 +274,17 @@ export const analyzeGoogleSheet = async (req, res) => {
 
     } catch (error) {
         console.error('❌ Analyze Error:', error);
-        res.status(500).json({ 
+
+        // --- NEW: Better 429/503 Handling ---
+        const isQuotaError = error.message.includes('429') || error.message.includes('Too Many Requests');
+        const status = isQuotaError ? 429 : 500;
+        const message = isQuotaError 
+            ? "AI Service is busy (Quota Limit). Please wait a moment and try again." 
+            : error.message;
+
+        res.status(status).json({ 
             error: `Failed to analyze ${source_type || 'data source'}`,
-            details: error.message,
+            details: message,
             suggestion: source_type === 'external_api' 
                 ? "Check if the API endpoint is accessible and doesn't require special authentication." 
                 : "Ensure the Google Sheet is publicly accessible or shared with the service account."

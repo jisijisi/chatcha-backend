@@ -33,6 +33,27 @@ export class GoogleService {
         return matches ? matches[1] : url; 
     }
 
+    // --- NEW: Helper for Retry Logic ---
+    static async generateContentWithRetry(model, prompt, retries = 3, delay = 2000) {
+        for (let i = 0; i < retries; i++) {
+            try {
+                return await model.generateContent(prompt);
+            } catch (error) {
+                // Check if error is 429 (Too Many Requests) or 503 (Service Unavailable)
+                const isRateLimit = error.message.includes('429') || error.status === 429;
+                const isServerBusy = error.message.includes('503') || error.status === 503;
+
+                if ((isRateLimit || isServerBusy) && i < retries - 1) {
+                    console.warn(`⚠️ AI Service Busy (Attempt ${i + 1}/${retries}). Retrying in ${delay/1000}s...`);
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    delay *= 2; // Double the wait time for next retry
+                } else {
+                    throw error; // Throw if it's a different error or we ran out of retries
+                }
+            }
+        }
+    }
+
     // Helper: Calculate string similarity (Levenshtein distance)
     static calculateSimilarity(str1, str2) {
         const longer = str1.length > str2.length ? str1 : str2;
@@ -350,7 +371,7 @@ export class GoogleService {
             const nonEmptyValues = values.filter(v => v !== null && v !== '');
             const emptyValues = values.filter(v => v === null || v === '');
             
-        const nonEmptyCount = nonEmptyValues.length;
+            const nonEmptyCount = nonEmptyValues.length;
             const emptyCount = emptyValues.length;
             const emptyPercentage = totalRows > 0 ? Math.round((emptyCount / totalRows) * 100) : 0;
             
@@ -797,7 +818,10 @@ export class GoogleService {
             console.log(`🤖 Using AI Model for Enhanced Analysis: ${activeModel}`);
             const model = genAI.getGenerativeModel({ model: activeModel });
             
-            const result = await model.generateContent(prompt);
+            // --- UPDATED: Use Retry Logic Here ---
+            const result = await this.generateContentWithRetry(model, prompt);
+            // -------------------------------------
+
             const description = result.response.text();
             
             console.log("🧠 Enhanced Analysis Complete.");
@@ -1009,7 +1033,10 @@ export class GoogleService {
             console.log(`🤖 Using AI Model for API Analysis: ${activeModel}`);
             const model = genAI.getGenerativeModel({ model: activeModel });
             
-            const result = await model.generateContent(prompt);
+            // --- UPDATED: Use Retry Logic Here ---
+            const result = await this.generateContentWithRetry(model, prompt);
+            // -------------------------------------
+
             const description = result.response.text();
             
             console.log("🧠 External API Analysis Complete.");

@@ -8,6 +8,7 @@ const router = express.Router();
 
 // AI Interaction
 router.post("/ask", ragController.askQuestion);
+router.post("/thinking/phrases", ragController.getThinkingPhrases);
 
 // Smart Personal Assistant
 router.post("/personal/clear-session", ragController.clearPersonalSession);

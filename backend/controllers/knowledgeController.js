@@ -176,6 +176,7 @@ export const getDocument = async (req, res) => {
         kd.status,
         kd.created_at,
         kd.updated_at,
+        kd.subcategory_id,
         kc.name as category_name,
         ksc.name as subcategory_name
       FROM knowledge_documents kd

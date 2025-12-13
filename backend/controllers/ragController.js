@@ -13,6 +13,54 @@ import { AI_BEHAVIOR } from '../utils/aiBehavior.js';
 // Initialize for dynamic conversational phrasing
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
+async function getLLMThinkingPhrases(prompt, intent) {
+    if (!process.env.GEMINI_API_KEY) return AI_BEHAVIOR.conversationalAssets?.transitions || [];
+    try {
+        const apiResponse = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${process.env.GEMINI_API_KEY}`,
+            {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    contents: [
+                        { role: "user", parts: [{ text: `
+Return ONLY a JSON array of short status phrases (3-6 items) that describe the assistant's current thinking for the user's request.
+Keep each phrase under 32 characters, no trailing ellipses.
+Tailor to the intent: ${intent || 'GENERAL'} and the question: "${prompt}".
+Example: ["Analyzing trends", "Checking HR policies", "Crunching numbers"]
+`}]}
+                    ],
+                    generationConfig: { temperature: 0.2, topP: 0.9, topK: 40, maxOutputTokens: 128 }
+                })
+            }
+        );
+        const data = await apiResponse.json();
+        const text = data?.candidates?.[0]?.content?.parts?.map(p => p.text).join('') || '';
+        let arr = [];
+        try {
+            arr = JSON.parse(text);
+        } catch {
+            const match = text.match(/\[([\s\S]*?)\]/);
+            if (match) {
+                arr = JSON.parse(match[0]);
+            }
+        }
+        if (Array.isArray(arr) && arr.length > 0) {
+            const cleaned = arr
+                .map(x => String(x).trim())
+                .filter(x => x.length > 0)
+                .map(x => x.replace(/\.\.\.$/, ''));
+            const unique = Array.from(new Set(cleaned.map(s => s.toLowerCase()))).map(
+                lower => cleaned.find(c => c.toLowerCase() === lower)
+            );
+            return unique.slice(0, 6);
+        }
+        return AI_BEHAVIOR.conversationalAssets?.transitions || [];
+    } catch {
+        return AI_BEHAVIOR.conversationalAssets?.transitions || [];
+    }
+}
+
 export const getRagStatus = (req, res) => {
     const stats = ragSystem.getFolderStats();
     res.json({ 
@@ -100,6 +148,7 @@ export const askQuestion = async (req, res) => {
         // 1. SEMANTIC ROUTING
         const intentData = await IntentService.classifyIntent(prompt, history);
         const intent = intentData.intent || "GENERAL";
+        const thinkingPhrases = await getLLMThinkingPhrases(prompt, intent);
         
         // --- MODIFIED: Use new rewriter logic ---
         let searchTerms = prompt;
@@ -152,7 +201,8 @@ export const askQuestion = async (req, res) => {
                     tool_query: smartResult.toolUsed || '',
                     result_count: smartResult.toolResult?.tool_output?.result_count || 0,
                     success: true,
-                    session_id: smartResult.sessionId
+                    session_id: smartResult.sessionId,
+                    meta: { thinking_phrases: thinkingPhrases }
                 });
                 
             } catch (assistantError) {
@@ -179,7 +229,8 @@ export const askQuestion = async (req, res) => {
                     },
                     accessed_documents: [],
                     accessed_tools: [],
-                    success: true
+                    success: true,
+                    meta: { thinking_phrases: thinkingPhrases }
                 });
             }
         }
@@ -444,7 +495,8 @@ Based on conversation history, this interprets to: "${searchTerms}"
             tool_used: toolUsed,
             tool_query: toolQuery,
             result_count: toolResultCount,
-            success: true
+            success: true,
+            meta: { thinking_phrases: thinkingPhrases }
         });
 
     } catch (error) {
@@ -618,4 +670,21 @@ export const debugSearchChunks = (req, res) => {
             documentId: chunk.documentId
         }))
     });
+};
+
+export const getThinkingPhrases = async (req, res) => {
+    try {
+        const { prompt } = req.body || {};
+        const history = req.body?.behavior_context?.conversation_history || [];
+        const intentData = await IntentService.classifyIntent(prompt || '', history);
+        const intent = intentData.intent || 'GENERAL';
+        const phrases = await getLLMThinkingPhrases(prompt || '', intent);
+        res.json({ success: true, intent, meta: { thinking_phrases: phrases } });
+    } catch (error) {
+        res.status(200).json({
+            success: true,
+            intent: 'GENERAL',
+            meta: { thinking_phrases: AI_BEHAVIOR.conversationalAssets?.transitions || [] }
+        });
+    }
 };

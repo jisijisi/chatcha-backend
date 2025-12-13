@@ -29,6 +29,21 @@ export class IntentService {
 
       const recentHistory = history.slice(-3).map(h => `User: ${h.question}\nAI: ${h.answer}`).join("\n");
 
+      // ---------------------------------------------------------
+      // 🔍 DYNAMICALLY FETCH ACTIVE DATA SOURCES FOR CONTEXT
+      // ---------------------------------------------------------
+      let liveDataSourcesList = "";
+      try {
+        const [rows] = await pool.execute("SELECT name FROM live_data_sources WHERE is_active = TRUE");
+        if (rows.length > 0) {
+            const names = rows.map(r => `"${r.name}"`).join(", ");
+            liveDataSourcesList = `ACTIVE DATA SOURCES: [${names}]`;
+        }
+      } catch (dbError) {
+        console.warn("⚠️ Failed to fetch live data sources for intent context:", dbError.message);
+      }
+      // ---------------------------------------------------------
+
       const prompt = `
       You are the semantic brain of a corporate AI Assistant.
       Your goal is to understand the user's *true intent* and *context*.
@@ -58,11 +73,14 @@ export class IntentService {
          - **CONTEXT RULE:** If the Rewritten Query is about reading/sending emails, listing/modifying calendar events, classify as PERSONAL_ACTION.
 
       2. "LIVE_DATA": 
-         - **KEYWORDS:** "project", "database", "stats", "count".
-         - **CONSTRAINT:** If it mentions "email" or "sent to me", it is NOT Live Data.
+         - **KEYWORDS:** "project", "database", "stats", "count", "list", "report", "tracker".
+         - **CONTEXT:** ${liveDataSourcesList}
+         - **RULE:** If the query mentions any of the **ACTIVE DATA SOURCES** (e.g., "RPA Projects", "Inventory", "Roster") or asks for specific data points/statistics from them, classify as LIVE_DATA.
+         - **CONSTRAINT:** If it mentions "email" or "sent to me" or "my schedule", it is NOT Live Data (it is Personal Action).
 
       3. "KNOWLEDGE_BASE": 
-         - **KEYWORDS:** "policy", "handbook", "procedure".
+         - **KEYWORDS:** "policy", "handbook", "procedure", "guidelines", "company info", "history".
+         - **RULE:** Use this for static documents, manuals, and general inquiries.
 
       4. "GENERAL": 
          - Greetings, small talk.
