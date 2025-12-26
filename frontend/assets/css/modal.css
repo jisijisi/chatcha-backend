@@ -10,7 +10,8 @@
   height: 100%;
   background: rgba(0, 0, 0, 0.6);
   z-index: 3000; /* FIXED: Increased from 1000 to 3000 to sit above settings-modal-overlay (2000) */
-  backdrop-filter: blur(3px);
+  /* backdrop-filter: blur(3px); REMOVED for performance */
+  will-change: opacity;
   animation: fadeIn 0.2s ease;
 }
 
@@ -27,6 +28,7 @@
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
   width: 90%;
   max-width: 450px;
+  will-change: transform, opacity;
   animation: slideUp 0.3s ease;
   position: relative;
   pointer-events: auto;

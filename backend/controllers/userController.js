@@ -40,11 +40,44 @@ export const upsertUserProfile = async (req, res) => {
            VALUES (?, ?, ?, ?, ?, NOW(), NOW())`,
           [name, email, department || 'External', position || 'Guest', activate ? 1 : 0]
         );
-        await conn.execute(
-          `INSERT INTO employee_access_permissions (employee_id, category_id, subcategory_id, source_id, access_level, granted_by)
-           VALUES (?, NULL, NULL, NULL, 'read', NULL)`,
-          [result.insertId]
-        );
+        
+        const newUserId = result.insertId;
+        const companyDomain = process.env.COMPANY_EMAIL_DOMAIN || 'cdo.com.ph';
+        const isCompanyEmail = email.toLowerCase().endsWith(`@${companyDomain}`);
+
+        if (isCompanyEmail) {
+            // Employee: All Knowledge Base Categories
+            const [allCategories] = await conn.execute('SELECT id FROM knowledge_categories');
+            if (allCategories.length > 0) {
+                const values = allCategories.map(cat => [newUserId, cat.id, null, null, 'read', null]);
+                const placeholders = values.map(() => '(?, ?, ?, ?, ?, ?)').join(', ');
+                const flatValues = values.flat();
+                await conn.execute(
+                    `INSERT INTO employee_access_permissions (employee_id, category_id, subcategory_id, source_id, access_level, granted_by)
+                     VALUES ${placeholders}`,
+                    flatValues
+                );
+            }
+        } else {
+            // External: Only 'company-general' and 'wikipedia'
+            const [categories] = await conn.execute(
+                `SELECT id FROM knowledge_categories 
+                 WHERE LOWER(name) LIKE 'company-general%' 
+                    OR LOWER(name) LIKE 'company general%'
+                    OR LOWER(name) LIKE 'wikipedia%' 
+                    OR LOWER(name) LIKE 'wikepedia%'`
+            );
+            if (categories.length > 0) {
+                const values = categories.map(cat => [newUserId, cat.id, null, null, 'read', null]);
+                const placeholders = values.map(() => '(?, ?, ?, ?, ?, ?)').join(', ');
+                const flatValues = values.flat();
+                await conn.execute(
+                    `INSERT INTO employee_access_permissions (employee_id, category_id, subcategory_id, source_id, access_level, granted_by)
+                     VALUES ${placeholders}`,
+                    flatValues
+                );
+            }
+        }
       } else {
         await conn.execute(
           `UPDATE employees 

@@ -792,13 +792,13 @@ export const getUsers = async (req, res) => {
         e.position,
         e.is_active,
         e.created_at,
-        COUNT(uc.id) as total_messages,
-        MAX(uc.message_timestamp) as last_active
+        (SELECT COUNT(*) FROM user_chats uc WHERE uc.employee_id = e.id) as total_messages,
+        (SELECT MAX(message_timestamp) FROM user_chats uc WHERE uc.employee_id = e.id) as last_active
       FROM employees e
-      LEFT JOIN user_chats uc ON e.id = uc.employee_id
-      GROUP BY e.id, e.name, e.email, e.department, e.position, e.is_active, e.created_at
       ORDER BY total_messages DESC, e.created_at DESC
     `);
+    
+    console.log(`👥 Admin loaded ${users.length} users`);
     res.json({ users });
   } catch (error) {
     console.error('❌ Users error:', error);
@@ -843,18 +843,32 @@ export const createUser = async (req, res) => {
     const grantedBy = req.adminUser ? req.adminUser.id : null;
 
     if (type === 'Employee') {
-        // Full Access: All knowledge base categories and its sub categories
-        await connection.execute(
-            `INSERT INTO employee_access_permissions (employee_id, category_id, subcategory_id, source_id, access_level, granted_by)
-             VALUES (?, NULL, NULL, NULL, 'read', ?)`,
-            [userId, grantedBy]
-        );
+        // Employee Access: All Knowledge Base Categories (excluding Live Data Tools & KB Settings)
+        // We explicitly assign all categories instead of using the wildcard (NULL, NULL, NULL)
+        // to prevent accidental access to Live Data Tools or KB Settings which require specific source_ids
+        const [allCategories] = await connection.execute('SELECT id FROM knowledge_categories');
+        
+        if (allCategories.length > 0) {
+            const values = allCategories.map(cat => [userId, cat.id, null, null, 'read', grantedBy]);
+            const placeholders = values.map(() => '(?, ?, ?, ?, ?, ?)').join(', ');
+            const flatValues = values.flat();
+
+            await connection.execute(
+                `INSERT INTO employee_access_permissions (employee_id, category_id, subcategory_id, source_id, access_level, granted_by)
+                 VALUES ${placeholders}`,
+                flatValues
+            );
+        } else {
+             console.warn('⚠️ No knowledge categories found for Employee user! User will have NO access.');
+        }
+
     } else if (type === 'External') {
-        // Restricted Access: Knowledge Base -> company general and wikepedia
+        // Restricted Access: Knowledge Base -> company general and wikipedia only
         // Find category IDs (handling "wikepedia" typo by checking for both)
         const [categories] = await connection.execute(
             `SELECT id, name FROM knowledge_categories 
-             WHERE LOWER(name) LIKE 'company general%' 
+             WHERE LOWER(name) LIKE 'company-general%' 
+                OR LOWER(name) LIKE 'company general%' 
                 OR LOWER(name) LIKE 'wikipedia%' 
                 OR LOWER(name) LIKE 'wikepedia%'`
         );

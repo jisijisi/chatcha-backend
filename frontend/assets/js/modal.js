@@ -100,6 +100,12 @@ export class ModalManager {
 
   async handleModalConfirm(e) {
     if (e) { e.preventDefault(); e.stopPropagation(); }
+    
+    // Prevent double submission
+    if (this.elements.modalConfirm.disabled || this.elements.modalConfirm.classList.contains('loading')) {
+      return;
+    }
+
     if (this.modalConfirmCallback) {
       const inputVisible = this.elements.modalInput.style.display !== "none";
       const value = inputVisible ? this.elements.modalInput.value.trim() : true;

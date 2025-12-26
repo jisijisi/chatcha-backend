@@ -1179,19 +1179,35 @@ class ChatApp {
       if (SpeechRecognition) {
         const recognition = new SpeechRecognition();
         recognition.continuous = false;
-        recognition.interimResults = false;
+        recognition.interimResults = true;
         recognition.lang = 'en-US'; 
         let isRecognizing = false;
 
         recognition.onresult = (event) => {
-          let transcript = event.results[0][0].transcript;
-          transcript = this.capitalizeAndPunctuate(transcript);
-          chatInput.value = transcript;
-          this.updateCharacterCount();
-          const t = TRANSLATIONS[this.currentLang] || TRANSLATIONS.en;
-          this.showToast(t.toasts.voiceCaptured, 'success', 2000);
-          this.isVoiceInput = true; 
-          this.askQuestion(true);
+          let finalTranscript = '';
+          let interimTranscript = '';
+
+          for (let i = event.resultIndex; i < event.results.length; ++i) {
+            if (event.results[i].isFinal) {
+              finalTranscript += event.results[i][0].transcript;
+            } else {
+              interimTranscript += event.results[i][0].transcript;
+            }
+          }
+
+          if (interimTranscript) {
+            chatInput.value = interimTranscript;
+          }
+
+          if (finalTranscript) {
+            finalTranscript = this.capitalizeAndPunctuate(finalTranscript);
+            chatInput.value = finalTranscript;
+            this.updateCharacterCount();
+            const t = TRANSLATIONS[this.currentLang] || TRANSLATIONS.en;
+            this.showToast(t.toasts.voiceCaptured, 'success', 2000);
+            this.isVoiceInput = true; 
+            this.askQuestion(true);
+          }
         };
 
         recognition.onerror = (event) => {

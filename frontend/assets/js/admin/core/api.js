@@ -2,7 +2,7 @@
 const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 const API_BASE = isLocal 
   ? 'http://localhost:3000' 
-  : window.location.origin;
+  : 'https://chatcha-backend.onrender.com';
 
 console.log(`[Admin] API_BASE set to: ${API_BASE}`);
 

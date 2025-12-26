@@ -886,7 +886,7 @@ body:has(#chat-container.centered) #sidebar button#new-chat:active {
   width: 100%;
   height: 100%;
   background: rgba(0, 0, 0, 0);
-  z-index: 19;
+  z-index: 1000;
   backdrop-filter: blur(0px);
   transition: background 0.3s ease, backdrop-filter 0.3s ease;
 }
