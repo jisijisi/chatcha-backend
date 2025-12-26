@@ -8,5 +8,7 @@ const router = express.Router();
 router.post("/auth/connect-google", authController.connectGoogle);
 router.get("/auth/google-status", authController.checkGoogleStatus);
 router.post("/auth/disconnect-google", authController.disconnectGoogle);
+router.post("/auth/request-otp", authController.requestOtp);
+router.post("/auth/verify-otp", authController.verifyOtp);
 
 export default router;

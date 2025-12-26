@@ -280,7 +280,7 @@ export const deleteDocument = async (req, res) => {
 export const getCategories = async (req, res) => {
   try {
     const [categories] = await pool.execute(`
-      SELECT id, name FROM knowledge_categories ORDER BY name
+      SELECT id, name, description FROM knowledge_categories ORDER BY name
     `);
     res.json({ categories });
   } catch (error) {
@@ -290,7 +290,7 @@ export const getCategories = async (req, res) => {
 };
 
 export const createCategory = async (req, res) => {
-  const { name } = req.body;
+  const { name, description } = req.body;
   
   if (!name || !name.trim()) {
     return res.status(400).json({ error: 'Category name is required' });
@@ -298,9 +298,9 @@ export const createCategory = async (req, res) => {
   
   try {
     const [result] = await pool.execute(
-      `INSERT INTO knowledge_categories (name, created_at)
-       VALUES (?, NOW())`,
-      [name.trim()]
+      `INSERT INTO knowledge_categories (name, description, created_at)
+       VALUES (?, ?, NOW())`,
+      [name.trim(), (description || '').trim()]
     );
     
     res.json({ 
@@ -319,7 +319,7 @@ export const createCategory = async (req, res) => {
 };
 
 export const updateCategory = async (req, res) => {
-  const { name } = req.body;
+  const { name, description } = req.body;
   const categoryId = req.params.id;
   
   if (!name || !name.trim()) {
@@ -329,9 +329,9 @@ export const updateCategory = async (req, res) => {
   try {
     const [result] = await pool.execute(
       `UPDATE knowledge_categories 
-       SET name = ?
+       SET name = ?, description = ?
        WHERE id = ?`,
-      [name.trim(), categoryId]
+      [name.trim(), (description || '').trim(), categoryId]
     );
     
     if (result.affectedRows === 0) {
@@ -455,12 +455,13 @@ export const getAllSubcategories = async (req, res) => {
         ksc.id,
         ksc.name,
         ksc.category_id,
+        ksc.description,
         kc.name as category_name,
         COUNT(kd.id) as document_count
       FROM knowledge_subcategories ksc
       JOIN knowledge_categories kc ON ksc.category_id = kc.id
       LEFT JOIN knowledge_documents kd ON ksc.id = kd.subcategory_id
-      GROUP BY ksc.id, ksc.name, ksc.category_id, kc.name
+      GROUP BY ksc.id, ksc.name, ksc.category_id, ksc.description, kc.name
       ORDER BY kc.name, ksc.name
     `);
     
@@ -473,7 +474,7 @@ export const getAllSubcategories = async (req, res) => {
 };
 
 export const createSubcategory = async (req, res) => {
-  const { name, category_id } = req.body;
+  const { name, category_id, description } = req.body;
   
   if (!name || !name.trim()) {
     return res.status(400).json({ error: 'Subcategory name is required' });
@@ -494,9 +495,9 @@ export const createSubcategory = async (req, res) => {
     }
     
     const [result] = await pool.execute(
-      `INSERT INTO knowledge_subcategories (name, category_id, created_at)
-       VALUES (?, ?, NOW())`,
-      [name.trim(), category_id]
+      `INSERT INTO knowledge_subcategories (name, category_id, description, created_at)
+       VALUES (?, ?, ?, NOW())`,
+      [name.trim(), category_id, (description || '').trim()]
     );
     
     res.json({ 
@@ -515,7 +516,7 @@ export const createSubcategory = async (req, res) => {
 };
 
 export const updateSubcategory = async (req, res) => {
-  const { name, category_id } = req.body;
+  const { name, category_id, description } = req.body;
   const subcategoryId = req.params.id;
   
   if (!name || !name.trim()) {
@@ -538,9 +539,9 @@ export const updateSubcategory = async (req, res) => {
     
     const [result] = await pool.execute(
       `UPDATE knowledge_subcategories 
-       SET name = ?, category_id = ?
+       SET name = ?, category_id = ?, description = ?
        WHERE id = ?`,
-      [name.trim(), category_id, subcategoryId]
+      [name.trim(), category_id, (description || '').trim(), subcategoryId]
     );
     
     if (result.affectedRows === 0) {

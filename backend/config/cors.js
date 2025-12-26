@@ -3,8 +3,12 @@ import cors from 'cors';
 
 export const ALLOWED_ORIGINS = [
     'http://127.0.0.1:5500',
+    'https://127.0.0.1:5500',
     'http://localhost:5500',
     'https://chatcha-cdo.netlify.app',
+    // Fix: Added port 5501 matching your Error 400 origin
+    'http://127.0.0.1:5501',
+    'http://localhost:5501'
 ];
 
 export const corsOptions = {

@@ -3,6 +3,7 @@ import fetch from 'node-fetch';
 import { pool } from '../config/database.js';
 import { UserGoogleService } from './userGoogleService.js';
 import { QueryService } from './queryService.js';
+import mysql from 'mysql2/promise';
 
 export class ToolService {
     
@@ -32,9 +33,7 @@ export class ToolService {
                     AND (
                         -- 1. Full Admin Access
                         (p.category_id IS NULL AND p.subcategory_id IS NULL AND p.source_id IS NULL)
-                        -- 2. Category Access
-                        OR (p.category_id = t.category_id AND p.subcategory_id IS NULL AND p.source_id IS NULL)
-                        -- 3. Direct Source Access
+                        -- 2. Direct Source Access
                         OR (p.source_id = t.id)
                     )
                 `;
@@ -78,6 +77,22 @@ export class ToolService {
                             name: `call_external_api_${tool.id}`,
                             description: `${contextPrefix}${tool.description}`,
                             parameters: { type: "OBJECT", properties, required: requiredParams }
+                        });
+                    } else if (tool.source_type === 'database') {
+                        // DATABASE TOOL DEFINITION
+                        functionDeclarations.push({
+                            name: `query_database_${tool.id}`,
+                            description: `${contextPrefix}${tool.description}. ACTION: Run SQL query against the '${tool.name}' database. IMPORTANT: Use 'LIKE' for text filters.`,
+                            parameters: {
+                                type: "OBJECT",
+                                properties: {
+                                    sql_query: { 
+                                        type: "STRING", 
+                                        description: "Standard SQL query. Ensure valid syntax for the target DB (MySQL). Use 'LIKE' with % for text matching." 
+                                    }
+                                },
+                                required: ["sql_query"]
+                            }
                         });
                     }
                 }
@@ -135,12 +150,33 @@ export class ToolService {
         
         try {
             if (!userEmail) return { error: "User not authenticated" };
+            
+            const [users] = await pool.execute("SELECT id FROM employees WHERE email = ? AND is_active = TRUE", [userEmail]);
+            if (users.length === 0) return { error: "User not found or inactive" };
+            const employeeId = users[0].id;
+            
+            async function hasToolAccess(toolId) {
+                const [rows] = await pool.execute(
+                    `SELECT 1 FROM employee_access_permissions 
+                     WHERE employee_id = ? 
+                     AND (
+                        (category_id IS NULL AND subcategory_id IS NULL AND source_id IS NULL)
+                        OR (source_id = ?)
+                     )
+                     LIMIT 1`,
+                    [employeeId, toolId]
+                );
+                return rows.length > 0;
+            }
 
             // ============================================================
             // A. EXTERNAL API TOOLS (With Smart Middleware)
             // ============================================================
             if (functionName.startsWith('call_external_api_')) {
                 const toolId = functionName.split('_').pop();
+                
+                const allowed = await hasToolAccess(toolId);
+                if (!allowed) return { error: "Access denied: Tool not permitted" };
                 const [rows] = await pool.execute("SELECT id, name, config FROM live_data_sources WHERE id = ?", [toolId]);
                 
                 if (rows.length === 0) return { error: "API Tool not found in database." };
@@ -279,11 +315,74 @@ export class ToolService {
             }
 
             // ============================================================
-            // D. SYSTEM TOOLS (SQL Execution on Sheets)
+            // D. DATABASE TOOLS (Direct SQL)
+            // ============================================================
+            if (functionName.startsWith('query_database_')) {
+                const parts = functionName.split('_');
+                const toolId = parts[parts.length - 1];
+                
+                const allowed = await hasToolAccess(toolId);
+                if (!allowed) return { error: "Access denied: Tool not permitted" };
+
+                const [rows] = await pool.execute("SELECT id, name, config FROM live_data_sources WHERE id = ?", [toolId]);
+                if (rows.length === 0) return { error: "Database source not found." };
+
+                const tool = rows[0];
+                let config = typeof tool.config === 'string' ? JSON.parse(tool.config) : tool.config;
+                // Handle nested db_config if present (common in my implementation)
+                if (config.db_config) config = config.db_config;
+
+                if (config.type !== 'mysql') {
+                    return { error: `Unsupported database type: ${config.type}. Only MySQL is currently supported.` };
+                }
+
+                let connection;
+                try {
+                    console.log(`🔌 Connecting to external DB: ${config.host}`);
+                    connection = await mysql.createConnection({
+                        host: config.host,
+                        user: config.user,
+                        password: config.password,
+                        database: config.database,
+                        port: config.port || 3306,
+                        connectTimeout: 5000
+                    });
+
+                    console.log(`🔍 Executing SQL: ${args.sql_query}`);
+                    // Safety: Limit rows if no LIMIT present to prevent massive dumps
+                    let sql = args.sql_query;
+                    if (!sql.toUpperCase().includes('LIMIT')) {
+                        sql += ' LIMIT 50';
+                    }
+
+                    const [results] = await connection.execute(sql);
+                    
+                    return {
+                        tool_output: {
+                            source_info: { id: tool.id, title: tool.name, type: 'database_sql' },
+                            query_executed: sql,
+                            result: results,
+                            result_count: results.length
+                        }
+                    };
+
+                } catch (dbError) {
+                    console.error("❌ Database Query Failed:", dbError);
+                    return { error: `Database Error: ${dbError.message}` };
+                } finally {
+                    if (connection) await connection.end();
+                }
+            }
+
+            // ============================================================
+            // E. SYSTEM TOOLS (SQL Execution on Sheets)
             // ============================================================
             if (functionName.startsWith('query_live_data_')) {
                 const parts = functionName.split('_');
                 const toolId = parts[parts.length - 1];
+                
+                const allowed = await hasToolAccess(toolId);
+                if (!allowed) return { error: "Access denied: Tool not permitted" };
 
                 const [rows] = await pool.execute("SELECT id, name, config FROM live_data_sources WHERE id = ?", [toolId]);
                 if (rows.length === 0) return { error: "Tool source not found in database." };

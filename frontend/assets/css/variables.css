@@ -1,32 +1,109 @@
-/* CSS Variables */
+/* frontend/assets/css/variables.css */
 :root {
-  /* Colors */
+  /* --- Brand Colors (Static - Do not change in dark mode) --- */
   --primary-color: #D71921; /* CDO Logo Red */
   --primary-hover: #F58220; /* CDO Logo Orange */
+  
+  /* --- Semantic Colors --- */
+  /* Text Headlines (ChatCDO, Good Evening) */
+  --text-brand: #D71921; 
+  /* Sidebar Toggle / Interactive Icons */
+  --toggle-icon-color: #D71921;
+  
+  /* --- Light Theme Defaults --- */
+  --bg-body: #f5f6fa;
+  --bg-card: #ffffff;
+  --bg-secondary: #f9fafb; /* Light gray for sidebars/headers */
+  --bg-hover: #f3f4f6;
+  
+  --text-main: #333333;
+  --text-muted: #666666;
+  --text-light: #9ca3af;
+  
+  --border-color: #e5e7eb;
+  
+  /* Sidebar Specifics */
   --sidebar-bg: #ffffff;
   --sidebar-border: #e0e0e0;
-  --chat-bg: #2c2c45;
-  --chat-hover: #3a3a5c;
-  --text-light: #ddd;
-  --text-muted: #bbb;
-  --user-msg-bg: #FEEBEA; /* Light Red */
-  --user-msg-border: #F8BABA; /* Red Border */
-  --bot-msg-bg: #f9f9f9;
+  
+  /* Chat Bubbles */
+  --user-msg-bg: #FEEBEA;
+  --user-msg-border: #F8BABA;
+  --user-msg-text: #333333;
+  
+  --bot-msg-bg: #ffffff;
   --bot-msg-border: #e5e5e5;
+  --bot-msg-text: #2d3748;
+  
+  /* Inputs & Forms */
+  --input-bg: #ffffff;
+  --input-border: #d1d5db;
+  --input-text: #1f2937;
+  
+  /* Code Blocks & Tables */
   --code-bg: #f4f4f4;
   --code-border: #e0e0e0;
-  
+  --code-text: #333333;
+  --table-header-bg: #f8fafc;
+  --table-border: #e2e8f0;
+
   /* Typography */
   --font-family: 'Gotham', 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
   
   /* Effects */
   --shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  
-  /* Border Radius */
   --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 14px;
   
   /* Transitions */
   --transition: all 0.3s ease;
+}
+
+/* --- Dark Theme Overrides --- */
+[data-theme="dark"] {
+  /* Brand Text & Icons - Switched to Yellow/Orange for Contrast */
+  --text-brand: #FFC700; 
+  --toggle-icon-color: #FFC700;
+
+  /* Backgrounds */
+  --bg-body: #111827;      /* Deep Blue-Black */
+  --bg-card: #1f2937;      /* Dark Gray-Blue */
+  --bg-secondary: #374151; /* Lighter Gray-Blue for headers/footers */
+  --bg-hover: #4b5563;     /* Hover state */
+  
+  /* Text */
+  --text-main: #f3f4f6;    /* Almost White */
+  --text-muted: #d1d5db;   /* Light Gray */
+  --text-light: #9ca3af;   /* Muted Gray */
+  
+  --border-color: #374151;
+  
+  /* Sidebar */
+  --sidebar-bg: #1f2937;
+  --sidebar-border: #374151;
+  
+  /* Chat Bubbles */
+  --user-msg-bg: #451a1a; /* Dark Red tint */
+  --user-msg-border: #7f1d1d;
+  --user-msg-text: #fecaca;
+  
+  --bot-msg-bg: #1f2937;
+  --bot-msg-border: #374151;
+  --bot-msg-text: #e5e7eb;
+  
+  /* Inputs */
+  --input-bg: #111827;
+  --input-border: #4b5563;
+  --input-text: #f9fafb;
+  
+  /* Code & Tables */
+  --code-bg: #111827;
+  --code-border: #374151;
+  --code-text: #e5e7eb;
+  --table-header-bg: #374151;
+  --table-border: #4b5563;
+  
+  /* Global Shadow Adjustment */
+  --shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
 }

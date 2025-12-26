@@ -3,12 +3,16 @@ import { pool } from '../config/database.js';
 
 export const adminAuthMiddleware = async (req, res, next) => {
   try {
+    let token = '';
     const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.substring(7);
+    } else if (req.query && typeof req.query.token === 'string') {
+      token = req.query.token;
+    } else {
       return res.status(401).json({ error: 'Unauthorized: No token provided' });
     }
     
-    const token = authHeader.substring(7);
     const sessionToken = token.split('_'); // Format: admin_token_TIMESTAMP_ID
     
     if (sessionToken[0] !== 'admin' || sessionToken[1] !== 'token') {

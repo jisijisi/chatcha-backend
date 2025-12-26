@@ -1,209 +1,143 @@
-// api.js - Updated to use dynamic configuration and persistence methods
+// frontend/assets/js/api.js
 import { CONFIG } from './config.js';
-import { AI_BEHAVIOR, PROMPT_TEMPLATES } from './ai-behavior.js';
-import { ResponseQuality } from './response-quality.js';
 
 export class APIManager {
   constructor() {
+    this.authManager = null;
+    this.markdownParser = null;
     this.abortController = null;
-    this.currentMarkdownParser = null;
-    this.authManager = null; 
-  }
-  
-  setMarkdownParser(parser) {
-    this.currentMarkdownParser = parser;
   }
 
   setAuthManager(authManager) {
     this.authManager = authManager;
   }
 
-  /**
-   * MAIN METHOD - Direct server RAG call with proper response handling
-   */
-  async getAIResponse(question, hrKnowledgeBase, currentConversation, userName, messageElement = null) {
+  setMarkdownParser(parser) {
+    this.markdownParser = parser;
+  }
+
+  // ==========================================================
+  // 🔐 AUTHENTICATION HEADERS
+  // ==========================================================
+  _getAuthHeaders() {
+    if (!this.authManager) {
+      throw new Error("AuthManager not initialized in API");
+    }
+
+    const session = this.authManager.getSession();
+    const headers = {
+      'Content-Type': 'application/json'
+    };
+
+    // 1. Handle ANONYMOUS GUEST Users (No Email)
+    if (session && session.userType === 'guest') {
+      return headers; 
+    }
+
+    // 2. Handle LOGGED IN Users (Employee OR External)
+    // If they have a valid email, we identify them.
+    if (session && session.email) {
+      headers['X-User-Email'] = session.email; 
+      return headers;
+    }
+
+    console.warn("⚠️ No valid session found for API request");
+    return headers;
+  }
+
+  // ==========================================================
+  // 🧠 CORE AI INTERACTION
+  // ==========================================================
+  
+  async getAIResponse(question, hrKnowledgeBase, history, userName, thinkingDiv) {
     this.abortController = new AbortController();
-    
+    const { signal } = this.abortController;
+
+    const payload = {
+      prompt: question,
+      behavior_context: {
+        conversation_history: history.slice(-10),
+        user_name: userName,
+        identity: { role: 'Company Assistant' }
+      }
+    };
+
     try {
-        console.log("🔍 Calling server RAG for company-wide knowledge...");
-        
-        // Enhanced request with behavior context
-        const requestBody = {
-            prompt: question,
-            use_rag: true,
-            behavior_context: {
-                identity: AI_BEHAVIOR.identity,
-                is_follow_up: currentConversation.length > 0,
-                conversation_history: currentConversation.slice(-3) // Last 3 exchanges for context
-            }
-        };
+      const response = await fetch(CONFIG.API_URL, {
+        method: "POST",
+        headers: this._getAuthHeaders(),
+        body: JSON.stringify(payload),
+        signal
+      });
 
-        const response = await fetch(CONFIG.API_URL, {
-            method: "POST",
-            headers: { 
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            },
-            body: JSON.stringify(requestBody),
-            signal: this.abortController.signal
-        });
-
-        if (!response.ok) {
-            if (response.status === 413) {
-                throw new Error('Request too large. Please try a more specific question.');
-            }
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      if (!response.ok) {
+        if (response.status === 503) {
+          throw new Error('Maintenance Mode');
         }
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Server Error: ${response.status}`);
+      }
 
-        const data = await response.json();
-        
-        console.log("=== API RESPONSE DEBUG ===");
-        console.log("Success:", data.success);
-        console.log("Answer length:", data.answer?.length);
-        console.log("Answer preview:", data.answer?.substring(0, 200));
-        console.log("=== END DEBUG ===");
-        
-        if (data.success && data.answer) {
-            console.log("✅ Server RAG response successful");
-            
-            // Optional: Log response quality for debugging
-            const quality = ResponseQuality.checkResponseQuality(data.answer, question);
-            console.log('Response Quality Score:', quality.score, 'Issues:', quality.issues);
-            
-            // Return the FULL answer without any modification
-            return data.answer;
-        } else {
-            throw new Error(data.error || "Server returned no answer");
-        }
+      const data = await response.json();
+      
+      return {
+        answer: data.answer,
+        accessed_documents: data.accessed_documents || [],
+        accessed_tools: data.accessed_tools || [],
+        source_categories: data.source_categories || {},
+        meta: data.meta || null
+      };
 
     } catch (error) {
-        console.error('❌ Error in getAIResponse:', error);
-        
-        if (error.name === 'AbortError') {
-            console.log('Request aborted by user');
-            throw error;
-        }
-        
-        if (error.message.includes('Failed to fetch')) {
-            throw new Error('Unable to connect to the server. Please check your internet connection and try again.');
-        } else if (error.message.includes('413') || error.message.includes('too large')) {
-            throw new Error('Your request is too large. Please try starting a new chat to reduce context size.');
-        } else {
-            throw new Error(`Failed to get response: ${error.message}`);
-        }
-    } finally {
-        this.abortController = null;
+      if (error.name === 'AbortError') {
+        throw error;
+      }
+      console.error("API Error:", error);
+      throw error;
     }
   }
 
-  // --- NEW PERSISTENCE METHODS ---
-
-  async loadChatHistory(userEmail) {
-      if (!userEmail) {
-          throw new Error('User email is required to load history from server.');
-      }
-
-      console.log(`📡 Loading history for ${userEmail} from server from ${CONFIG.HISTORY_API_URL_BASE}/load...`);
-
-      try {
-          const response = await fetch(`${CONFIG.HISTORY_API_URL_BASE}/load?email=${userEmail}`, {
-              method: 'GET',
-              headers: {
-                  'Content-Type': 'application/json',
-                  // In a real app, you would pass a secure token here, not the email
-                  'X-User-Email': userEmail
-              }
-          });
-
-          if (!response.ok) {
-              const errorText = await response.text();
-              throw new Error(`Failed to load history: HTTP ${response.status} - ${errorText}`);
+  async getThinkingPhrases(question, history, userName) {
+    try {
+      const response = await fetch(`${CONFIG.API_BASE}/thinking/phrases`, {
+        method: "POST",
+        headers: this._getAuthHeaders(),
+        body: JSON.stringify({
+          prompt: question,
+          behavior_context: {
+            conversation_history: history.slice(-10),
+            user_name: userName
           }
-
-          const data = await response.json();
-          console.log(`✅ Loaded ${data.chats?.length || 0} chats from server.`);
-          
-          return {
-              chats: data.chats || [],
-              currentConversation: data.currentConversation || [],
-              activeChatIndex: data.activeChatIndex || null,
-              historyCollapsed: data.historyCollapsed ?? false,
-              userName: data.userName || null
-          };
-      } catch (error) {
-          console.error('❌ Failed to load chat history from API:', error);
-          // Return empty defaults on failure to prevent app crash
-          return { 
-              chats: [], 
-              currentConversation: [], 
-              activeChatIndex: null, 
-              historyCollapsed: false,
-              userName: null
-          };
-      }
+        })
+      });
+      if (!response.ok) return { meta: null };
+      const data = await response.json();
+      return { meta: data.meta || null };
+    } catch {
+      return { meta: null };
+    }
   }
 
-  async saveChatHistory(dataToSave, userEmail) {
-      if (!userEmail) {
-          console.error('User email is missing. Skipping server save.');
-          return;
-      }
+  async getFollowUpSuggestions(conversationHistory, lastAnswer) {
+    try {
+      const response = await fetch(`${CONFIG.API_BASE}/follow-up`, {
+        method: "POST",
+        headers: this._getAuthHeaders(),
+        body: JSON.stringify({
+          conversation_history: conversationHistory,
+          last_answer: lastAnswer
+        })
+      });
       
-      console.log(`💾 Saving history for ${userEmail} to server at ${CONFIG.HISTORY_API_URL_BASE}/save...`);
-      
-      const payload = {
-          email: userEmail,
-          ...dataToSave
-      };
-
-      try {
-          const response = await fetch(`${CONFIG.HISTORY_API_URL_BASE}/save`, {
-              method: 'POST',
-              headers: {
-                  'Content-Type': 'application/json',
-                  // In a real app, you would pass a secure token here, not the email
-                  'X-User-Email': userEmail 
-              },
-              body: JSON.stringify(payload)
-          });
-
-          if (!response.ok) {
-              const errorText = await response.text();
-              throw new Error(`Failed to save history: HTTP ${response.status} - ${errorText}`);
-          }
-
-          console.log('✅ Chat history saved to server successfully.');
-          return true;
-      } catch (error) {
-          console.error('❌ Failed to save chat history to API:', error);
-          // Log the failure but don't stop the app
-          return false;
-      }
+      if (!response.ok) return [];
+      const data = await response.json();
+      return data.questions || [];
+    } catch (error) {
+      console.error("Follow-up fetch error:", error);
+      return [];
+    }
   }
 
-  /**
-   * Streaming response handler (if needed in future)
-   */
-  async handleStreamingResponse(response, messageElement) {
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-    let fullAnswer = '';
-    
-    // ... (Streaming logic remains the same) ...
-    return fullAnswer || "I'm not sure how to answer that. Could you try asking differently?";
-  }
-
-  /**
-   * Unified API call method (for compatibility)
-   */
-  async callAIAPI(prompt, messageElement = null) {
-    // Redirect to main method for simplicity
-    return await this.getAIResponse(prompt, null, [], null, messageElement);
-  }
-
-  /**
-   * Essential methods only
-   */
   stopGeneration() {
     if (this.abortController) {
       this.abortController.abort();
@@ -211,38 +145,316 @@ export class APIManager {
     }
   }
 
-  isLoading() {
-    return this.abortController !== null;
+  // ==========================================================
+  // 📂 CHAT HISTORY
+  // ==========================================================
+
+  async loadChatHistory(userEmail) {
+    try {
+      const response = await fetch(`${CONFIG.API_BASE}/chats/load?email=${encodeURIComponent(userEmail)}`, {
+        method: "GET",
+        headers: this._getAuthHeaders()
+      });
+
+      if (!response.ok) throw new Error("Failed to load history");
+      return await response.json();
+    } catch (error) {
+      console.error("Load History Error:", error);
+      return { chats: [], currentConversation: [] };
+    }
+  }
+
+  async saveChatHistory(data, userEmail) {
+    try {
+      const payload = {
+        email: userEmail,
+        chats: data.chats,
+        currentConversation: data.currentConversation,
+        activeChatIndex: data.activeChatIndex
+      };
+
+      await fetch(`${CONFIG.API_BASE}/chats/save`, {
+        method: "POST",
+        headers: this._getAuthHeaders(),
+        body: JSON.stringify(payload)
+      });
+    } catch (error) {
+      console.error("Save History Error:", error);
+    }
+  }
+
+  async deleteChatSession(userEmail, sessionId) {
+    await fetch(`${CONFIG.API_BASE}/chats/delete`, {
+      method: "DELETE",
+      headers: this._getAuthHeaders(),
+      body: JSON.stringify({ email: userEmail, sessionId })
+    });
+  }
+
+  async renameChatSession(userEmail, sessionId, newTitle) {
+    await fetch(`${CONFIG.API_BASE}/chats/rename`, {
+      method: "PUT",
+      headers: this._getAuthHeaders(),
+      body: JSON.stringify({ email: userEmail, sessionId, newTitle })
+    });
+  }
+
+  // ==========================================================
+  // 🟢 KNOWLEDGE BASE (USER ACCESSIBLE)
+  // ==========================================================
+
+  async getDatabaseStats() {
+      const res = await fetch(`${CONFIG.API_BASE}/database/stats`, { headers: this._getAuthHeaders() });
+      return await res.json();
   }
   
-  /**
-   * Simple conversation optimization (keep recent messages only)
-   */
-  optimizeConversationHistory(conversation, currentQuestion) {
-    // Just keep the last 3 exchanges for context
-    return conversation.slice(-3);
+  async hasKbSettingsAccess() {
+      const res = await fetch(`${CONFIG.API_BASE}/features/kb-settings/access`, { headers: this._getAuthHeaders() });
+      return await res.json();
+  }
+  
+  async getDocuments() {
+      const res = await fetch(`${CONFIG.API_BASE}/knowledge/documents`, { headers: this._getAuthHeaders() });
+      return await res.json();
   }
 
-  /**
-   * Dummy methods for compatibility - do nothing
-   */
-  enablePhaseOptimization() {
-    console.log('Phase optimization handled by server RAG');
+  async getDocument(id) {
+      const res = await fetch(`${CONFIG.API_BASE}/knowledge/documents/${id}`, { headers: this._getAuthHeaders() });
+      return await res.json();
   }
 
-  disablePhaseOptimization() {
-    console.log('Phase optimization handled by server RAG');
+  async createDocument(data) {
+      const res = await fetch(`${CONFIG.API_BASE}/knowledge/documents`, {
+          method: 'POST',
+          headers: this._getAuthHeaders(),
+          body: JSON.stringify(data)
+      });
+      return await res.json();
   }
 
-  clearCache() {
-    console.log('Cache clearing handled by server');
+  async updateDocument(id, data) {
+      const res = await fetch(`${CONFIG.API_BASE}/knowledge/documents/${id}`, {
+          method: 'PUT',
+          headers: this._getAuthHeaders(),
+          body: JSON.stringify(data)
+      });
+      return await res.json();
+  }
+
+  async deleteDocument(id) {
+      const res = await fetch(`${CONFIG.API_BASE}/knowledge/documents/${id}`, {
+          method: 'DELETE',
+          headers: this._getAuthHeaders()
+      });
+      return await res.json();
+  }
+  
+  async getCategories() {
+      const res = await fetch(`${CONFIG.API_BASE}/knowledge/categories`, { headers: this._getAuthHeaders() });
+      return await res.json();
+  }
+  
+  // These use Admin endpoints but are mapped here for consistency
+  async createCategory(name) {
+      const res = await fetch(`${CONFIG.API_BASE}/admin/categories`, {
+          method: 'POST',
+          headers: this._getAuthHeaders(),
+          body: JSON.stringify({ name })
+      });
+      return await res.json();
+  }
+
+  async updateCategory(id, name) {
+      const res = await fetch(`${CONFIG.API_BASE}/admin/categories/${id}`, {
+          method: 'PUT',
+          headers: this._getAuthHeaders(),
+          body: JSON.stringify({ name })
+      });
+      return await res.json();
+  }
+  
+  async getSubcategories(catId) {
+      const url = catId 
+        ? `${CONFIG.API_BASE}/knowledge/subcategories/${catId}`
+        : `${CONFIG.API_BASE}/knowledge/subcategories`;
+      
+      const res = await fetch(url, { headers: this._getAuthHeaders() });
+      return await res.json();
+  }
+
+  async createSubcategory(name, category_id, description = '') {
+      const res = await fetch(`${CONFIG.API_BASE}/knowledge/subcategories`, {
+          method: 'POST',
+          headers: this._getAuthHeaders(),
+          body: JSON.stringify({ name, category_id, description })
+      });
+      return await res.json();
+  }
+
+  async updateSubcategory(id, name, category_id, description = '') {
+      const res = await fetch(`${CONFIG.API_BASE}/knowledge/subcategories/${id}`, {
+          method: 'PUT',
+          headers: this._getAuthHeaders(),
+          body: JSON.stringify({ name, category_id, description })
+      });
+      return await res.json();
+  }
+
+  async deleteSubcategory(id) {
+      const res = await fetch(`${CONFIG.API_BASE}/knowledge/subcategories/${id}`, {
+          method: 'DELETE',
+          headers: this._getAuthHeaders()
+      });
+      return await res.json();
+  }
+  
+  async regenerateCache() {
+      const res = await fetch(`${CONFIG.API_BASE}/cache/regenerate`, { 
+          method: 'POST',
+          headers: this._getAuthHeaders() 
+      });
+      return await res.json();
+  }
+
+  async convertFileToJSON(file) {
+    const formData = new FormData();
+    formData.append('file', file);
+    const headers = this._getAuthHeaders();
+    delete headers['Content-Type']; 
+
+    const response = await fetch(`${CONFIG.API_BASE}/knowledge/convert-file`, {
+      method: 'POST',
+      headers: headers,
+      body: formData
+    });
+
+    if (!response.ok) throw new Error("Conversion failed");
+    return await response.json();
+  }
+
+  // ==========================================================
+  // 🎙️ GEMINI TTS
+  // ==========================================================
+
+  async getTTS(text) {
+      try {
+          const allowedVoices = ['Puck','Charon','Kore','Fenrir','Aoede'];
+          const voice = allowedVoices.includes(CONFIG.TTS_VOICE_NAME) ? CONFIG.TTS_VOICE_NAME : undefined;
+          const response = await fetch(`${CONFIG.API_BASE}/tts/speak`, {
+              method: 'POST',
+              headers: this._getAuthHeaders(),
+              body: JSON.stringify({ text, voice })
+          });
+
+          if (!response.ok) {
+              const err = await response.json();
+              throw new Error(err.error || 'TTS generation failed');
+          }
+
+          return await response.blob();
+      } catch (error) {
+          console.error("API.getTTS Error:", error);
+          throw error;
+      }
+  }
+
+  // ==========================================================
+  // ⚙️ SYSTEM & UTILS
+  // ==========================================================
+
+  async getSettings() {
+      const res = await fetch(`${CONFIG.API_BASE}/admin/settings`, { headers: this._getAuthHeaders() });
+      if (!res.ok) throw new Error("Unauthorized");
+      return await res.json();
+  }
+
+  async updateSettings(data) {
+      const res = await fetch(`${CONFIG.API_BASE}/admin/settings`, {
+          method: 'PUT',
+          headers: this._getAuthHeaders(),
+          body: JSON.stringify(data)
+      });
+      return await res.json();
+  }
+
+  async getSystemHealth() {
+      const res = await fetch(`${CONFIG.API_BASE}/admin/system/health`, { headers: this._getAuthHeaders() });
+      return await res.json();
+  }
+
+  async updateUserName(email, newName) {
+    try {
+      const response = await fetch(`${CONFIG.API_BASE}/api/user/profile`, {
+        method: 'PUT',
+        headers: this._getAuthHeaders(),
+        body: JSON.stringify({ email, name: newName })
+      });
+      return response.ok;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  async getUserProfile(email) {
+    const url = `${CONFIG.API_BASE}/api/user/profile?email=${encodeURIComponent(email)}`;
+    const res = await fetch(url, { headers: this._getAuthHeaders() });
+    return await res.json();
+  }
+
+  async upsertUserProfile(profile) {
+    const payload = {
+      email: profile.email,
+      name: profile.name,
+      department: profile.department || null,
+      position: profile.position || null,
+      activate: profile.activate !== false
+    };
+
+    const res = await fetch(`${CONFIG.API_BASE}/api/user/profile`, {
+      method: 'POST',
+      headers: this._getAuthHeaders(),
+      body: JSON.stringify(payload)
+    });
+    return await res.json();
+  }
+
+  async requestOtp(email) {
+    const res = await fetch(`${CONFIG.API_BASE}/auth/request-otp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    });
+    return await res.json();
+  }
+
+  async verifyOtp(email, code) {
+    const res = await fetch(`${CONFIG.API_BASE}/auth/verify-otp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, code })
+    });
+    return await res.json();
+  }
+
+  async deleteAccount(email) {
+    const headers = this._getAuthHeaders();
+    const payload = email ? { email } : null;
+    const res = await fetch(`${CONFIG.API_BASE}/api/user/account`, {
+      method: 'DELETE',
+      headers: headers,
+      body: payload ? JSON.stringify(payload) : undefined
+    });
+    return await res.json();
   }
 
   async initializeCDOCache() {
-    console.log('Company info cache handled by server RAG');
-  }
-
-  async getCDOInfo() {
-    return ''; // Let server handle company info through RAG
+    try {
+        const response = await fetch(`${CONFIG.API_BASE}/rag/status`, {
+            headers: this._getAuthHeaders()
+        });
+        return await response.json();
+    } catch (e) {
+        return null;
+    }
   }
 }

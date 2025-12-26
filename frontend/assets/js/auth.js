@@ -44,7 +44,7 @@ export class AuthManager {
   // Get user-specific storage key for employee data
   getUserStorageKey(baseKey) {
     const session = this.getSession();
-    if (!session || session.userType !== 'employee' || !session.email) {
+    if (!session || (session.userType !== 'employee' && session.userType !== 'external') || !session.email) {
       // Return the base key for guests/unauthenticated (though data-sync should handle this)
       return baseKey;
     }
@@ -57,9 +57,12 @@ export class AuthManager {
     const session = this.getSession();
     if (!session) return 'You';
     
-    // If employee, return email; if guest, return 'You'
-    if (session.userType === 'employee' && session.email) {
-      return session.email;
+    if ((session.userType === 'employee' || session.userType === 'external') && session.email) {
+      const local = session.email.split('@')[0];
+      const cleaned = local.replace(/[\._-]+/g, ' ').replace(/\s+/g, ' ').trim();
+      if (cleaned) {
+        return cleaned.split(' ').map(w => w ? (w[0].toUpperCase() + w.slice(1).toLowerCase()) : '').join(' ').trim();
+      }
     }
     
     return 'You';

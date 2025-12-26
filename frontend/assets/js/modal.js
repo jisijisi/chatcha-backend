@@ -1,5 +1,6 @@
-// Modal and Toast Management
+// frontend/assets/js/modal.js - Added Cancel Text Support
 import { CONFIG } from './config.js';
+import { TRANSLATIONS } from './translations.js';
 
 export class ModalManager {
   constructor(elements) {
@@ -9,10 +10,11 @@ export class ModalManager {
 
   showWelcomeModal(onConfirm) {
     this.showModal({
-      title: "Welcome to ChatCHA! ✨", // No change needed
-      message: "I'm Cindy, your AI assistant for CDO Foodsphere! I'm here to help with questions about company policies, history, products, and more.\n\nWhat should I call you?", // UPDATED
+      title: "Welcome to ChatCDO! ✨", 
+      message: "I'm Cindy, your AI assistant for CDO Foodsphere! I'm here to help with questions about company policies, history, products, and more.\n\nWhat should I call you?",
       inputValue: "",
       confirmText: "Let's Get Started! 🚀",
+      cancelText: null, // No cancel option for welcome
       confirmClass: "",
       onConfirm
     });
@@ -28,11 +30,33 @@ export class ModalManager {
   }
 
   showModal(options) {
-    const { title, message, inputValue = "", confirmText = "Confirm", confirmClass = "", onConfirm } = options;
+    const { 
+      title, 
+      message, 
+      inputValue = "", 
+      confirmText = "Confirm", 
+      cancelText = "Cancel", // Default fallback
+      confirmClass = "", 
+      onConfirm 
+    } = options;
     
     this.elements.modalTitle.textContent = title;
     this.elements.modalMessage.textContent = message;
     this.elements.modalConfirm.textContent = confirmText;
+    if (this.elements.modalConfirm) this.elements.modalConfirm.setAttribute('type', 'button');
+    if (this.elements.modalCancel) this.elements.modalCancel.setAttribute('type', 'button');
+    if (this.elements.modalClose) this.elements.modalClose.setAttribute('type', 'button');
+    
+    // Update Cancel Button Text
+    if (cancelText) {
+      this.elements.modalCancel.textContent = cancelText;
+      this.elements.modalCancel.style.display = 'inline-block';
+    } else {
+      this.elements.modalCancel.style.display = 'none';
+    }
+    
+    // Store original text for restoring after loading
+    this.elements.modalConfirm.dataset.originalText = confirmText;
     
     this.elements.modalConfirm.className = "modal-btn modal-btn-confirm";
     if (confirmClass) {
@@ -49,6 +73,9 @@ export class ModalManager {
     
     this.elements.modalOverlay.classList.add("active");
     this.elements.modalOverlay.setAttribute("aria-hidden", "false");
+    this.elements.modalOverlay.style.zIndex = '10250';
+    const innerModal = this.elements.modalOverlay.querySelector('.modal');
+    if (innerModal) innerModal.style.zIndex = '10251';
     
     this.modalConfirmCallback = onConfirm;
   }
@@ -59,6 +86,10 @@ export class ModalManager {
     this.elements.modalInput.value = "";
     this.modalConfirmCallback = null;
     
+    // Reset button state
+    this.elements.modalConfirm.disabled = false;
+    this.elements.modalConfirm.classList.remove('loading');
+    
     this.elements.modalCancel.style.display = '';
     this.elements.modalClose.style.display = '';
     this.elements.modalOverlay.style.pointerEvents = '';
@@ -67,11 +98,54 @@ export class ModalManager {
     this.elements.modalMessage.style.lineHeight = '';
   }
 
-  handleModalConfirm() {
+  async handleModalConfirm(e) {
+    if (e) { e.preventDefault(); e.stopPropagation(); }
     if (this.modalConfirmCallback) {
       const inputVisible = this.elements.modalInput.style.display !== "none";
       const value = inputVisible ? this.elements.modalInput.value.trim() : true;
-      this.modalConfirmCallback(value);
+      let shouldClose = true;
+      try {
+        // Check if the callback returns a promise (is async)
+        const result = this.modalConfirmCallback(value);
+        
+        if (result instanceof Promise) {
+          // Show loading state
+          const btn = this.elements.modalConfirm;
+          const originalText = btn.dataset.originalText || btn.textContent;
+          
+          // Get current language for "Processing..." text
+          const lang = localStorage.getItem('app_language') || 'en';
+          const t = TRANSLATIONS[lang] || TRANSLATIONS.en;
+          const processingText = t.modals.processing || "Processing...";
+          
+          btn.disabled = true;
+          btn.classList.add('loading');
+          // Add spinner and localized processing text
+          btn.innerHTML = `<span class="btn-spinner"></span> ${processingText}`;
+          
+          // Wait for completion
+          const awaited = await result;
+          if (awaited === false) {
+            shouldClose = false;
+          }
+          // Restore button state if staying open
+          if (!shouldClose) {
+            btn.disabled = false;
+            btn.classList.remove('loading');
+            btn.textContent = originalText;
+          }
+        } else {
+          if (result === false) {
+            shouldClose = false;
+          }
+        }
+      } catch (error) {
+        console.error("Modal action failed:", error);
+      }
+      if (shouldClose) {
+        this.closeModal();
+      }
+      return;
     }
     this.closeModal();
   }
@@ -121,119 +195,125 @@ export class ModalManager {
   }
 
   initializeTooltips() {
-    if (!document.getElementById('tooltip-styles')) {
-      const style = document.createElement('style');
-      style.id = 'tooltip-styles';
-      style.textContent = `
-        .tooltip-wrapper {
-          position: relative;
-          display: inline-flex;
-        }
-      `;
-      document.head.appendChild(style);
-    }
+    // Styles handled in CSS
   }
 
   addTooltip(element, text, position = 'top') {
     if (!element || window.innerWidth <= CONFIG.MOBILE_BREAKPOINT) return;
-    
-    const existingTooltip = element.querySelector('.tooltip');
-    if (existingTooltip && existingTooltip.textContent === text) {
-      return;
-    }
-    
-    const tooltip = document.createElement('div');
-    tooltip.className = `tooltip ${position}`;
-    tooltip.textContent = text;
-    
-    element.style.position = 'relative';
-    element.appendChild(tooltip);
-    
-    let showTimeout;
-    let hideTimeout;
-    
+    let tooltip = null;
+    // Global handlers to guarantee cleanup even on fast hover/scroll
+    let onDocPointerDown, onDocScroll, onWinResize, onWinBlur, onPointerMove, onDocMouseLeave;
     const showTooltip = () => {
+      // FIX: Check if element exists before accessing properties
+      if (!element) return;
+      
       const isSidebarElement = element.closest('#sidebar');
       const sidebar = document.getElementById('sidebar');
       if (isSidebarElement && sidebar && !sidebar.classList.contains('minimized')) {
         return;
       }
-      
-      clearTimeout(hideTimeout);
-      showTimeout = setTimeout(() => {
-        tooltip.classList.add('show');
-        this.positionTooltip(tooltip, element, position);
-      }, 300);
+      const existing = document.querySelectorAll('.tooltip');
+      existing.forEach(t => t.remove());
+      tooltip = document.createElement('div');
+      tooltip.className = `tooltip ${position}`;
+      tooltip.textContent = text;
+      document.body.appendChild(tooltip);
+      requestAnimationFrame(() => {
+        if (tooltip && tooltip.classList) { // Add safety check
+            tooltip.classList.add('show');
+            this.positionTooltip(tooltip, element, position);
+        }
+      });
+      // Attach robust hide triggers
+      onDocPointerDown = () => hideTooltip();
+      onDocScroll = () => hideTooltip();
+      onWinResize = () => hideTooltip();
+      onWinBlur = () => hideTooltip();
+      onPointerMove = () => {
+        if (!element || !element.matches(':hover')) hideTooltip();
+      };
+      onDocMouseLeave = () => hideTooltip();
+      document.addEventListener('pointerdown', onDocPointerDown, { passive: true });
+      document.addEventListener('wheel', onDocScroll, { passive: true, capture: true });
+      document.addEventListener('scroll', onDocScroll, { passive: true, capture: true });
+      window.addEventListener('resize', onWinResize);
+      window.addEventListener('blur', onWinBlur);
+      document.addEventListener('pointermove', onPointerMove, { passive: true });
+      document.addEventListener('mouseleave', onDocMouseLeave);
     };
-    
     const hideTooltip = () => {
-      clearTimeout(showTimeout);
-      hideTimeout = setTimeout(() => {
-        tooltip.classList.remove('show');
-      }, 100);
+      if (tooltip) {
+        tooltip.remove();
+        tooltip = null;
+      }
+      // Detach global listeners to avoid leaks
+      if (onDocPointerDown) document.removeEventListener('pointerdown', onDocPointerDown);
+      if (onDocScroll) {
+        document.removeEventListener('wheel', onDocScroll, { capture: true });
+        document.removeEventListener('scroll', onDocScroll, { capture: true });
+      }
+      if (onWinResize) window.removeEventListener('resize', onWinResize);
+      if (onWinBlur) window.removeEventListener('blur', onWinBlur);
+      if (onPointerMove) document.removeEventListener('pointermove', onPointerMove);
+      if (onDocMouseLeave) document.removeEventListener('mouseleave', onDocMouseLeave);
+      onDocPointerDown = onDocScroll = onWinResize = onWinBlur = onPointerMove = onDocMouseLeave = null;
     };
-    
-    element.addEventListener('mouseenter', showTooltip);
-    element.addEventListener('mouseleave', hideTooltip);
-    element.addEventListener('focus', showTooltip);
-    element.addEventListener('blur', hideTooltip);
-    
-    element._tooltipHandlers = { showTooltip, hideTooltip };
+    // Ensure element exists before adding listeners
+    if (element) {
+        element.addEventListener('mouseenter', showTooltip, { passive: true });
+        // Use both mouseleave and pointerleave to maximize reliability
+        element.addEventListener('mouseleave', hideTooltip, { passive: true });
+        element.addEventListener('pointerleave', hideTooltip, { passive: true });
+        element.addEventListener('focus', showTooltip);
+        element.addEventListener('blur', hideTooltip);
+        element._tooltipHandlers = { showTooltip, hideTooltip };
+    }
   }
 
-  // --- THIS FUNCTION IS NOW FIXED ---
   positionTooltip(tooltip, element, position) {
+    if (!tooltip || !element) return;
     const elementRect = element.getBoundingClientRect();
     const tooltipRect = tooltip.getBoundingClientRect();
-    const viewport = {
-      width: window.innerWidth,
-      height: window.innerHeight
-    };
-    
+    const viewport = { width: window.innerWidth, height: window.innerHeight };
+    const isInInputArea = !!element.closest('.input-area');
     let top, left;
-    
     switch (position) {
       case 'top':
         top = elementRect.top - tooltipRect.height - 8;
         left = elementRect.left + (elementRect.width / 2) - (tooltipRect.width / 2);
-        if (top < 10) {
-          top = elementRect.bottom + 8;
+        if (top < 10) { top = elementRect.bottom + 8; tooltip.className = 'tooltip bottom show'; }
+        break;
+      case 'bottom':
+        top = elementRect.bottom + 8;
+        left = elementRect.left + (elementRect.width / 2) - (tooltipRect.width / 2);
+        if (!isInInputArea && (top + tooltipRect.height > viewport.height - 10)) {
+          top = elementRect.top - tooltipRect.height - 8;
+          tooltip.className = 'tooltip top show';
+        } else {
           tooltip.className = 'tooltip bottom show';
         }
         break;
-        
       case 'right':
         top = elementRect.top + (elementRect.height / 2) - (tooltipRect.height / 2);
         left = elementRect.right + 8;
-        if (left + tooltipRect.width > viewport.width - 10) {
-          left = elementRect.left - tooltipRect.width - 8;
-          tooltip.className = 'tooltip left show';
-        }
+        if (left + tooltipRect.width > viewport.width - 10) { left = elementRect.left - tooltipRect.width - 8; tooltip.className = 'tooltip left show'; }
         break;
-        
       default:
         top = elementRect.top - tooltipRect.height - 8;
         left = elementRect.left + (elementRect.width / 2) - (tooltipRect.width / 2);
     }
-    
     left = Math.max(10, Math.min(left, viewport.width - tooltipRect.width - 10));
-    top = Math.max(10, Math.min(top, viewport.height - tooltipRect.height - 10));
-    
-    // Set the calculated fixed positions
+    if (position === 'bottom' && isInInputArea) {
+      top = Math.max(10, top);
+    } else {
+      top = Math.max(10, Math.min(top, viewport.height - tooltipRect.height - 10));
+    }
     tooltip.style.top = `${top}px`;
     tooltip.style.left = `${left}px`;
   }
 
   removeSidebarTooltips() {
-    const sidebar = document.getElementById('sidebar');
-    if (!sidebar) return;
-    
-    const sidebarElements = sidebar.querySelectorAll('[class*="tooltip"]');
-    sidebarElements.forEach(element => {
-      const tooltip = element.querySelector('.tooltip');
-      if (tooltip) {
-        tooltip.remove();
-      }
-    });
+    const tooltips = document.querySelectorAll('.tooltip');
+    tooltips.forEach(t => t.remove());
   }
 }

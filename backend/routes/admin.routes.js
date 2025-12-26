@@ -27,6 +27,7 @@ router.get("/admin/dashboard-knowledge-usage", adminController.getKnowledgeUsage
 router.get("/admin/dashboard-stats-filtered", adminController.getDashboardStatsFiltered);
 router.get("/admin/dashboard-charts-filtered", adminController.getDashboardChartsFiltered);
 router.get("/admin/dashboard-activity-filtered", adminController.getDashboardActivityFiltered);
+router.get("/admin/dashboard-department-usage-filtered", adminController.getDashboardDepartmentUsageFiltered);
 
 // Knowledge Base
 router.get("/admin/documents", knowledgeController.getDocuments);
@@ -76,7 +77,14 @@ router.delete("/admin/chats/:sessionId", adminController.deleteChat);
 router.get("/admin/settings", adminController.getSettings);
 router.put("/admin/settings", adminController.updateSettings);
 router.get("/admin/system/health", adminController.getSystemHealth);
+router.get("/admin/system/gemini-models", adminController.getAvailableGeminiModels); // <--- NEW ROUTE
 router.post("/admin/cache/clear", adminController.clearCache);
-router.post("/admin/cache/regenerate", adminController.regenerateCache);
+router.post("/admin/cache/regenerate", cacheController.regenerateCache);
+router.get("/admin/dashboard/stream", adminController.dashboardStream);
+
+// Smart Assistant (New)
+router.get("/admin/smart-assistant/sessions", adminController.getSmartAssistantSessions);
+router.get("/admin/smart-assistant/analytics", adminController.getSmartAssistantAnalytics);
+router.post("/admin/smart-assistant/sessions/clear", adminController.clearAllSmartAssistantSessions);
 
 export default router;

@@ -1,0 +1,74 @@
+
+/* Live Voice FAB */
+.live-voice-fab {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: none;
+  background: #1f1f1f;
+  color: #fff;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+  cursor: pointer;
+  z-index: 10000;
+  display: none; /* shown by JS when enabled */
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.live-voice-fab:hover {
+  transform: scale(1.05);
+  box-shadow: 0 12px 30px rgba(0,0,0,0.3);
+}
+
+.live-voice-fab .mic-icon {
+  width: 28px;
+  height: 28px;
+}
+
+.live-voice-fab.active {
+  background: #D71921; /* CDO Red */
+}
+
+.live-voice-fab.connecting {
+  background: #f59e0b; /* Amber-500 */
+  animation: connectingPulse 1s infinite;
+}
+
+@keyframes connectingPulse {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(0.95); opacity: 0.8; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.live-pulse-ring {
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  border: 2px solid rgba(215, 25, 33, 0.6);
+  opacity: 0;
+  transform: scale(0.9);
+  pointer-events: none;
+}
+
+.live-voice-fab.active .live-pulse-ring {
+  animation: livePulse 1.4s ease-out infinite;
+  opacity: 1;
+}
+
+@keyframes livePulse {
+  0% { transform: scale(0.9); opacity: 0.7; }
+  50% { transform: scale(1.15); opacity: 0.3; }
+  100% { transform: scale(0.9); opacity: 0; }
+}
+
+/* Adjust position on mobile if needed */
+@media (max-width: 768px) {
+  .live-voice-fab {
+    bottom: 80px; /* Above the input bar area if needed, or adjust as per layout */
+    right: 20px;
+  }
+}

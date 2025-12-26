@@ -7,6 +7,7 @@ import { getEnhancedContext } from '../services/aiService.js';
 import { ToolService } from '../services/toolService.js'; 
 import { IntentService } from '../services/intentService.js';
 import { SmartPersonalAssistant } from '../services/smartPersonalAssistant.js';  // NEW IMPORT
+import { SmartDataAnalyst } from '../services/smartDataAnalyst.js'; // NEW IMPORT
 import { PROMPT_TEMPLATES } from '../utils/prompts.js';
 import { AI_BEHAVIOR } from '../utils/aiBehavior.js';
 
@@ -115,7 +116,9 @@ export const searchRag = async (req, res) => {
 };
 
 export const askQuestion = async (req, res) => {
-    const { prompt, use_rag = true, behavior_context } = req.body;
+    const { prompt, use_rag = true, behavior_context, session_id, sessionId } = req.body; // Extract session_id
+    const activeSessionId = session_id || sessionId; // Normalization
+    
     const userEmail = req.header('X-User-Email'); 
     
     if (!prompt) return res.status(400).json({ error: "Missing prompt" });
@@ -236,7 +239,54 @@ export const askQuestion = async (req, res) => {
         }
 
         // =========================================================================================
-        // STANDARD AGENT FLOW (Knowledge Base / Live Data / Generic)
+        // 📊 NEW: SMART DATA ANALYST (For Live Data)
+        // =========================================================================================
+        
+        if (intent === 'LIVE_DATA') {
+            try {
+                const dataAnalyst = new SmartDataAnalyst();
+                
+                // Extract last bot response for context merging
+                const lastHistoryItem = history.length > 0 ? history[history.length - 1] : null;
+                const lastBotResponse = lastHistoryItem ? (lastHistoryItem.answer || lastHistoryItem.content) : null;
+
+                const analystResult = await dataAnalyst.processQuery(prompt, history, lastBotResponse, activeSessionId, userEmail);
+                
+                return res.json({
+                    answer: analystResult.text,
+                    intent: intent,
+                    analysis: {
+                        emotion: intentData.user_emotion,
+                        complexity: intentData.complexity,
+                        is_followup: intentData.is_followup,
+                        rewritten: searchTerms,
+                        pending_action: analystResult.status
+                    },
+                    accessed_documents: [], // Clear knowledge base sources
+                    accessed_tools: [{
+                        id: "smart-data-analyst",
+                        name: analystResult.source ? `${analystResult.source} (${analystResult.category || 'Live Data Tools'})` : "Smart Data Analyst",
+                        category: "Live Data",
+                        source_name: analystResult.source,
+                        source_category: analystResult.category
+                    }],
+                    source_categories: {},
+                    rag_used: false, // Explicitly false to prevent KB usage
+                    tool_used: true,
+                    tool_query: "Smart Data Analysis",
+                    result_count: analystResult.data ? analystResult.data.length : 0,
+                    success: true,
+                    meta: { thinking_phrases: thinkingPhrases }
+                });
+
+            } catch (analystError) {
+                console.error("❌ Smart Data Analyst failed:", analystError);
+                // Fallback to General/RAG if analysis fails
+            }
+        }
+
+        // =========================================================================================
+        // STANDARD AGENT FLOW (Knowledge Base / Generic)
         // =========================================================================================
 
         // 2. CONTEXT & TOOL PREPARATION
@@ -255,9 +305,10 @@ export const askQuestion = async (req, res) => {
                 break;
 
             case 'LIVE_DATA':
-                systemPromptTemplate = PROMPT_TEMPLATES.LIVE_DATA;
-                activeTools = await ToolService.getAvailableTools(userEmail, 'LIVE_DATA');
-                ragContext = "Use the provided tools to fetch live data. Do not use knowledge base text.";
+                // Handled above by SmartDataAnalyst
+                systemPromptTemplate = PROMPT_TEMPLATES.GENERAL; 
+                activeTools = [];
+                ragContext = "";
                 break;
 
             case 'KNOWLEDGE_BASE':
@@ -456,7 +507,11 @@ Based on conversation history, this interprets to: "${searchTerms}"
                     }
                 }
             }
-        } else if (intent === 'KNOWLEDGE_BASE' && availableSourceNames.length > 0) {
+        } 
+        
+        // Fallback: If no documents were matched (either no citations or citations failed matching),
+        // but we have available sources and intent is KB, use the top source.
+        if (documentSources.length === 0 && intent === 'KNOWLEDGE_BASE' && availableSourceNames.length > 0) {
             const topName = availableSourceNames[0];
             const topId = sourceMap[topName];
             if (topId !== -1) {
@@ -686,5 +741,70 @@ export const getThinkingPhrases = async (req, res) => {
             intent: 'GENERAL',
             meta: { thinking_phrases: AI_BEHAVIOR.conversationalAssets?.transitions || [] }
         });
+    }
+};
+
+export const getFollowUpQuestions = async (req, res) => {
+    if (!process.env.GEMINI_API_KEY) {
+        return res.json({ questions: [] });
+    }
+
+    try {
+        const { conversation_history, last_answer } = req.body;
+        
+        // Prepare context: take the last few turns
+        const recentHistory = (conversation_history || []).slice(-3).map(m => 
+            `User: ${m.question}\nAssistant: ${m.answer}`
+        ).join('\n\n');
+
+        const prompt = `
+        You are to propose 1–3 follow-up questions strictly related to the assistant’s last answer.
+        
+        CONTEXT:
+        ${recentHistory}
+        
+        LAST ASSISTANT ANSWER:
+        ${last_answer}
+        
+        INSTRUCTIONS:
+        1. Check if the last user message was a topical query and the assistant produced a substantive answer.
+        2. If the last user message is a short acknowledgment (e.g. "Thanks", "Okay", "Got it") or clarification with no new topic, return an empty array [].
+        3. If valid, generate 1-3 short, grammatically correct follow-up questions.
+        4. Avoid repeating entities verbatim if possible (use pronouns like "it", "they" where clear).
+        5. Do not introduce completely new topics unrelated to the context.
+        6. Return ONLY a raw JSON array of strings. Example: ["What are their best-selling products?", "How do I apply?"]
+        `;
+
+        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
+        const result = await model.generateContent({
+            contents: [{ role: "user", parts: [{ text: prompt }] }],
+            generationConfig: {
+                temperature: 0.3,
+                maxOutputTokens: 256,
+                responseMimeType: "application/json"
+            }
+        });
+
+        const responseText = result.response.text();
+        let questions = [];
+        try {
+            questions = JSON.parse(responseText);
+        } catch (e) {
+            // Fallback parsing if not pure JSON
+            const match = responseText.match(/\[.*\]/s);
+            if (match) {
+                try { questions = JSON.parse(match[0]); } catch {}
+            }
+        }
+
+        // Ensure it's an array of strings
+        if (!Array.isArray(questions)) questions = [];
+        questions = questions.filter(q => typeof q === 'string').slice(0, 3);
+
+        res.json({ questions });
+
+    } catch (error) {
+        console.error("Follow-up generation error:", error);
+        res.json({ questions: [] }); // Fail gracefully
     }
 };

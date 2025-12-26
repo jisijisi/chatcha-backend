@@ -1,0 +1,386 @@
+/* data-visualization.css - Unified Styles for Tables and Custom Charts */
+
+/* ========================================
+   DATA TABLES (Markdown Output & JSON)
+======================================== */
+.table-wrapper {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  /* Max height + vertical scroll ensures large JSON datasets don't consume the entire chat */
+  max-height: 500px;
+  overflow-y: auto;
+  overflow-x: auto;
+  margin: 20px 0;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e2e8f0;
+  background: white;
+  -webkit-overflow-scrolling: touch;
+}
+
+table.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+  min-width: 600px; /* Forces scroll on small screens */
+  background: white;
+}
+
+table.data-table thead {
+  background: linear-gradient(135deg, #D71921 0%, #B71519 100%);
+  color: white;
+}
+
+table.data-table th {
+  /* STICKY HEADER for long lists */
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: #D71921; /* Solid fallback for sticky context */
+  
+  padding: 16px 20px;
+  text-align: left;
+  font-weight: 700;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 3px solid #FFC700;
+  white-space: nowrap;
+  border-right: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+table.data-table th:last-child {
+  border-right: none;
+}
+
+table.data-table td {
+  padding: 14px 20px;
+  border-bottom: 1px solid #e8e8e8;
+  color: #2d3748;
+  vertical-align: top;
+  line-height: 1.6;
+  border-right: 1px solid #f1f5f9;
+}
+
+table.data-table td:last-child {
+  border-right: none;
+}
+
+/* Row Hover & Striping */
+table.data-table tbody tr {
+  transition: all 0.2s ease;
+}
+
+table.data-table tbody tr:hover {
+  background-color: #fff5f5;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(215, 25, 33, 0.1);
+}
+
+table.data-table tbody tr:nth-child(even) {
+  background-color: #f8fafc;
+}
+
+table.data-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Empty cells handling */
+table.data-table td:empty::before {
+  content: "—";
+  color: #999;
+  font-style: italic;
+}
+
+/* ========================================
+   CHARTS (Canvas Renderer Output)
+======================================== */
+.chart-container {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  margin: 24px 0;
+  padding: 24px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  box-sizing: border-box;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.chart-container:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  transform: translateY(-2px);
+}
+
+.chart-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0 0 20px 0;
+  text-align: center;
+  font-family: 'Montserrat', sans-serif;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #f0f0f0;
+}
+
+/* Canvas styling */
+.data-chart {
+  display: block;
+  width: 100% !important;
+  height: auto !important;
+  max-height: 400px;
+  border-radius: 8px;
+  background: #fafbfc;
+}
+
+.chart-error {
+  padding: 24px;
+  background: #fff3cd;
+  border: 2px solid #ffc107;
+  border-radius: 12px;
+  color: #856404;
+  text-align: center;
+  margin: 20px 0;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+/* Chart Legend Styles */
+.chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  justify-content: center;
+  margin-top: 20px;
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  color: #4b5563;
+}
+
+.legend-color {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+/* ========================================
+   RESPONSIVE ADJUSTMENTS
+======================================== */
+@media (max-width: 768px) {
+  /* Tables */
+  .table-wrapper {
+    margin: 16px 0;
+    border-radius: 8px;
+  }
+  
+  table.data-table th,
+  table.data-table td {
+    padding: 12px 16px;
+    font-size: 0.85rem;
+  }
+  
+  /* Charts */
+  .chart-container {
+    padding: 16px;
+    margin: 20px 0;
+    border-radius: 12px;
+  }
+  
+  .chart-title {
+    font-size: 1.1rem;
+    margin-bottom: 16px;
+  }
+  
+  .data-chart {
+    max-height: 300px;
+  }
+  
+  .chart-legend {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .table-wrapper {
+    border-radius: 6px;
+  }
+  
+  table.data-table th,
+  table.data-table td {
+    padding: 10px 12px;
+    font-size: 0.8rem;
+  }
+  
+  .chart-container {
+    padding: 12px;
+    margin: 16px 0;
+  }
+  
+  .chart-title {
+    font-size: 1rem;
+  }
+  
+  .data-chart {
+    max-height: 250px;
+  }
+}
+
+/* ========================================
+   ANIMATIONS & TRANSITIONS
+======================================== */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.chart-container,
+.table-wrapper {
+  animation: fadeInUp 0.6s ease-out forwards;
+}
+
+table.data-table tbody tr {
+  animation: slideInLeft 0.4s ease-out forwards;
+  animation-fill-mode: both;
+}
+
+table.data-table tbody tr:nth-child(1) { animation-delay: 0.1s; }
+table.data-table tbody tr:nth-child(2) { animation-delay: 0.2s; }
+table.data-table tbody tr:nth-child(3) { animation-delay: 0.3s; }
+table.data-table tbody tr:nth-child(4) { animation-delay: 0.4s; }
+table.data-table tbody tr:nth-child(5) { animation-delay: 0.5s; }
+
+/* ========================================
+   PRINT STYLES
+======================================== */
+@media print {
+  .chart-container,
+  .table-wrapper {
+    break-inside: avoid;
+    box-shadow: none;
+    border: 2px solid #333;
+  }
+  
+  table.data-table {
+    min-width: auto;
+  }
+  
+  .data-chart {
+    max-height: 300px;
+  }
+}
+
+/* ========================================
+   DARK MODE SUPPORT (Optional)
+======================================== */
+@media (prefers-color-scheme: dark) {
+  .chart-container {
+    background: #1f2937;
+    border-color: #374151;
+    color: #f9fafb;
+  }
+  
+  .chart-title {
+    color: #f9fafb;
+  }
+  
+  .table-wrapper {
+    background: #1f2937;
+    border-color: #374151;
+  }
+  
+  table.data-table {
+    background: #1f2937;
+    color: #f9fafb;
+  }
+  
+  table.data-table td {
+    color: #f9fafb;
+    border-color: #374151;
+  }
+  
+  table.data-table tbody tr:nth-child(even) {
+    background-color: #374151;
+  }
+  
+  table.data-table tbody tr:hover {
+    background-color: #4b5563;
+  }
+}
+
+/* ========================================
+   ACCESSIBILITY ENHANCEMENTS
+======================================== */
+.chart-container:focus-within {
+  outline: 3px solid #D71921;
+  outline-offset: 2px;
+}
+
+table.data-table th[scope="col"] {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .chart-container {
+    border: 3px solid #000;
+  }
+  
+  table.data-table th {
+    background: #000;
+    color: #fff;
+  }
+  
+  table.data-table td {
+    border-color: #000;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .chart-container,
+  .table-wrapper,
+  table.data-table tbody tr {
+    animation: none;
+    transition: none;
+  }
+  
+  table.data-table tbody tr:hover {
+    transform: none;
+  }
+}

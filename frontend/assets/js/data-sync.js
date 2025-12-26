@@ -21,15 +21,13 @@ export class DataSyncManager {
   async loadAll() {
     const userType = this.authManager.getUserType();
     
-    if (userType === 'employee') {
+    if (userType === 'employee' || userType === 'external') {
       const userEmail = this.authManager.getUserEmail();
       if (userEmail) {
-        // 1. Employee: Load from API
         return this.apiManager.loadChatHistory(userEmail);
       }
     }
 
-    // 2. Guest or Employee without email (Fallback to LocalStorage)
     console.log('Loading data from LocalStorage (Guest/Fallback mode)');
     return {
       chats: this.loadGuestFromLocalStorage(CONFIG.STORAGE_KEYS.CHATS) || [],
@@ -62,16 +60,14 @@ export class DataSyncManager {
     this._saveTimeout = setTimeout(async () => {
       const userType = this.authManager.getUserType();
       
-      if (userType === 'employee') {
+      if (userType === 'employee' || userType === 'external') {
         const userEmail = this.authManager.getUserEmail();
         if (userEmail) {
-          // 1. Employee: Save to API
           this.apiManager.saveChatHistory(data, userEmail);
         } else {
           console.error('Cannot save employee data, email missing.');
         }
       } else {
-        // 2. Guest: Save to LocalStorage
         try {
           const currentConvKey = this.getGuestStorageKey(CONFIG.STORAGE_KEYS.CURRENT_CONVERSATION);
           const chatsKey = this.getGuestStorageKey(CONFIG.STORAGE_KEYS.CHATS);

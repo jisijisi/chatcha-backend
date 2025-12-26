@@ -1,117 +1,271 @@
-/* Input Area Styles */
+/* Modern Input Area Styles - Footer Layout - FULLY THEMED */
 .input-area {
   width: 100%;
-  padding: 15px;
-  text-align: center;
-  border-top: 1px solid #ddd;
-  background-color: #fff;
+  padding: 0 16px 24px;
+  background: transparent;
   display: flex;
   justify-content: center;
-  align-items: center;
-  gap: 10px;
+  align-items: flex-end;
+  gap: 0;
   position: relative;
   bottom: 0;
+  border-top: none;
+  z-index: 300;
+}
+
+.input-area::before {
+  content: none;
+}
+
+/* Blurry divider between chat and input (Conversational state) */
+#chat-container:not(.centered) .input-area::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -40px;
+  height: 40px;
+  background: linear-gradient(to bottom, rgba(0,0,0,0) 0%, var(--bg-body) 100%);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  pointer-events: none;
+  z-index: 150;
+  will-change: opacity;
+  transform: translateZ(0);
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+[data-theme="dark"] #chat-container:not(.centered) .input-area::before {
+  background: linear-gradient(to bottom, rgba(0,0,0,0) 0%, var(--bg-body) 100%);
+  opacity: 1 !important;
+  visibility: visible !important;
 }
 
 .input-area .input-wrapper {
   position: relative;
   flex: 1;
-  max-width: 700px;
+  max-width: 768px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: 20px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+  z-index: 200;
+}
+
+/* Main Textarea */
+.input-area textarea {
+  width: 100%;
+  padding: 12px 16px 8px 16px;
+  border: none;
+  border-radius: 20px 20px 0 0;
+  font-size: 15px;
+  line-height: 1.5;
+  background: transparent;
+  color: var(--input-text);
+  box-sizing: border-box;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  resize: none;
+  min-height: 44px;
+  height: 44px;
+  max-height: 200px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+}
+
+.input-area textarea::placeholder {
+  color: var(--text-light);
+}
+
+.input-area textarea:focus {
+  outline: none;
+}
+
+.input-area textarea:disabled {
+  background: var(--bg-secondary);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Footer Section */
+.input-footer {
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px 10px 12px;
+  background: transparent;
+  border-radius: 0 0 20px 20px;
+  min-height: 44px;
 }
 
-.input-area input {
-  width: 100%;
-  padding: 12px 60px 12px 55px; 
-  border-radius: 25px;
-  border: 1px solid #ccc;
-  font-size: 1rem;
-  transition: var(--transition);
-  background: #fff;
-  box-sizing: border-box;
-  /* --- THESE TWO LINES ARE NOW REMOVED --- */
-  /* position: relative; */
-  /* z-index: 1; */
-  /* --- END OF FIX --- */
+/* Left side buttons container */
+.input-footer-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.input-area input:focus {
-  outline: none;
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(215, 25, 33, 0.1); /* MODIFIED */
+/* Right side buttons container */
+.input-footer-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
-/* Send Button */
-.input-area button {
-  background: #D71921;
+/* Microphone Button */
+.input-area #mic-btn {
+  background: transparent;
   border: none;
-  color: #fff;
-  font-size: 1.1rem;
-  border-radius: 50%;
-  width: 42px;
-  height: 42px;
+  color: var(--text-muted);
+  border-radius: 8px;
+  width: 32px;
+  height: 32px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: var(--transition);
+  transition: all 0.2s ease;
   flex-shrink: 0;
-  box-shadow: 0 2px 8px rgba(215, 25, 33, 0.3);
-  position: relative;
-  overflow: hidden;
-  margin-left: 8px;
+  padding: 0;
 }
 
-.input-area button::before {
+.input-area #mic-btn:hover {
+  background: var(--bg-secondary);
+  color: var(--primary-color);
+}
+
+.input-area #mic-btn:active {
+  background: var(--bg-secondary);
+  transform: scale(0.95);
+}
+
+.input-area #mic-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* Recording State */
+.input-area #mic-btn.recording {
+  color: #ffffff;
+  background: #ef4444;
+  animation: pulse-recording 1.5s ease-in-out infinite;
+}
+
+.input-area #mic-btn.recording:hover {
+  background: #dc2626;
+}
+
+/* Speaking State */
+.input-area #mic-btn.speaking-mode {
+  color: #ffffff;
+  background: var(--primary-color);
+}
+
+.input-area #mic-btn.speaking-mode:hover {
+  background: #b01419;
+}
+
+@keyframes pulse-recording {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(239, 68, 68, 0);
+  }
+}
+
+/* Send Button */
+.input-area button#send-btn {
+  background: var(--primary-color);
+  border: none;
+  color: #ffffff;
+  border-radius: 10px;
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  margin: 0;
+  position: relative;
+}
+
+.input-area button#send-btn::before {
   content: '';
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(135deg, transparent 0%, rgba(255, 255, 255, 0.2) 100%);
+  background: linear-gradient(135deg, transparent 0%, rgba(255, 255, 255, 0.15) 100%);
   opacity: 0;
-  transition: opacity 0.3s ease;
+  transition: opacity 0.2s ease;
 }
 
-.input-area button:hover::before {
+.input-area button#send-btn:hover {
+  background: #b01419;
+  box-shadow: 0 2px 8px rgba(215, 25, 33, 0.3);
+  transform: scale(1.05);
+}
+
+.input-area button#send-btn:hover::before {
   opacity: 1;
 }
 
-.input-area button:hover,
-.input-area button:focus {
-  box-shadow: 0 4px 16px rgba(215, 25, 33, 0.4);
-  transform: translateY(-2px) translateZ(0);
+.input-area button#send-btn:active {
+  transform: scale(0.95);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-.input-area button:active {
-  transform: translateY(0) scale(0.95);
-  box-shadow: 0 2px 8px rgba(215, 25, 33, 0.35);
+.input-area button#send-btn:disabled {
+  background: var(--bg-secondary);
+  color: var(--text-light);
+  cursor: not-allowed;
+  box-shadow: none;
 }
 
-.input-area button .arrow {
-  width: 20px;
-  height: 20px;
+.input-area button#send-btn:disabled:hover {
+  transform: none;
+}
+
+.input-area button#send-btn .arrow {
+  width: 16px;
+  height: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: transform 0.2s ease;
 }
 
-.input-area button:hover .arrow {
+.input-area button#send-btn:hover .arrow {
   transform: translateY(-2px);
 }
 
-/* Stop Button */
-.input-area button.stop-mode {
-  background: #D71921;
+/* Stop Button State */
+.input-area button#send-btn.stop-mode {
+  background: #ef4444;
   animation: pulse-stop 2s ease-in-out infinite;
 }
 
-.input-area button .stop-icon {
-  width: 20px;
-  height: 20px;
+.input-area button#send-btn.stop-mode:hover {
+  background: #dc2626;
+  animation: none;
+}
+
+.input-area button#send-btn .stop-icon {
+  width: 14px;
+  height: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -119,142 +273,190 @@
   color: white;
 }
 
-.input-area button.stop-mode:hover .stop-icon {
+.input-area button#send-btn.stop-mode:hover .stop-icon {
   transform: scale(1.1);
 }
 
-/* Character Counter - Fixed positioning for all states */
+@keyframes pulse-stop {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(239, 68, 68, 0);
+  }
+}
+
+/* Character Counter */
 .input-counter {
-  position: absolute;
-  right: 8px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 0.7rem;
-  color: #999;
-  pointer-events: none;
+  font-size: 11px;
+  color: var(--text-muted);
   transition: color 0.2s ease;
-  background: rgba(255, 255, 255, 0.95);
-  padding: 2px 5px;
-  border-radius: 8px;
-  z-index: 3;
-  backdrop-filter: blur(4px);
   white-space: nowrap;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-  border: 1px solid rgba(0, 0, 0, 0.05);
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  user-select: none;
 }
 
 .input-counter.warning {
   color: #f59e0b;
-  background: rgba(245, 158, 11, 0.12);
-  font-weight: 500;
 }
 
 .input-counter.error {
   color: #ef4444;
-  background: rgba(239, 68, 68, 0.12);
-  font-weight: 500;
 }
 
-/* Centered Input Area (Welcome State) - Fixed counter positioning */
+/* Welcome State Overrides */
 #chat-container.centered .input-area {
   position: relative;
-  padding: 15px;
-  bottom: auto;
-  transform: none;
   width: 100%;
-  max-width: min(500px, 90vw);
+  max-width: 768px;
+  margin-top: 32px;
 }
 
-#chat-container.centered .input-area input {
-  max-width: min(500px, 90vw);
-  padding-right: 60px !important;
-  padding-left: 55px !important;
+#chat-container.centered .input-area .input-wrapper {
+  max-width: 100%;
+  background: var(--input-bg) !important;
+  border: 1px solid var(--input-border) !important;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08) !important;
+  border-radius: 20px;
 }
 
-#chat-container.centered .input-counter {
-  right: 8px !important; /* Force same position as normal state */
+#chat-container.centered .input-footer {
+  background: transparent !important;
 }
 
-/* Mobile specific adjustments - Fixed counter positioning */
+#chat-container.centered #question {
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  padding: 12px 16px 8px 16px !important;
+}
+
+#chat-container.centered #send-btn {
+  border: none !important;
+}
+
+/* Responsive adjustments */
 @media (max-width: 768px) {
-  .input-area input {
-    padding-right: 55px;
-    padding-left: 55px;
+  .input-area {
+    padding: 0 12px 20px;
   }
-  
+
+  .input-area .input-wrapper {
+    max-width: 100%;
+    border-radius: 18px;
+  }
+
+  .input-area textarea {
+    padding: 14px 14px 10px 14px;
+    font-size: 16px;
+    border-radius: 18px 18px 0 0;
+    min-height: 48px;
+    height: 48px;
+  }
+
+  .input-footer {
+    padding: 6px 10px 8px 10px;
+    min-height: 40px;
+    border-radius: 0 0 18px 18px;
+  }
+
+  .input-footer-left,
+  .input-footer-right {
+    gap: 6px;
+  }
+
+  .input-area #mic-btn {
+    width: 30px;
+    height: 30px;
+  }
+
+  .input-area #mic-btn svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .input-area button#send-btn {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    border-radius: 9px;
+  }
+
+  .input-area button#send-btn .arrow {
+    width: 14px;
+    height: 14px;
+  }
+
   .input-counter {
-    right: 8px !important; /* Force consistent position */
+    font-size: 10px;
   }
-  
-  #chat-container.centered .input-area input {
-    padding-right: 55px !important;
-    padding-left: 55px !important;
-  }
-  
-  #chat-container.centered .input-counter {
-    right: 8px !important; /* Force same position */
+
+  #chat-container.centered .input-area {
+    margin-top: 24px;
   }
 }
 
-/* === NEW RULES FOR MIC BUTTON === */
-.input-area #mic-btn {
+@media (max-width: 480px) {
+  .input-area {
+    padding: 0 8px 16px;
+  }
+
+  .input-area textarea {
+    padding: 12px 12px 8px 12px;
+    font-size: 16px;
+  }
+
+  .input-footer {
+    padding: 5px 8px 6px 8px;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  .input-area .input-wrapper {
+    max-width: 680px;
+  }
+}
+
+@media (min-width: 1440px) {
+  .input-area .input-wrapper {
+    max-width: 800px;
+  }
+}
+
+/* Focus States */
+.input-area #mic-btn:focus-visible,
+.input-area button#send-btn:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+/* Smooth Transitions */
+.input-area #mic-btn,
+.input-area button#send-btn {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Loading State */
+.input-area.loading textarea {
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+/* Scrollbar Styling */
+.input-area textarea::-webkit-scrollbar {
+  width: 6px;
+}
+
+.input-area textarea::-webkit-scrollbar-track {
   background: transparent;
-  border: none;
-  color: #888; /* Muted gray color */
-  border-radius: 50%;
-  width: 42px;
-  height: 42px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: var(--transition);
-  flex-shrink: 0;
-  box-shadow: none; /* No shadow by default */
-  margin-left: 0;
-  margin-right: -5px; /* Pull it closer to the input */
-  z-index: 5;
-  
-  position: absolute;
-  left: 8px;
-  top: 50%;
-  transform: translateY(-50%);
 }
 
-.input-area #mic-btn:hover {
-  background: #f0f0f0;
-  color: var(--primary-color);
-  transform: translateY(-50%); /* Keep it centered */
+.input-area textarea::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 3px;
 }
 
-.input-area #mic-btn svg {
-  width: 22px;
-  height: 22px;
-}
-
-/* "Recording" state for the button */
-.input-area #mic-btn.recording {
-  color: #fff;
-  background: var(--primary-color); /* Use your brand red */
-  animation: pulse-stop 1.5s ease-in-out infinite;
-}
-
-/* === MODIFIED: Adjust wrapper to handle absolute mic button === */
-.input-area .input-wrapper {
-  position: relative;
-  flex: 1;
-  max-width: 700px;
-  display: flex;
-  align-items: center;
-}
-
-/* "Speaking" state for the button */
-.input-area #mic-btn.speaking-mode {
-  color: #fff;
-  background: var(--primary-color); /* Use brand red */
-}
-
-.input-area #mic-btn.speaking-mode:hover {
-  background: var(--primary-hover); /* Use brand orange on hover */
-  transform: translateY(-50%); /* Keep it centered */
+.input-area textarea::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
 }

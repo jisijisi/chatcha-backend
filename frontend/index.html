@@ -5,176 +5,506 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ChatCDO - Company AI Assistant</title>
   <meta name="description" content="Chat with Cindy - Your Company AI Assistant">
-
   <link rel="icon" type="image/png" href="assets/images/logo.png">
-
+  <script>
+    (function() {
+      try {
+        const savedTheme = localStorage.getItem('app_theme') || 'system';
+        const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        if (savedTheme === 'dark' || (savedTheme === 'system' && systemDark)) {
+          document.documentElement.setAttribute('data-theme', 'dark');
+        } else {
+          document.documentElement.setAttribute('data-theme', 'light');
+        }
+      } catch (e) {
+        console.error('Theme initialization failed', e);
+      }
+    })();
+  </script>
+  <style>
+    :root { --loader-bg: #f5f6fa; --loader-text: #333333; }
+    [data-theme="dark"] { --loader-bg: #111827; --loader-text: #f3f4f6; }
+    body { margin: 0; padding: 0; background-color: var(--loader-bg); }
+    #global-loader { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: var(--loader-bg); z-index: 9999; display: flex; justify-content: center; align-items: center; flex-direction: column; transition: opacity 0.5s ease, visibility 0.5s ease; }
+    #global-loader .loader-text { color: var(--loader-text); font-family: sans-serif; font-weight: 600; margin-top: 15px; }
+  </style>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  
   <link rel="stylesheet" href="assets/css/main.css">
-  
+  <link rel="stylesheet" href="assets/css/settings.css">
+  <link href="https://unpkg.com/gridjs/dist/theme/mermaid.min.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://unpkg.com/json5@2/dist/index.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
+  <div id="global-loader">
+    <img src="assets/images/logo.png" alt="Loading..." class="loader-logo">
+    <div class="loader-spinner"></div>
+    <p class="loader-text">Initializing ChatCDO...</p>
+  </div>
   <div id="app">
     <aside id="sidebar" aria-label="Chat navigation">
       <div class="sidebar-header">
         <div class="logo-container">
           <img src="assets/images/logo.png" alt="ChatCDO Logo" class="logo">
             <div class="logo-hamburger-overlay">
-              <img src="assets/images/left_panel_open_24dp_1F1F1F_FILL0_wght400_GRAD0_opsz24.png" alt="Expand sidebar">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><line x1="9" x2="9" y1="3" y2="21"/></svg>
             </div>
         </div>
         <h1>ChatCDO</h1>
-        
         <button id="sidebar-toggle" class="sidebar-toggle" aria-label="Minimize sidebar" aria-expanded="true">
-          <img src="assets/images/left_panel_close_24dp_1F1F1F_FILL0_wght400_GRAD0_opsz24.png" alt="Minimize sidebar" class="toggle-icon icon-close">
-          <img src="assets/images/left_panel_open_24dp_1F1F1F_FILL0_wght400_GRAD0_opsz24.png" alt="Expand sidebar" class="toggle-icon icon-open">
+          <svg class="toggle-icon icon-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><line x1="9" x2="9" y1="3" y2="21"/></svg>
+          <svg class="toggle-icon icon-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><line x1="9" x2="9" y1="3" y2="21"/></svg>
         </button>
       </div>
-
       <button id="new-chat" aria-label="Start new chat">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M12 5v14M5 12h14"/>
-        </svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
         <span>New Chat</span>
       </button>
-      
-      <nav aria-label="Chat history">
-        <ul id="chat-history" role="list"></ul>
-      </nav>
-
+      <nav aria-label="Chat history"><ul id="chat-history" role="list"></ul></nav>
       <div class="sidebar-footer">
         <div class="user-info" id="user-info">
           <div class="user-avatar">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-              <circle cx="12" cy="7" r="4"></circle>
-            </svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
           </div>
-          <div class="user-details">
-            <span class="user-name" id="user-display-name">Guest</span>
-            <span class="user-type" id="user-type-label">Guest User</span>
-          </div>
+          <div class="user-details"><span class="user-name" id="user-display-name">Guest</span><span class="user-type" id="user-type-label">Guest User</span></div>
         </div>
-        <button id="logout-btn" class="logout-btn" aria-label="Logout">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-            <polyline points="16 17 21 12 16 7"></polyline>
-            <line x1="21" y1="12" x2="9" y2="12"></line>
-          </svg>
-          <span>Logout</span>
-        </button>
+        <div class="user-context-menu" id="user-context-menu">
+          <button id="settings-option"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.07 4.93a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14M13.46 2.05a10 10 0 0 1 7.49 7.49m0 4.92a10 10 0 0 1-7.49 7.49m-2.92 0a10 10 0 0 1-7.49-7.49m0-4.92a10 10 0 0 1 7.49-7.49"></path></svg> Settings</button>
+          <button id="kb-option"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M15.5 13a3.5 3.5 0 0 0 -3.5 3.5v1a3.5 3.5 0 0 0 7 0v-1.8"></path><path d="M8.5 13a3.5 3.5 0 0 1 3.5 3.5v1a3.5 3.5 0 0 1 -7 0v-1.8"></path><path d="M17.5 16a3.5 3.5 0 0 0 0 -7h-.5"></path><path d="M19 9.3v-2.8a3.5 3.5 0 0 0 -7 0"></path><path d="M6.5 16a3.5 3.5 0 0 1 0 -7h.5"></path><path d="M5 9.3v-2.8a3.5 3.5 0 0 1 7 0v10"></path></svg> Knowledge Base</button>
+          <button id="contact-option"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg> Contact us</button>
+          <button id="logout-option" class="danger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg> Log out</button>
+        </div>
       </div>
     </aside>
-
     <main id="chat-container" class="centered">
-      <button id="mobile-menu-toggle" class="mobile-menu-toggle" aria-label="Open menu" aria-expanded="false">
-        <span class="hamburger">
-          <span></span>
-          <span></span>
-          <span></span>
-        </span>
-      </button>
-
+      <button id="mobile-menu-toggle" class="mobile-menu-toggle" aria-label="Open menu" aria-expanded="false"><span class="hamburger"><span></span><span></span><span></span></span></button>
       <section id="welcome-message" class="show" aria-live="polite">
-        <h2>Hi, I'm Cindy</h2>
-        <p>Welcome! I'm your AI HR and Recruitment Assistant. Ask me anything about hiring, recruitment, HR policies, or candidate evaluation.</p>
-        </section>
-
+        <div class="welcome-avatar-container"><div class="welcome-avatar-border"></div><img src="assets/images/avatar.png" alt="Cindy Avatar" class="welcome-avatar"></div>
+        <h2>Good evening, <span id="welcome-username">Jisi</span></h2>
+        <p>I'm Cindy, your company AI assistant. How can I help you today?</p>
+      </section>
       <div id="chat" role="log" aria-live="polite" aria-atomic="false"></div>
-
       <form class="input-area" role="search">
         <label for="question" class="sr-only">Ask Cindy</label>
-        
-        <button id="mic-btn" type="button" aria-label="Use voice input">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
-            <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
-            <line x1="12" y1="19" x2="12" y2="23"></line>
-            <line x1="8" y1="23" x2="16" y2="23"></line>
-          </svg>
-        </button>
-        <input 
-          id="question" 
-          type="text"
-          placeholder="Ask Cindy here" 
-          aria-label="Ask Cindy here"
-          autocomplete="off"
-          maxlength="500"
-        />
-        <button id="send-btn" type="submit" aria-label="Send message">
-          <svg class="arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M12 19V5M5 12l7-7 7 7"/>
-          </svg>
-        </button>
+        <div class="input-wrapper">
+          <textarea id="question" rows="1" placeholder="Ask Cindy here" aria-label="Ask Cindy here" autocomplete="off" maxlength="500"></textarea>
+          <div class="input-footer">
+            <div class="input-footer-left">
+              <button id="mic-btn" type="button" aria-label="Use voice input"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg></button>
+            </div>
+            <div class="input-footer-right">
+              <div class="input-counter">0/500</div>
+              <button id="send-btn" type="submit" aria-label="Send message"><svg class="arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
+            </div>
+          </div>
+        </div>
       </form>
     </main>
   </div>
-
   <div id="sidebar-overlay" aria-hidden="true"></div>
-
   <div id="history-dropdown" class="history-dropdown" aria-hidden="true">
-    <div class="history-dropdown-header">
-      <h3>Previous Chats</h3>
-    </div>
+    <div class="history-dropdown-header"><h3>Previous Chats</h3></div>
     <ul id="history-dropdown-list" role="list"></ul>
   </div>
-
   <div id="modal-overlay" class="modal-overlay" aria-hidden="true">
     <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-      <div class="modal-header">
-        <h3 id="modal-title"></h3>
-        <button class="modal-close" aria-label="Close modal">&times;</button>
-      </div>
+      <div class="modal-header"><h3 id="modal-title"></h3><button class="modal-close" aria-label="Close modal">&times;</button></div>
+      <div class="modal-body"><p id="modal-message"></p><input type="text" id="modal-input" class="modal-input" style="display: none;"></div>
+      <div class="modal-footer"><button id="modal-cancel" class="modal-btn modal-btn-cancel">Cancel</button><button id="modal-confirm" class="modal-btn modal-btn-confirm">Confirm</button></div>
+    </div>
+  </div>
+  <div class="modal" id="confirmation-modal">
+    <div class="modal-content" style="max-width: 400px;">
+      <div class="modal-header"><h3 id="confirm-modal-title">Confirm Action</h3><button class="modal-close" id="confirm-modal-close">✕</button></div>
+      <div class="modal-body"><p id="confirm-modal-message" style="font-size: 0.938rem; color: var(--text-muted); line-height: 1.6; text-align: center;">Are you sure?</p></div>
+      <div class="modal-footer"><button class="btn btn-secondary" id="confirm-modal-cancel">Cancel</button><button class="btn btn-primary" id="confirm-modal-btn"><span class="btn-text">Confirm</span></button></div>
+    </div>
+  </div>
+  <div class="modal-overlay" id="user-integrations-modal" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="user-integrations-title">
+      <div class="modal-header"><h3 id="user-integrations-title">Connect Calendar</h3><button class="modal-close" aria-label="Close modal">&times;</button></div>
       <div class="modal-body">
-        <p id="modal-message"></p>
-        <input type="text" id="modal-input" class="modal-input" style="display: none;">
+        <p>Connect your Google Calendar to allow the AI to view and schedule meetings.</p>
+        <div class="integration-connect-section"><button id="btn-connect-user-calendar" class="btn btn-primary">Connect Google Calendar</button></div>
+        <div class="integration-info"><p><strong>Permissions:</strong> Read-only access to view your calendar events</p><p><strong>Usage:</strong> The AI can help schedule meetings and check your availability</p></div>
       </div>
-      <div class="modal-footer">
-        <button id="modal-cancel" class="modal-btn modal-btn-cancel">Cancel</button>
-        <button id="modal-confirm" class="modal-btn modal-btn-confirm">Confirm</button>
+      <div class="modal-footer"><button class="modal-btn modal-btn-cancel">Cancel</button></div>
+    </div>
+  </div>
+  <header id="mobile-header" class="mobile-header" aria-hidden="true">
+    <button id="mobile-header-toggle" class="mobile-menu-toggle in-header" aria-label="Open menu" aria-expanded="false"><span class="hamburger"><span></span><span></span><span></span></span></button>
+    <div class="mobile-header-center">
+      <img src="assets/images/logo.png" alt="ChatCDO Logo" class="mobile-header-logo" id="mobile-header-logo">
+      <button id="mobile-header-title" class="mobile-header-title" aria-label="Chat options"><span class="title-text"></span><svg class="dropdown-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></button>
+    </div>
+    <div id="mobile-header-dropdown" class="mobile-header-dropdown" role="menu">
+      <button class="dropdown-option" id="mobile-rename-option" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg> Rename</button>
+      <button class="dropdown-option delete" id="mobile-delete-option" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg> Delete</button>
+    </div>
+  </header>
+  <div class="modal-overlay" id="data-view-modal">
+    <div class="modal full-screen">
+      <div class="modal-header"><h3 id="data-view-title">Data Analysis</h3><div class="modal-actions"><button class="modal-close" id="data-view-close">✕</button></div></div>
+      <div class="modal-body" id="data-view-body"></div>
+      <div class="modal-footer"><button class="btn btn-secondary" id="data-view-close-btn">Close</button></div>
+    </div>
+  </div>
+  <div class="settings-modal-overlay" id="settings-modal-overlay">
+    <div class="settings-modal">
+      <div class="settings-header"><h2>Settings</h2><button class="settings-close-btn" id="settings-close-btn">×</button></div>
+      <div class="settings-body">
+        <div class="settings-sidebar">
+          <button class="settings-nav-item active" data-panel="general"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.07 4.93a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14M13.46 2.05a10 10 0 0 1 7.49 7.49m0 4.92a10 10 0 0 1-7.49 7.49m-2.92 0a10 10 0 0 1-7.49-7.49m0-4.92a10 10 0 0 1 7.49-7.49"></path></svg> General</button>
+          <button class="settings-nav-item" data-panel="profile"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg> Profile</button>
+          <button class="settings-nav-item" data-panel="integration"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg> Integration</button>
+          <button class="settings-nav-item" data-panel="about"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg> About</button>
+        </div>
+        <div class="settings-content">
+          <div class="settings-panel active" id="settings-general">
+            <div class="settings-section">
+              <div class="settings-section-title">Appearance</div>
+              <div class="settings-item">
+                <span class="settings-item-label">Theme</span>
+                <div class="theme-options">
+                  <button class="settings-btn theme-btn active" data-theme="system">System</button>
+                  <button class="settings-btn theme-btn" data-theme="light">Light</button>
+                  <button class="settings-btn theme-btn" data-theme="dark">Dark</button>
+                </div>
+              </div>
+            </div>
+            <div class="settings-section">
+              <div class="settings-section-title">Language</div>
+              <div class="settings-item">
+                <span class="settings-item-label">Interface Language</span>
+                <select id="settings-language-select" class="form-input" style="width: auto; min-width: 150px;">
+                  <option value="en">English</option>
+                  <option value="tl">Tagalog</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="settings-panel" id="settings-profile">
+            <div class="settings-section">
+              <div class="settings-section-title">Profile Information</div>
+              <form class="profile-form" id="profile-form">
+                <div class="form-group"><label class="form-label">Display Name</label><input type="text" class="form-input" id="profile-display-name" placeholder="Enter your display name"></div>
+                <div class="form-group"><label class="form-label">Email Address</label><input type="email" class="form-input" id="profile-email" disabled></div>
+                <div class="form-group"><label class="form-label">Phone Number</label><input type="tel" class="form-input" id="profile-phone" placeholder="Enter your phone number"></div>
+                <div class="form-actions"><button type="button" class="settings-btn settings-btn-outline-danger" id="profile-cancel-btn">Discard</button><button type="submit" class="settings-btn settings-btn-primary">Save Changes</button></div>
+              </form>
+            </div>
+            <div class="settings-section" style="margin-top: 32px; border-top: 1px solid #e5e7eb; padding-top: 24px;">
+              <div class="settings-section-title">Account Actions</div>
+              <div class="settings-item"><span class="settings-item-label">Log out of all devices</span><button class="settings-btn settings-btn-outline-danger" id="settings-logout-btn">Log out</button></div>
+              <div class="settings-item"><span class="settings-item-label">Delete account</span><button class="settings-btn settings-btn-outline-danger" id="settings-delete-account-btn">Delete</button></div>
+            </div>
+          </div>
+          <div class="settings-panel" id="settings-integration">
+            <div class="settings-section">
+              <div class="settings-section-title">Connected Services</div>
+              <div class="integration-item">
+                <div class="integration-info">
+                  <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="Google Services" class="integration-logo">
+                  <div class="integration-details">
+                    <h4>Google Services</h4>
+                    <p>Connect your account to enable AI access to your workspace.</p>
+                    <div class="integration-features"><span class="feature-tag"><img src="https://upload.wikimedia.org/wikipedia/commons/a/a5/Google_Calendar_icon_%282020%29.svg" alt="Calendar" class="feature-icon">Calendar</span><span class="feature-tag"><img src="https://upload.wikimedia.org/wikipedia/commons/7/7e/Gmail_icon_%282020%29.svg" alt="Gmail" class="feature-icon">Gmail</span></div>
+                  </div>
+                </div>
+                <div class="integration-actions" id="google-integration-actions">
+                  <button class="settings-btn settings-btn-primary" id="btn-google-connect">Connect</button>
+                  <button class="settings-btn settings-btn-outline-danger" id="btn-google-disconnect" disabled>Disconnect</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="settings-panel" id="settings-about">
+            <div class="about-content">
+              <h3>About ChatCDO</h3>
+              <p>ChatCDO is your intelligent AI assistant designed to help you with HR inquiries, company information, and data analysis. Built with cutting-edge AI technology to provide accurate and helpful responses.</p>
+              <h3>Version</h3><p><span class="version-info">v1.0.0</span></p>
+              <h3>Features</h3><p>• Natural language understanding<br>• Real-time data analysis<br>• Integration with company systems<br>• Secure and private conversations</p>
+              <h3>Support</h3><p>For technical support or questions, please contact:<br>Email: support@cdofoodsphere.com<br>Phone: +1 234 567 8900</p>
+              <h3>Legal</h3><p>© 2025 CDO Foodsphere. All rights reserved.<br><a href="#" onclick="alert('Privacy Policy'); return false;">Privacy Policy</a> | <a href="#" onclick="alert('Terms of Service'); return false;">Terms of Service</a></p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 
-  <header id="mobile-header" class="mobile-header" aria-hidden="true">
-    <button id="mobile-header-toggle" class="mobile-menu-toggle in-header" aria-label="Open menu" aria-expanded="false">
-      <span class="hamburger">
-        <span></span>
-        <span></span>
-        <span></span>
-      </span>
-    </button>
-    <div class="mobile-header-center">
-      <img src="assets/images/logo.png" alt="ChatCDO Logo" class="mobile-header-logo" id="mobile-header-logo">
-      <button id="mobile-header-title" class="mobile-header-title" aria-label="Chat options">
-        <span class="title-text"></span>
-        <svg class="dropdown-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="6 9 12 15 18 9"></polyline>
-        </svg>
-      </button>
+  <div class="modal-overlay" id="kb-full-modal-overlay">
+    <div class="modal full-screen">
+      <div class="modal-header">
+        <h3 id="kb-full-title">Knowledge Directory</h3>
+        <div class="modal-actions"><button class="modal-close" id="kb-full-close">✕</button></div>
+      </div>
+      <div class="modal-body" id="kb-full-body">
+        <div class="kb-tab-nav">
+          <button class="kb-tab-btn active" data-kb-tab="docs">Documents</button>
+          <button class="kb-tab-btn" data-kb-tab="subcats">Subcategories</button>
+        </div>
+        <div id="kb-tab-docs" class="kb-tab-content active">
+          <div class="kb-topbar">
+            <div class="kb-top-actions">
+              <input type="text" id="kb-search-input" class="form-input" placeholder="Search documents...">
+              <button class="settings-btn settings-btn-primary" id="btn-add-doc">+ Add Document</button>
+              <button class="settings-btn" id="kb-refresh-btn" type="button"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg> Refresh List</button>
+            </div>
+            <div class="kb-status-actions">
+              <div class="kb-status-indicator"><span class="status-dot"></span><span class="status-text">Checking...</span></div>
+              <div class="kb-status-meta"><span><strong>...</strong> Files</span><span><strong>...</strong> Chunks</span></div>
+              <button class="settings-btn settings-btn-danger" id="btn-regen-cache" type="button">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg> Regenerate Cache
+              </button>
+            </div>
+          </div>
+          <div class="kb-table-container">
+            <table class="kb-table">
+              <thead><tr><th>Title</th><th>Category &rarr; Subcategory</th><th>Status</th><th>Actions</th></tr></thead>
+              <tbody id="kb-docs-list-body"><tr><td colspan="4" class="kb-loading">Loading...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+        <div id="kb-tab-subcats" class="kb-tab-content">
+          <div class="kb-toolbar">
+            <div style="flex:1;"></div>
+            <button class="settings-btn settings-btn-primary" id="btn-add-subcat">+ Add Subcategory</button>
+          </div>
+          <div class="kb-table-container">
+            <table class="kb-table">
+              <thead><tr><th>Subcategory Name</th><th>Parent Category</th><th>Actions</th></tr></thead>
+              <tbody id="kb-subcats-list-body"><tr><td colspan="3" class="kb-loading">Loading...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer"><button class="btn btn-secondary" id="kb-full-close-btn">Close</button></div>
     </div>
-    <div id="mobile-header-dropdown" class="mobile-header-dropdown" role="menu">
-      <button class="dropdown-option" id="mobile-rename-option" role="menuitem">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-        </svg>
-        Rename
-      </button>
-      <button class="dropdown-option delete" id="mobile-delete-option" role="menuitem">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="3 6 5 6 21 6"></polyline>
-          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-        </svg>
-        Delete
-      </button>
-    </div>
-  </header>
+  </div>
 
+  <div class="modal" id="kb-doc-modal">
+    <div class="modal-content large">
+      <div class="modal-header">
+        <h3 id="kb-doc-modal-title">Add Document</h3>
+        <button class="modal-close" id="kb-doc-close">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="file-upload-section">
+          <div class="file-upload-label">
+            <span style="display: flex; align-items: center; gap: 8px;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"></rect><circle cx="12" cy="5" r="2"></circle><path d="M12 7v4"></path><line x1="8" y1="16" x2="8" y2="16"></line><line x1="16" y1="16" x2="16" y2="16"></line></svg> 
+              AI Auto-Convert
+            </span>
+            <span class="ai-badge">Gemini Powered</span>
+          </div>
+          <div class="upload-controls">
+            <input type="file" id="kb-file-upload" class="form-input" accept=".pdf,.docx,.txt,.csv,.png,.jpg" style="flex:1;">
+            <button class="settings-btn" id="btn-kb-convert" type="button">Convert to JSON</button>
+          </div>
+          <div class="upload-hint" style="margin-top:8px; font-size:0.8rem; color:var(--text-muted);">Upload a PDF, Image, or Document. Gemini will analyze it and extract the content into structured JSON below.</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Document Title *</label>
+          <input type="text" id="kb-doc-title" class="form-input" placeholder="Enter document title">
+        </div>
+        <div class="form-row" style="display:flex; gap:16px;">
+          <div class="form-group" style="flex:1;">
+            <label class="form-label">Category *</label>
+            <select id="kb-doc-category" class="form-input"></select>
+          </div>
+          <div class="form-group" style="flex:1;">
+            <label class="form-label">Subcategory *</label>
+            <select id="kb-doc-subcategory" class="form-input" disabled></select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Status *</label>
+          <select id="kb-doc-status" class="form-input">
+            <option value="draft">Draft</option>
+            <option value="published">Published</option>
+            <option value="archived">Archived</option>
+          </select>
+        </div>
+        <div class="form-group" style="display:flex; flex-direction:column; flex:1;">
+          <label class="form-label">Content (JSON) *</label>
+          <textarea id="kb-doc-content" class="form-input json-editor" rows="12" placeholder='{"key": "value"}' style="font-family:monospace;"></textarea>
+          <div class="json-validator" id="kb-json-validator" style="display:none; margin-top:5px; padding:5px; border-radius:4px; font-size:0.8rem;"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="kb-doc-cancel">Cancel</button>
+        <button class="btn btn-primary" id="kb-doc-save">Save Document</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="kb-conversion-status-modal">
+    <div class="modal-content" style="max-width: 520px;">
+      <div class="modal-header">
+        <h3 id="kb-conversion-status-title">Converting File</h3>
+        <button class="modal-close" id="kb-conversion-status-close" style="display: none;" type="button">✕</button>
+      </div>
+      <div class="modal-body">
+        <div id="kb-conversion-loading" class="conversion-state">
+          <div class="conversion-spinner">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" opacity="0.25"></circle><path d="M22 12a10 10 0 0 1-10 10" opacity="0.8"></path></svg>
+          </div>
+          <div class="conversion-progress">
+            <div class="conversion-progress-bar">
+              <div class="conversion-progress-fill" id="kb-conversion-progress-fill"></div>
+            </div>
+            <p id="kb-conversion-progress-text" style="text-align: center; color: var(--text-muted); font-size: 0.813rem; margin-top: 8px;">Uploading file...</p>
+          </div>
+        </div>
+        <div id="kb-conversion-success" class="conversion-state" style="display: none;">
+          <div class="conversion-result-icon success">
+            <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          </div>
+          <h4 style="margin: 20px 0 10px; text-align: center; color: #10b981;">Conversion Successful</h4>
+          <div class="conversion-stats">
+            <div class="stat">
+              <span class="stat-label">File</span>
+              <span class="stat-value" id="kb-conversion-filename">-</span>
+            </div>
+            <div class="stat">
+              <span class="stat-label">Size</span>
+              <span class="stat-value" id="kb-conversion-size">-</span>
+            </div>
+          </div>
+        </div>
+        <div id="kb-conversion-error" class="conversion-state" style="display: none;">
+          <div class="conversion-result-icon error">
+            <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+          </div>
+          <h4 style="margin: 20px 0 10px; text-align: center; color: #ef4444;">Conversion Failed</h4>
+          <p id="kb-conversion-error-message" style="color: #b91c1c; font-size: 0.9rem; text-align: center;">Unknown error</p>
+        </div>
+      </div>
+      <div class="modal-footer" id="kb-conversion-footer" style="display: none;">
+        <button class="btn btn-primary" id="kb-conversion-close-btn" type="button">Close & View JSON</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="kb-view-modal">
+    <div class="modal-content large">
+      <div class="modal-header">
+        <h3 id="kb-view-title">Document Preview</h3>
+        <button class="modal-close" id="kb-view-close" type="button">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="preview-metadata" style="margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid var(--border-color);">
+          <span class="meta-item"><strong>Category:</strong> <span id="kb-view-category">-</span></span>
+          <span class="meta-item" style="margin-left: 15px;"><strong>Status:</strong> <span id="kb-view-status" class="kb-badge">-</span></span>
+        </div>
+        <div id="kb-view-content" class="preview-content" style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; font-family: monospace; white-space: pre-wrap; max-height: 500px; overflow-y: auto; color: var(--text-main); border: 1px solid var(--border-color);"></div>
+      </div>
+      <div class="modal-footer"><button class="btn btn-secondary" id="kb-view-close-btn" type="button">Close</button></div>
+    </div>
+  </div>
+
+  <div class="modal" id="kb-delete-confirm-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="kb-delete-title">Confirm Delete</h3>
+        <button class="modal-close" id="kb-delete-close" type="button">✕</button>
+      </div>
+      <div class="modal-body">
+        <p id="kb-delete-message">Are you sure you want to delete this item? This action cannot be undone.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="kb-delete-cancel" type="button">Cancel</button>
+        <button class="btn btn-danger" id="kb-delete-confirm" type="button">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="kb-subcat-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="kb-subcat-title">Add Subcategory</h3>
+        <button class="modal-close" id="kb-subcat-close" type="button">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Subcategory Name</label>
+          <input type="text" id="kb-subcat-name" class="form-input">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Parent Category</label>
+          <select id="kb-subcat-parent" class="form-input"></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="kb-subcat-description">Description</label>
+          <textarea id="kb-subcat-description" class="form-input" rows="3" placeholder="Optional description"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="kb-subcat-cancel" type="button">Cancel</button>
+        <button class="btn btn-primary" id="kb-subcat-save" type="button">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="cache-progress-modal">
+    <div class="modal-content" style="max-width: 500px;">
+      <div class="modal-header">
+        <h3 id="cache-modal-title">Regenerating Cache...</h3>
+      </div>
+      <div class="modal-body">
+        <div id="cache-status-loading" class="conversion-state">
+          <div class="conversion-spinner">
+            <div class="spinner-ring"></div>
+            <div class="spinner-icon">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+              </svg>
+            </div>
+          </div>
+          <h4 id="cache-status-message" style="margin: 20px 0 10px; text-align: center; color: var(--text-main);">Starting embedding process...</h4>
+          <p id="cache-status-subtext" style="text-align: center; color: var(--text-muted); font-size: 0.875rem;">This operation may take several minutes depending on the volume of knowledge data.</p>
+          <div class="conversion-progress">
+            <div class="conversion-progress-bar" id="cache-progressbar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-describedby="cache-status-message">
+              <div class="conversion-progress-fill" id="cache-progress-fill-modal"></div>
+            </div>
+            <p id="cache-progress-text-modal" style="text-align: center; color: var(--text-muted); font-size: 0.813rem; margin-top: 8px;" aria-live="polite">0% Complete</p>
+          </div>
+        </div>
+
+        <div id="cache-status-result" class="conversion-state" style="display: none;">
+          <div class="conversion-result-icon success" id="cache-result-icon">
+            <span style="font-size: 3rem;">✅</span>
+          </div>
+          <h4 id="cache-result-title" style="margin: 20px 0 10px; text-align: center; color: #10b981;">Regeneration Successful!</h4>
+          <p id="cache-result-subtext" style="text-align: center; color: #64748b; font-size: 0.875rem;">The RAG system cache has been fully rebuilt and is now active.</p>
+          <div class="conversion-stats">
+            <div class="stat-item">
+              <span class="stat-label">Files Processed</span>
+              <span class="stat-value" id="cache-result-files">—</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Total Chunks</span>
+              <span class="stat-value" id="cache-result-chunks">—</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer" id="cache-progress-footer">
+        <button class="btn btn-secondary" id="cache-progress-cancel" type="button">Cancel Operation</button>
+        <button class="btn btn-primary" id="cache-progress-finish" style="display: none;" type="button">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/gridjs/dist/gridjs.umd.js"></script>
   <script type="module" src="assets/js/app.js"></script>
+</script>
+<!-- TTS initialization handled in app.js via TTSManager (see frontend/assets/js/tts-manager.js) -->
 </body>
 </html>

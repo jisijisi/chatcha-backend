@@ -1,11 +1,15 @@
 // backend/server.js
 
+// 1. LOAD ENV VARS FIRST (Critical for ES Modules)
+import "dotenv/config"; 
+
 import express from "express";
 import cors from "cors";
-import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
-import multer from "multer"; 
+import http from "http";
+import WebSocket from 'ws';
+const WebSocketServer = WebSocket.Server;
 
 // Configuration & Utils
 import { pool, testDatabaseConnection } from "./config/database.js";
@@ -20,12 +24,18 @@ import chatRoutes from "./routes/chat.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
 import integrationRoutes from "./routes/integration.routes.js";
 import ragRoutes from "./routes/rag.routes.js";
+import ttsRoutes from "./routes/tts.routes.js";
+import attachFullDuplexWS from "./ws/full_duplex_ws.js";
+ 
 import * as userController from "./controllers/userController.js";
 
-dotenv.config();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 const PORT = process.env.PORT || 3000;
+const server = http.createServer(app);
+
+// Attach full-duplex WebSocket endpoint
+attachFullDuplexWS(server);
 
 // 1. Security & Parsing
 app.disable('x-powered-by');
@@ -33,9 +43,20 @@ app.use(corsHeaders);
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
 app.use(express.json({ limit: '10mb' }));
+
+// Handle malformed JSON bodies explicitly
+app.use((err, req, res, next) => {
+    if (err && err.type === 'entity.parse.failed') {
+        return res.status(400).json({
+            error: 'Invalid JSON',
+            message: err.message
+        });
+    }
+    next(err);
+});
 app.use(express.static(path.join(__dirname, "../frontend")));
 
-// 2. Health Check (Bypasses Maintenance Mode)
+// 2. Health Check
 app.get("/health", async (req, res) => {
     let dbStatus = "disconnected";
     try {
@@ -64,9 +85,13 @@ app.use(chatRoutes);
 app.use(adminRoutes);
 app.use(integrationRoutes);
 app.use(ragRoutes);
+app.use("/tts", ttsRoutes);
 
-// User Profile Route
+// User Profile Routes
+app.get("/api/user/profile", userController.getUserProfile);
+app.post("/api/user/profile", userController.upsertUserProfile);
 app.put("/api/user/profile", userController.updateUserProfile);
+app.delete("/api/user/account", userController.deleteAccount);
 
 // 5. Error Handling
 app.use(notFoundHandler);
@@ -80,10 +105,11 @@ async function startServer() {
         
         console.log('🚀 Initializing RAG System...');
         await ragSystem.initializeRAG();
-        
-        app.listen(PORT, () => {
+
+        server.listen(PORT, () => {
             console.log(`\n✅ SERVER RUNNING: http://localhost:${PORT}`);
             console.log(`📊 Mode: ${process.env.NODE_ENV || 'development'}`);
+            console.log(`🔊 TTS Service: Active`);
         });
     } catch (err) {
         console.error("❌ Startup failed:", err);

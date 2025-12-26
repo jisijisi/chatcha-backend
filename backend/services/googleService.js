@@ -2,6 +2,9 @@ import { google } from 'googleapis';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
+import fetch from 'node-fetch'; // Force usage of node-fetch package to support 'timeout' option
+import { DataProfiler } from '../utils/DataProfiler.js'; // Import the new profiler
+
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { pool } from '../config/database.js';
 
@@ -35,13 +38,35 @@ export class GoogleService {
 
     // --- NEW: Helper for Retry Logic ---
     static async generateContentWithRetry(model, prompt, retries = 3, delay = 2000) {
+        // Fallback models to try if the primary model fails with 404/Not Found
+        const fallbackModels = ["gemini-1.5-flash", "gemini-1.5-flash-latest", "gemini-pro"];
+        let currentModel = model;
+
         for (let i = 0; i < retries; i++) {
             try {
-                return await model.generateContent(prompt);
+                return await currentModel.generateContent(prompt);
             } catch (error) {
                 // Check if error is 429 (Too Many Requests) or 503 (Service Unavailable)
                 const isRateLimit = error.message.includes('429') || error.status === 429;
                 const isServerBusy = error.message.includes('503') || error.status === 503;
+                
+                // Check for 404 (Model Not Found) - Try fallback models
+                const isModelNotFound = error.message.includes('404') || error.status === 404;
+
+                if (isModelNotFound) {
+                    console.warn(`⚠️ Model not found. Attempting fallback models...`);
+                    for (const fallbackName of fallbackModels) {
+                         try {
+                             console.log(`🔄 Switching to fallback model: ${fallbackName}`);
+                             const fallbackModel = genAI.getGenerativeModel({ model: fallbackName });
+                             return await fallbackModel.generateContent(prompt);
+                         } catch (fbError) {
+                             console.warn(`   Fallback ${fallbackName} failed: ${fbError.message}`);
+                         }
+                    }
+                    // If all fallbacks fail, throw original error
+                    throw error;
+                }
 
                 if ((isRateLimit || isServerBusy) && i < retries - 1) {
                     console.warn(`⚠️ AI Service Busy (Attempt ${i + 1}/${retries}). Retrying in ${delay/1000}s...`);
@@ -603,67 +628,63 @@ export class GoogleService {
                 overallQualityMetrics.totalColumns += headers.length;
                 
                 dataContext += `📊 COLUMN ANALYSIS:\n`;
-                Object.entries(columnAnalysis).forEach(([header, analysis]) => {
-                    dataContext += `\n┌─ "${header}" ──────────────────────────────\n`;
-                    dataContext += `│ Data Type: ${analysis.dataType} (${analysis.typeConfidence} confidence)\n`;
-                    dataContext += `│ Total Values: ${analysis.totalValues}\n`;
-                    dataContext += `│ Unique Values: ${analysis.uniqueCount}\n`;
-                    dataContext += `│ Empty Cells: ${analysis.emptyCount} (${analysis.emptyPercentage}%)\n`;
-                    dataContext += `│ Quality Score: ${analysis.qualityScore}/100\n`;
-                    
-                    if (analysis.dataType === 'categorical' && analysis.uniqueCount <= 20) {
-                        dataContext += `│ Valid Values: ${JSON.stringify(analysis.uniqueValues)}\n`;
-                    } else if (analysis.dataType === 'categorical') {
-                        dataContext += `│ Top Values: ${JSON.stringify(analysis.topValues.slice(0, 5))}\n`;
-                    }
-                    
-                    if (analysis.sampleValues.length > 0) {
-                        dataContext += `│ Sample Values: ${JSON.stringify(analysis.sampleValues)}\n`;
-                    }
-                    
-                    if (analysis.variations && analysis.variations.length > 0) {
-                        overallQualityMetrics.columnsWithIssues++;
-                        dataContext += `│ ⚠️ DATA INCONSISTENCIES DETECTED:\n`;
-                        analysis.variations.slice(0, 3).forEach(v => {
-                            dataContext += `│   • "${v.original}" → Should be: "${v.suggested}"\n`;
-                            dataContext += `│     (Frequency: ${v.frequency}x, Severity: ${v.severity})\n`;
-                        });
-                        if (analysis.variations.length > 3) {
-                            dataContext += `│   ... and ${analysis.variations.length - 3} more variations\n`;
+                dataContext += `NOTE: The list below covers ALL ${headers.length} columns. You MUST output a definition for EVERY single column listed here. Do not skip any.\n\n`;
+                
+                // 1. Pre-render a simple Table of Contents for the LLM to copy
+                dataContext += `FULL COLUMN LIST (Reference):\n`;
+                headers.forEach((h, i) => dataContext += `${i+1}. ${h}\n`);
+                dataContext += `\n`;
+
+                // --- CRITICAL FIX: COMPACT MODE FOR LARGE DATASETS ---
+                // The AI prompt has a token limit. If we have many columns, we must be concise.
+                headers.forEach(header => {
+                    const analysis = columnAnalysis[header] || columnAnalysis[Object.keys(columnAnalysis).find(k => k.trim().toLowerCase() === header.trim().toLowerCase())];
+                    if (!analysis) return;
+
+                    const hasIssues = (analysis.qualityIssues && analysis.qualityIssues.length > 0) || 
+                                    (analysis.variations && analysis.variations.length > 0) ||
+                                    (analysis.emptyPercentage > 20);
+
+                    // If column is "boring" (high quality, simple text/number), use compact format
+                    // AGGRESSIVE COMPACT: Use a single line for these to save space
+                    if (!hasIssues && analysis.dataType !== 'categorical') {
+                         dataContext += `• [${header}]: Type=${analysis.dataType}, Empty=${analysis.emptyPercentage}%, Unique=${analysis.uniqueCount}, Sample=${JSON.stringify(analysis.sampleValues.slice(0, 2))}\n`;
+                    } else {
+                        // Full detailed format for complex/problematic columns
+                        dataContext += `\n┌─ "${header}" ──────────────────────────────\n`;
+                        dataContext += `│ Data Type: ${analysis.dataType} (${analysis.typeConfidence} confidence)\n`;
+                        dataContext += `│ Total Values: ${analysis.totalValues}\n`;
+                        dataContext += `│ Unique Values: ${analysis.uniqueCount}\n`;
+                        dataContext += `│ Empty Cells: ${analysis.emptyCount} (${analysis.emptyPercentage}%)\n`;
+                        dataContext += `│ Quality Score: ${analysis.qualityScore}/100\n`;
+                        
+                        if (analysis.dataType === 'categorical' && analysis.uniqueCount <= 20) {
+                            dataContext += `│ Valid Values: ${JSON.stringify(analysis.uniqueValues)}\n`;
+                        } else if (analysis.dataType === 'categorical') {
+                            dataContext += `│ Top Values: ${JSON.stringify(analysis.topValues.slice(0, 5))}\n`;
                         }
+                        
+                        if (analysis.sampleValues.length > 0) {
+                            dataContext += `│ Sample Values: ${JSON.stringify(analysis.sampleValues)}\n`;
+                        }
+                        
+                        if (analysis.variations && analysis.variations.length > 0) {
+                            overallQualityMetrics.columnsWithIssues++;
+                            dataContext += `│ ⚠️ DATA INCONSISTENCIES DETECTED:\n`;
+                            analysis.variations.slice(0, 3).forEach(v => {
+                                dataContext += `│   • "${v.original}" → Should be: "${v.suggested}"\n`;
+                                dataContext += `│     (Frequency: ${v.frequency}x, Severity: ${v.severity})\n`;
+                            });
+                        }
+                        
+                        if (analysis.qualityIssues && analysis.qualityIssues.length > 0) {
+                            dataContext += `│ 📝 QUALITY ISSUES:\n`;
+                            analysis.qualityIssues.forEach(issue => {
+                                dataContext += `│   • ${issue}\n`;
+                            });
+                        }
+                        dataContext += `└─────────────────────────────────────────────\n`;
                     }
-                    
-                    if (analysis.potentialDuplicates && analysis.potentialDuplicates.length > 0) {
-                        overallQualityMetrics.columnsWithIssues++;
-                        dataContext += `│ ⚠️ POTENTIAL NAME VARIATIONS:\n`;
-                        analysis.potentialDuplicates.forEach(d => {
-                            dataContext += `│   • "${d.value}" ≈ "${d.match}" (${d.similarity}% similar)\n`;
-                            dataContext += `│     Reason: ${d.reason}\n`;
-                        });
-                    }
-                    
-                    if (analysis.qualityIssues && analysis.qualityIssues.length > 0) {
-                        dataContext += `│ 📝 QUALITY ISSUES:\n`;
-                        analysis.qualityIssues.forEach(issue => {
-                            dataContext += `│   • ${issue}\n`;
-                        });
-                    }
-                    
-                    // Column-specific insights
-                    if (analysis.isNameColumn) {
-                        dataContext += `│ 👤 IDENTIFIED AS: Name column\n`;
-                    }
-                    if (analysis.isStatusColumn) {
-                        dataContext += `│ 🏷️ IDENTIFIED AS: Status column\n`;
-                    }
-                    if (analysis.isDateColumn) {
-                        dataContext += `│ 📅 IDENTIFIED AS: Date/Time column\n`;
-                    }
-                    if (analysis.isNumericColumn) {
-                        dataContext += `│ 🔢 IDENTIFIED AS: Numeric column\n`;
-                    }
-                    
-                    dataContext += `└─────────────────────────────────────────────\n`;
                 });
                 
                 // Calculate tab quality score
@@ -775,6 +796,13 @@ export class GoogleService {
               • 💡 Query Tip: [Specific advice for querying this column]
 
             [Continue for other important columns...]
+            
+            🧠 DATA CONTENT INTELLIGENCE (AUTO-DETECTED):
+            The analysis above (in "Column Definitions") already covers categorical values and unique counts. 
+            Ensure this section summarizes:
+            • Key Identifiers (ID columns)
+            • Date Ranges found in the data
+            • Main Categories and their top values
 
             💡 SQL QUERY TIPS (USE CORRECT SYNTAX):
             • Always use '?' as the table name
@@ -858,7 +886,7 @@ export class GoogleService {
                         'Content-Type': 'application/json',
                         ...headers
                     },
-                    timeout: 10000 // 10 second timeout
+                    timeout: 60000 // Increased to 60 seconds
                 };
                 
                 // Add query parameters if any
@@ -940,6 +968,16 @@ export class GoogleService {
             analysisContext += `• Data Type: ${dataAnalysis.dataType}\n`;
             analysisContext += `• Structure: ${dataAnalysis.structure}\n`;
             analysisContext += `• Estimated Fields: ${dataAnalysis.estimatedFieldCount}\n\n`;
+
+            // NEW: DATA CONTENT ANALYSIS (VALUE DISTRIBUTIONS)
+            if (Array.isArray(jsonData) && jsonData.length > 0) {
+                // Use the standardized DataProfiler
+                const profile = DataProfiler.profileData(jsonData);
+                const summary = DataProfiler.generateLLMSummary(profile);
+                
+                analysisContext += summary;
+                analysisContext += `\n`;
+            }
             
             analysisContext += `SAMPLE DATA (first 2000 chars):\n`;
             const sampleJson = JSON.stringify(jsonData, null, 2);
@@ -998,6 +1036,22 @@ export class GoogleService {
             The API returns [data format] containing:
             - field_name: [description] (Example: "example_value")
             - field_name_2: [description]
+            
+            🔍 COLUMN DEFINITIONS (SQL COMPATIBLE):
+            Since this API returns a list of objects, we can treat it as a virtual table.
+            - **SQL Column:** \`field_name\` (Original: "fieldName")
+               • Description: [Description of field]
+               • Data Type: [String/Number/Boolean]
+               • Example Value: "example"
+             
+             - **SQL Column:** \`field_name_2\` (Original: "fieldName2")
+              • Description: [Description]
+              • Data Type: [Type]
+
+            🧠 DATA CONTENT INTELLIGENCE (AUTO-DETECTED):
+            • [Insert Categorical Value Lists here if available]
+            • [Insert Date Ranges here if available]
+            • [Insert Key ID columns here]
 
             🎯 USE CASES:
             • [Use case 1: When you need to...]

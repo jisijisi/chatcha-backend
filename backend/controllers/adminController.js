@@ -4,6 +4,35 @@ import { databaseCacheManager, ragSystem } from '../services/ragService.js';
 import * as xlsx from 'xlsx'; 
 import os from 'os';
 
+// NOTE: If using Node.js < 18, uncomment the line below:
+// import fetch from 'node-fetch'; 
+
+const permissionClients = new Map();
+const dashboardClients = new Set();
+
+export const dashboardStream = async (req, res) => {
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.flushHeaders?.();
+  res.write(`data: ${JSON.stringify({ type: 'connected', ts: Date.now() })}\n\n`);
+  dashboardClients.add(res);
+  const heartbeat = setInterval(() => {
+    try { res.write(`data: ${JSON.stringify({ type: 'heartbeat', ts: Date.now() })}\n\n`); } catch {}
+  }, 15000);
+  req.on('close', () => {
+    clearInterval(heartbeat);
+    dashboardClients.delete(res);
+  });
+};
+
+export const broadcastDashboardUpdate = (payload = {}) => {
+  const msg = `data: ${JSON.stringify({ type: 'dashboard_update', ts: Date.now(), ...payload })}\n\n`;
+  dashboardClients.forEach(client => {
+    try { client.write(msg); } catch {}
+  });
+};
+
 // ==========================================
 // AUTHENTICATION
 // ==========================================
@@ -179,19 +208,32 @@ export const getDashboardEmployees = async (req, res) => {
 
 export const getKnowledgeUsage = async (req, res) => {
   try {
-    const { timeframe = 'overall' } = req.query;
+    const { timeframe = 'overall', year, month } = req.query;
+    const yearInt = parseInt(year, 10);
+    const monthInt = parseInt(month, 10);
     
     let dateFilter = '';
+    let params = [];
     
     switch(timeframe) {
       case 'daily':
         dateFilter = 'WHERE uc.message_timestamp >= DATE(NOW())';
         break;
       case 'monthly':
-        dateFilter = 'WHERE uc.message_timestamp >= DATE_SUB(CURDATE(), INTERVAL 1 MONTH)';
+        if (Number.isInteger(yearInt) && Number.isInteger(monthInt) && monthInt >= 1 && monthInt <= 12) {
+          dateFilter = 'WHERE YEAR(uc.message_timestamp) = ? AND MONTH(uc.message_timestamp) = ?';
+          params = [yearInt, monthInt];
+        } else {
+          dateFilter = 'WHERE uc.message_timestamp >= DATE_SUB(CURDATE(), INTERVAL 1 MONTH)';
+        }
         break;
       case 'yearly':
-        dateFilter = 'WHERE uc.message_timestamp >= DATE_SUB(CURDATE(), INTERVAL 1 YEAR)';
+        if (Number.isInteger(yearInt)) {
+          dateFilter = 'WHERE YEAR(uc.message_timestamp) = ?';
+          params = [yearInt];
+        } else {
+          dateFilter = 'WHERE uc.message_timestamp >= DATE_SUB(CURDATE(), INTERVAL 1 YEAR)';
+        }
         break;
       case 'overall':
       default:
@@ -200,7 +242,6 @@ export const getKnowledgeUsage = async (req, res) => {
     
     console.log(`📊 [Knowledge Usage] Loading for timeframe: ${timeframe}`);
     
-    // STEP 1: Get all chat messages with their accessed_categories
     const [chatMessages] = await pool.execute(`
       SELECT 
         uc.id,
@@ -212,11 +253,10 @@ export const getKnowledgeUsage = async (req, res) => {
         AND uc.accessed_categories != '{}'
         AND uc.accessed_categories != 'null'
         AND JSON_LENGTH(uc.accessed_categories) > 0
-    `);
+    `, params);
 
     console.log(`📊 [Knowledge Usage] Found ${chatMessages.length} messages with source tracking`);
 
-    // Handle empty data case
     if (chatMessages.length === 0) {
       console.log('ℹ️ [Knowledge Usage] No messages found for this timeframe');
       return res.json({
@@ -227,9 +267,8 @@ export const getKnowledgeUsage = async (req, res) => {
       });
     }
 
-    // STEP 2: Parse JSON and count document access
     const documentAccessCount = {};
-    const documentDetails = {}; // Store document info: {id: {name, category}}
+    const documentDetails = {}; 
 
     chatMessages.forEach(msg => {
       try {
@@ -237,16 +276,11 @@ export const getKnowledgeUsage = async (req, res) => {
           ? JSON.parse(msg.accessed_categories) 
           : msg.accessed_categories;
         
-        // Extract documents array
         if (categories.documents && Array.isArray(categories.documents)) {
           categories.documents.forEach(doc => {
             if (doc && typeof doc === 'object' && doc.id) {
               const docId = doc.id;
-              
-              // Count access
               documentAccessCount[docId] = (documentAccessCount[docId] || 0) + 1;
-              
-              // Store document details
               if (!documentDetails[docId]) {
                 documentDetails[docId] = {
                   name: doc.name || `Document ${docId}`,
@@ -256,16 +290,28 @@ export const getKnowledgeUsage = async (req, res) => {
             }
           });
         }
+
+        if (categories.tools && Array.isArray(categories.tools)) {
+          categories.tools.forEach(tool => {
+            if (tool && tool.source_name) {
+               const docId = `tool-${tool.source_name}`; 
+               documentAccessCount[docId] = (documentAccessCount[docId] || 0) + 1;
+               if (!documentDetails[docId]) {
+                 documentDetails[docId] = {
+                   name: tool.source_name, 
+                   category: tool.source_category || 'Live Data'
+                 };
+               }
+            }
+          });
+        }
       } catch (e) {
         console.warn('⚠️ [Knowledge Usage] Failed to parse accessed_categories:', e.message);
       }
     });
 
     const uniqueDocIds = Object.keys(documentAccessCount);
-    console.log(`📄 [Knowledge Usage] Unique document IDs: [${uniqueDocIds.join(', ')}]`);
-    console.log(`📊 [Knowledge Usage] Access counts:`, documentAccessCount);
 
-    // Handle case where no documents were accessed
     if (uniqueDocIds.length === 0) {
       console.log('ℹ️ [Knowledge Usage] No documents accessed in this timeframe');
       return res.json({
@@ -276,7 +322,6 @@ export const getKnowledgeUsage = async (req, res) => {
       });
     }
 
-    // STEP 3: Build category and subcategory aggregations
     const categoryMap = {};
     const subcategoryMap = {};
     const topDocs = [];
@@ -286,16 +331,20 @@ export const getKnowledgeUsage = async (req, res) => {
       const accessCount = documentAccessCount[docId];
       
       if (docInfo) {
-        const category = docInfo.category;
+        let category = docInfo.category || 'Uncategorized';
+        if (category && typeof category === 'string') {
+            category = category.trim();
+            category = category.replace(/[-_]/g, ' ');
+            category = category.split(' ')
+                .filter(word => word.length > 0)
+                .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+                .join(' ');
+        }
+
         const subcategory = `${category} - ${docInfo.name}`;
-        
-        // Aggregate by category
         categoryMap[category] = (categoryMap[category] || 0) + accessCount;
-        
-        // Aggregate by subcategory (document level)
         subcategoryMap[subcategory] = (subcategoryMap[subcategory] || 0) + accessCount;
         
-        // Add to top documents list
         topDocs.push({
           document_title: docInfo.name,
           category: category,
@@ -304,7 +353,6 @@ export const getKnowledgeUsage = async (req, res) => {
       }
     });
 
-    // STEP 4: Format output for charts
     const categoryUsage = Object.entries(categoryMap)
       .map(([name, count]) => ({ 
         category_name: name, 
@@ -325,10 +373,6 @@ export const getKnowledgeUsage = async (req, res) => {
       .sort((a, b) => b.access_count - a.access_count)
       .slice(0, 5);
 
-    console.log('✅ [Knowledge Usage] Category Usage:', categoryUsage);
-    console.log('✅ [Knowledge Usage] Subcategory Usage:', subcategoryUsage);
-    console.log('✅ [Knowledge Usage] Top Documents:', topDocuments);
-
     res.json({
       categoryUsage,
       subcategoryUsage,
@@ -338,7 +382,6 @@ export const getKnowledgeUsage = async (req, res) => {
     
   } catch (error) {
     console.error('❌ [Knowledge Usage] Error:', error);
-    console.error('❌ [Knowledge Usage] Stack:', error.stack);
     res.status(500).json({ 
       error: 'Failed to load knowledge usage data',
       details: error.message 
@@ -348,44 +391,76 @@ export const getKnowledgeUsage = async (req, res) => {
 
 export const getDashboardStatsFiltered = async (req, res) => {
   try {
-    const { timeframe = 'overall' } = req.query;
+    const { timeframe = 'overall', year, month } = req.query;
+    
+    const yearInt = parseInt(year, 10);
+    const monthInt = parseInt(month, 10);
     
     let dateFilter = '';
-    switch(timeframe) {
-      case 'daily':
-        dateFilter = 'WHERE message_timestamp >= DATE(NOW())';
-        break;
-      case 'monthly':
+    let params = [];
+    if (timeframe === 'daily') {
+      dateFilter = 'WHERE message_timestamp >= DATE(NOW())';
+    } else if (timeframe === 'monthly') {
+      if (Number.isInteger(yearInt) && Number.isInteger(monthInt) && monthInt >= 1 && monthInt <= 12) {
+        dateFilter = 'WHERE YEAR(message_timestamp) = ? AND MONTH(message_timestamp) = ?';
+        params = [yearInt, monthInt];
+      } else {
         dateFilter = 'WHERE message_timestamp >= DATE_SUB(CURDATE(), INTERVAL 1 MONTH)';
-        break;
-      case 'yearly':
+      }
+    } else if (timeframe === 'yearly') {
+      if (Number.isInteger(yearInt)) {
+        dateFilter = 'WHERE YEAR(message_timestamp) = ?';
+        params = [yearInt];
+      } else {
         dateFilter = 'WHERE message_timestamp >= DATE_SUB(CURDATE(), INTERVAL 1 YEAR)';
-        break;
-      case 'overall':
-      default:
-        dateFilter = '';
+      }
+    } else {
+      dateFilter = '';
     }
     
     const [messages] = await pool.execute(
-      `SELECT COUNT(*) as count FROM user_chats ${dateFilter}`
+      `SELECT COUNT(*) as count FROM user_chats ${dateFilter}`,
+      params
     );
     
     const [activeUsers] = await pool.execute(
-      `SELECT COUNT(DISTINCT employee_id) as count FROM user_chats ${dateFilter}`
+      `SELECT COUNT(DISTINCT employee_id) as count FROM user_chats ${dateFilter}`,
+      params
     );
 
-    const [newSessions] = await pool.execute(`
+    let sessionsWhere = '';
+    let sessionsParams = [];
+    if (timeframe === 'overall') {
+      sessionsWhere = '';
+    } else if (timeframe === 'daily') {
+      sessionsWhere = 'WHERE start_date >= DATE(NOW())';
+    } else if (timeframe === 'monthly') {
+      if (Number.isInteger(yearInt) && Number.isInteger(monthInt) && monthInt >= 1 && monthInt <= 12) {
+        sessionsWhere = 'WHERE YEAR(start_date) = ? AND MONTH(start_date) = ?';
+        sessionsParams = [yearInt, monthInt];
+      } else {
+        sessionsWhere = 'WHERE start_date >= DATE_SUB(CURDATE(), INTERVAL 1 MONTH)';
+      }
+    } else if (timeframe === 'yearly') {
+      if (Number.isInteger(yearInt)) {
+        sessionsWhere = 'WHERE YEAR(start_date) = ?';
+        sessionsParams = [yearInt];
+      } else {
+        sessionsWhere = 'WHERE start_date >= DATE_SUB(CURDATE(), INTERVAL 1 YEAR)';
+      }
+    }
+
+    const [newSessions] = await pool.execute(
+      `
       SELECT COUNT(session_id) as count FROM (
         SELECT session_id, DATE(MIN(message_timestamp)) as start_date 
         FROM user_chats 
         GROUP BY session_id
       ) as sessions 
-      ${timeframe === 'overall' ? '' : `WHERE start_date >= ${
-        timeframe === 'daily' ? 'DATE(NOW())' : 
-        timeframe === 'monthly' ? 'DATE_SUB(CURDATE(), INTERVAL 1 MONTH)' :
-        'DATE_SUB(CURDATE(), INTERVAL 1 YEAR)'
-      }`}
-    `);
+      ${sessionsWhere}
+      `,
+      sessionsParams
+    );
 
     const [draftsPendingReview] = await pool.execute(
       `SELECT COUNT(*) as count FROM knowledge_documents WHERE status = 'draft'`
@@ -407,9 +482,12 @@ export const getDashboardStatsFiltered = async (req, res) => {
 
 export const getDashboardChartsFiltered = async (req, res) => {
   try {
-    const { timeframe = 'overall' } = req.query;
+    const { timeframe = 'overall', year, month } = req.query;
+    const yearInt = parseInt(year, 10);
+    const monthInt = parseInt(month, 10);
     
     let sqlQuery = '';
+    let params = [];
     
     if (timeframe === 'daily') {
       sqlQuery = `
@@ -438,16 +516,22 @@ export const getDashboardChartsFiltered = async (req, res) => {
       `;
     } else {
       let dateFilter = '';
-      switch(timeframe) {
-        case 'monthly':
+      if (timeframe === 'monthly') {
+        if (Number.isInteger(yearInt) && Number.isInteger(monthInt) && monthInt >= 1 && monthInt <= 12) {
+          dateFilter = 'WHERE YEAR(message_timestamp) = ? AND MONTH(message_timestamp) = ?';
+          params = [yearInt, monthInt];
+        } else {
           dateFilter = 'WHERE message_timestamp >= DATE_SUB(CURDATE(), INTERVAL 1 MONTH)';
-          break;
-        case 'yearly':
+        }
+      } else if (timeframe === 'yearly') {
+        if (Number.isInteger(yearInt)) {
+          dateFilter = 'WHERE YEAR(message_timestamp) = ?';
+          params = [yearInt];
+        } else {
           dateFilter = 'WHERE message_timestamp >= DATE_SUB(CURDATE(), INTERVAL 1 YEAR)';
-          break;
-        case 'overall':
-        default:
-          dateFilter = 'WHERE message_timestamp >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)';
+        }
+      } else {
+        dateFilter = 'WHERE message_timestamp >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)';
       }
 
       sqlQuery = `
@@ -459,10 +543,90 @@ export const getDashboardChartsFiltered = async (req, res) => {
       `;
     }
     
-    const [messagesOverTime] = await pool.execute(sqlQuery);
+    const [messagesOverTime] = await pool.execute(sqlQuery, params);
+    
+    let activeQuery = '';
+    let activeParams = [];
+    if (timeframe === 'daily') {
+      activeQuery = `
+        WITH RECURSIVE hours AS (
+          SELECT 0 AS hour_num
+          UNION ALL
+          SELECT hour_num + 1
+          FROM hours
+          WHERE hour_num < 23
+        )
+        SELECT 
+          CASE 
+            WHEN hours.hour_num = 0 THEN '12:00 AM'
+            WHEN hours.hour_num < 12 THEN CONCAT(hours.hour_num, ':00 AM')
+            WHEN hours.hour_num = 12 THEN '12:00 PM'
+            ELSE CONCAT(hours.hour_num - 12, ':00 PM')
+          END as label,
+          hours.hour_num as sort_key,
+          COALESCE(COUNT(DISTINCT uc.employee_id), 0) as count
+        FROM hours
+        LEFT JOIN user_chats uc ON 
+          HOUR(uc.message_timestamp) = hours.hour_num
+          AND DATE(uc.message_timestamp) = CURDATE()
+        GROUP BY hours.hour_num, label
+        ORDER BY hours.hour_num ASC
+      `;
+    } else {
+      if (timeframe === 'monthly') {
+        if (Number.isInteger(yearInt) && Number.isInteger(monthInt) && monthInt >= 1 && monthInt <= 12) {
+          activeQuery = `
+            SELECT DATE(message_timestamp) as day, COUNT(DISTINCT employee_id) as count 
+            FROM user_chats 
+            WHERE YEAR(message_timestamp) = ? AND MONTH(message_timestamp) = ?
+            GROUP BY day 
+            ORDER BY day ASC
+          `;
+          activeParams = [yearInt, monthInt];
+        } else {
+          activeQuery = `
+            SELECT DATE(message_timestamp) as day, COUNT(DISTINCT employee_id) as count 
+            FROM user_chats 
+            WHERE message_timestamp >= DATE_SUB(CURDATE(), INTERVAL 1 MONTH)
+            GROUP BY day 
+            ORDER BY day ASC
+          `;
+        }
+      } else if (timeframe === 'yearly') {
+        if (Number.isInteger(yearInt)) {
+          activeQuery = `
+            SELECT DATE(message_timestamp) as day, COUNT(DISTINCT employee_id) as count 
+            FROM user_chats 
+            WHERE YEAR(message_timestamp) = ?
+            GROUP BY day 
+            ORDER BY day ASC
+          `;
+          activeParams = [yearInt];
+        } else {
+          activeQuery = `
+            SELECT DATE(message_timestamp) as day, COUNT(DISTINCT employee_id) as count 
+            FROM user_chats 
+            WHERE message_timestamp >= DATE_SUB(CURDATE(), INTERVAL 1 YEAR)
+            GROUP BY day 
+            ORDER BY day ASC
+          `;
+        }
+      } else {
+        activeQuery = `
+          SELECT DATE(message_timestamp) as day, COUNT(DISTINCT employee_id) as count 
+          FROM user_chats 
+          WHERE message_timestamp >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+          GROUP BY day 
+          ORDER BY day ASC
+        `;
+      }
+    }
+    
+    const [activeUsersOverTime] = await pool.execute(activeQuery, activeParams);
 
     res.json({
       messagesOverTime,
+      activeUsersOverTime,
       timeframe
     });
 
@@ -472,24 +636,81 @@ export const getDashboardChartsFiltered = async (req, res) => {
   }
 };
 
+export const getDashboardDepartmentUsageFiltered = async (req, res) => {
+  try {
+    const { timeframe = 'overall', year, month } = req.query;
+    const yearInt = parseInt(year, 10);
+    const monthInt = parseInt(month, 10);
+    
+    let whereClause = '';
+    let params = [];
+    if (timeframe === 'daily') {
+      whereClause = 'WHERE uc.message_timestamp >= DATE(NOW())';
+    } else if (timeframe === 'monthly') {
+      if (Number.isInteger(yearInt) && Number.isInteger(monthInt) && monthInt >= 1 && monthInt <= 12) {
+        whereClause = 'WHERE YEAR(uc.message_timestamp) = ? AND MONTH(uc.message_timestamp) = ?';
+        params = [yearInt, monthInt];
+      } else {
+        whereClause = 'WHERE uc.message_timestamp >= DATE_SUB(CURDATE(), INTERVAL 1 MONTH)';
+      }
+    } else if (timeframe === 'yearly') {
+      if (Number.isInteger(yearInt)) {
+        whereClause = 'WHERE YEAR(uc.message_timestamp) = ?';
+        params = [yearInt];
+      } else {
+        whereClause = 'WHERE uc.message_timestamp >= DATE_SUB(CURDATE(), INTERVAL 1 YEAR)';
+      }
+    } else {
+      whereClause = 'WHERE uc.message_timestamp >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)';
+    }
+    
+    const [rows] = await pool.execute(
+      `
+      SELECT 
+        COALESCE(e.department, 'Unknown') as department,
+        COUNT(*) as count
+      FROM user_chats uc
+      JOIN employees e ON uc.employee_id = e.id
+      ${whereClause}
+      GROUP BY department
+      ORDER BY count DESC
+      `,
+      params
+    );
+    
+    res.json({ departmentUsage: rows, timeframe });
+  } catch (error) {
+    console.error('❌ Dashboard Department Usage Error:', error);
+    res.status(500).json({ error: 'Failed to load department usage data' });
+  }
+};
+
 export const getDashboardActivityFiltered = async (req, res) => {
   try {
-    const { timeframe = 'overall' } = req.query;
+    const { timeframe = 'overall', year, month } = req.query;
+    const yearInt = parseInt(year, 10);
+    const monthInt = parseInt(month, 10);
     
     let dateFilter = '';
-    switch(timeframe) {
-      case 'daily':
-        dateFilter = 'WHERE uc.message_timestamp >= DATE(NOW())';
-        break;
-      case 'monthly':
+    let params = [];
+    if (timeframe === 'daily') {
+      dateFilter = 'WHERE uc.message_timestamp >= DATE(NOW())';
+    } else if (timeframe === 'monthly') {
+      if (Number.isInteger(yearInt) && Number.isInteger(monthInt) && monthInt >= 1 && monthInt <= 12) {
+        dateFilter = 'WHERE YEAR(uc.message_timestamp) = ? AND MONTH(uc.message_timestamp) = ?';
+        params = [yearInt, monthInt];
+      } else {
         dateFilter = 'WHERE uc.message_timestamp >= DATE_SUB(CURDATE(), INTERVAL 1 MONTH)';
-        break;
-      case 'yearly':
+      }
+    } else if (timeframe === 'yearly') {
+      if (Number.isInteger(yearInt)) {
+        dateFilter = 'WHERE YEAR(uc.message_timestamp) = ?';
+        params = [yearInt];
+      } else {
         dateFilter = 'WHERE uc.message_timestamp >= DATE_SUB(CURDATE(), INTERVAL 1 YEAR)';
-        break;
-      case 'overall':
-      default:
-        dateFilter = 'WHERE uc.message_timestamp >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)';
+      }
+    } else {
+      dateFilter = 'WHERE uc.message_timestamp >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)';
     }
     
     const [recentActivity] = await pool.execute(`
@@ -502,20 +723,34 @@ export const getDashboardActivityFiltered = async (req, res) => {
       ${dateFilter}
       ORDER BY uc.message_timestamp DESC
       LIMIT 10
-    `);
+    `, params);
     
     const formattedActivity = recentActivity.map(item => ({
       ...item,
       email: item.email || 'Unknown User'
     }));
 
-    const mostActiveUsersFilter = timeframe === 'overall' ? 
-      'WHERE uc.message_timestamp >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)' :
-      `WHERE uc.message_timestamp >= ${
-        timeframe === 'daily' ? 'DATE(NOW())' : 
-        timeframe === 'monthly' ? 'DATE_SUB(CURDATE(), INTERVAL 1 MONTH)' :
-        'DATE_SUB(CURDATE(), INTERVAL 1 YEAR)'
-      }`;
+    let mostActiveUsersFilter = '';
+    let mostParams = [];
+    if (timeframe === 'overall') {
+      mostActiveUsersFilter = 'WHERE uc.message_timestamp >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)';
+    } else if (timeframe === 'daily') {
+      mostActiveUsersFilter = 'WHERE uc.message_timestamp >= DATE(NOW())';
+    } else if (timeframe === 'monthly') {
+      if (Number.isInteger(yearInt) && Number.isInteger(monthInt) && monthInt >= 1 && monthInt <= 12) {
+        mostActiveUsersFilter = 'WHERE YEAR(uc.message_timestamp) = ? AND MONTH(uc.message_timestamp) = ?';
+        mostParams = [yearInt, monthInt];
+      } else {
+        mostActiveUsersFilter = 'WHERE uc.message_timestamp >= DATE_SUB(CURDATE(), INTERVAL 1 MONTH)';
+      }
+    } else if (timeframe === 'yearly') {
+      if (Number.isInteger(yearInt)) {
+        mostActiveUsersFilter = 'WHERE YEAR(uc.message_timestamp) = ?';
+        mostParams = [yearInt];
+      } else {
+        mostActiveUsersFilter = 'WHERE uc.message_timestamp >= DATE_SUB(CURDATE(), INTERVAL 1 YEAR)';
+      }
+    }
 
     const [mostActiveUsers] = await pool.execute(`
       SELECT 
@@ -528,7 +763,7 @@ export const getDashboardActivityFiltered = async (req, res) => {
       GROUP BY e.id, e.name, e.email
       ORDER BY message_count DESC 
       LIMIT 5;
-    `);
+    `, mostParams);
 
     res.json({
       recentActivity: formattedActivity,
@@ -572,29 +807,91 @@ export const getUsers = async (req, res) => {
 };
 
 export const createUser = async (req, res) => {
-  const { name, email, department, position } = req.body;
+  const { name, email, department, position, user_type } = req.body;
   
   if (!name || !email) {
     return res.status(400).json({ error: 'Name and Email are required' });
   }
 
+  const connection = await pool.getConnection();
+
   try {
-    const [result] = await pool.execute(
+    await connection.beginTransaction();
+
+    const [result] = await connection.execute(
       `INSERT INTO employees (name, email, department, position, is_active, created_at)
        VALUES (?, ?, ?, ?, TRUE, NOW())`,
       [name, email, department || null, position || null]
     );
+    
+    const userId = result.insertId;
+    
+    // Determine User Type:
+    // 1. Explicit user_type from request
+    // 2. Check if 'department' contains 'external' (case-insensitive)
+    // 3. Default to 'Employee'
+    let type = user_type;
+    if (!type && department && department.toLowerCase().includes('external')) {
+        type = 'External';
+    }
+    if (!type) {
+        type = 'Employee';
+    }
+
+    console.log(`👤 Creating user ${email} with type: ${type} (Dept: ${department}, ReqType: ${user_type})`);
+
+    const grantedBy = req.adminUser ? req.adminUser.id : null;
+
+    if (type === 'Employee') {
+        // Full Access: All knowledge base categories and its sub categories
+        await connection.execute(
+            `INSERT INTO employee_access_permissions (employee_id, category_id, subcategory_id, source_id, access_level, granted_by)
+             VALUES (?, NULL, NULL, NULL, 'read', ?)`,
+            [userId, grantedBy]
+        );
+    } else if (type === 'External') {
+        // Restricted Access: Knowledge Base -> company general and wikepedia
+        // Find category IDs (handling "wikepedia" typo by checking for both)
+        const [categories] = await connection.execute(
+            `SELECT id, name FROM knowledge_categories 
+             WHERE LOWER(name) LIKE 'company general%' 
+                OR LOWER(name) LIKE 'wikipedia%' 
+                OR LOWER(name) LIKE 'wikepedia%'`
+        );
+        
+        console.log(`🔍 External user categories found: ${categories.length}`, categories.map(c => c.name));
+
+        if (categories.length > 0) {
+            const values = categories.map(cat => [userId, cat.id, null, null, 'read', grantedBy]);
+            const placeholders = values.map(() => '(?, ?, ?, ?, ?, ?)').join(', ');
+            const flatValues = values.flat();
+
+            await connection.execute(
+                `INSERT INTO employee_access_permissions (employee_id, category_id, subcategory_id, source_id, access_level, granted_by)
+                 VALUES ${placeholders}`,
+                flatValues
+            );
+        } else {
+             console.warn('⚠️ No categories found for External user! User will have NO access.');
+        }
+    }
+
+    await connection.commit();
+
     res.json({ 
       success: true, 
-      id: result.insertId,
+      id: userId,
       message: 'User created successfully' 
     });
   } catch (error) {
+    await connection.rollback();
     if (error.code === 'ER_DUP_ENTRY') {
       return res.status(400).json({ error: 'Email already exists' });
     }
     console.error('❌ Create user error:', error);
     res.status(500).json({ error: 'Failed to create user' });
+  } finally {
+    connection.release();
   }
 };
 
@@ -735,7 +1032,7 @@ export const getUserPermissions = async (req, res) => {
     if (user.length === 0) return res.status(404).json({ error: 'User not found' });
 
     const [permissions] = await pool.execute(
-      'SELECT category_id, subcategory_id, source_id FROM employee_access_permissions WHERE employee_id = ?',
+      'SELECT category_id, subcategory_id, source_id, access_level FROM employee_access_permissions WHERE employee_id = ?',
       [userId]
     );
 
@@ -769,13 +1066,38 @@ export const updateUserPermissions = async (req, res) => {
       [userId]
     );
 
+    async function getKbAccessSourceId(conn) {
+      const [rows] = await conn.execute(
+        `SELECT id FROM live_data_sources 
+         WHERE source_type = 'internal_flag' AND name = 'KB_SETTINGS_ACCESS' 
+         LIMIT 1`
+      );
+      if (rows.length > 0) return rows[0].id;
+      const [result] = await conn.execute(
+        `INSERT INTO live_data_sources 
+         (name, description, source_type, config, is_active, category_id, subcategory_id) 
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [
+          'KB_SETTINGS_ACCESS',
+          'Internal flag: KB settings access',
+          'internal_flag',
+          '{}',
+          1,
+          null,
+          null
+        ]
+      );
+      return result.insertId;
+    }
+
     if (permissions && permissions.length > 0) {
+      const kbSourceId = await getKbAccessSourceId(connection);
       const values = permissions.map(p => [
         userId, 
-        p.category_id || null, 
-        p.subcategory_id || null,
-        p.source_id || null,
-        'read', 
+        (p.category_id ?? null), 
+        (p.subcategory_id ?? null),
+        (p.source_id === 0 ? kbSourceId : (p.source_id ?? null)),
+        (p.access_level ?? 'read'), 
         grantedBy || null 
       ]);
 
@@ -799,6 +1121,13 @@ export const updateUserPermissions = async (req, res) => {
     res.status(500).json({ error: 'Failed to update permissions' });
   } finally {
     connection.release();
+    try {
+      const clients = permissionClients.get(Number(userId));
+      if (clients && clients.size > 0) {
+        const payload = JSON.stringify({ type: 'permissions_updated', employee_id: Number(userId), ts: Date.now() });
+        clients.forEach(res => { res.write(`data: ${payload}\n\n`); });
+      }
+    } catch {}
   }
 };
 
@@ -832,9 +1161,6 @@ export const bulkUpdatePermissions = async (req, res) => {
     await connection.beginTransaction();
     console.log('🔄 Transaction started');
 
-    // === FIX FOR ISSUE 2: Remove Full Access rows for these users first ===
-    // If we are adding specific permissions, we don't want the user to retain "Full Access" (all NULLs).
-    // This allows admins to "restrict" users who previously had full access by selecting them and granting specific rights.
     if (userIds.length > 0) {
       const placeholders = userIds.map(() => '?').join(',');
       console.log(`🧹 Cleaning up 'Full Access' rows for ${userIds.length} users before adding specific permissions...`);
@@ -848,20 +1174,46 @@ export const bulkUpdatePermissions = async (req, res) => {
         userIds
       );
     }
-    // ====================================================================
 
     const values = [];
     const grantedBy = null; // You can set this to admin user ID if needed
+    
+    // Helper to get KB source ID if needed
+    async function getKbAccessSourceId(conn) {
+        const [rows] = await conn.execute(
+            `SELECT id FROM live_data_sources 
+             WHERE source_type = 'internal_flag' AND name = 'KB_SETTINGS_ACCESS' 
+             LIMIT 1`
+        );
+        if (rows.length > 0) return rows[0].id;
+        const [result] = await conn.execute(
+            `INSERT INTO live_data_sources 
+             (name, description, source_type, config, is_active, category_id, subcategory_id) 
+             VALUES (?, ?, ?, ?, ?, ?, ?)`,
+            [
+            'KB_SETTINGS_ACCESS',
+            'Internal flag: KB settings access',
+            'internal_flag',
+            '{}',
+            1,
+            null,
+            null
+            ]
+        );
+        return result.insertId;
+    }
+    
+    const kbSourceId = await getKbAccessSourceId(connection);
     
     // Build values array for bulk insert
     userIds.forEach(userId => {
       permissions.forEach(p => {
         values.push([
           userId, 
-          p.category_id || null, 
-          p.subcategory_id || null,
-          p.source_id || null,
-          'read', 
+          (p.category_id ?? null), 
+          (p.subcategory_id ?? null),
+          (p.source_id === 0 ? kbSourceId : (p.source_id ?? null)),
+          (p.access_level ?? 'read'), 
           grantedBy
         ]);
       });
@@ -909,6 +1261,98 @@ export const bulkUpdatePermissions = async (req, res) => {
   } finally {
     connection.release();
     console.log('🔓 Database connection released');
+    try {
+      userIds.forEach(uid => {
+        const clients = permissionClients.get(Number(uid));
+        if (clients && clients.size > 0) {
+          const payload = JSON.stringify({ type: 'permissions_updated', employee_id: Number(uid), ts: Date.now() });
+          clients.forEach(res => { res.write(`data: ${payload}\n\n`); });
+        }
+      });
+    } catch {}
+  }
+};
+
+// ==========================================
+// FEATURE ACCESS CHECKS
+// ==========================================
+
+export const checkKbSettingsAccess = async (req, res) => {
+  try {
+    const userEmail = req.header('X-User-Email');
+    if (!userEmail) {
+      return res.json({ allowed: false });
+    }
+    const [employees] = await pool.execute(
+      'SELECT id FROM employees WHERE email = ? AND is_active = TRUE',
+      [userEmail]
+    );
+    if (employees.length === 0) {
+      return res.json({ allowed: false });
+    }
+    const employeeId = employees[0].id;
+    const [rows] = await pool.execute(
+      `SELECT 1 
+       FROM employee_access_permissions 
+       WHERE employee_id = ? 
+         AND (
+           -- Explicit KB Settings flag
+           source_id IN (
+             SELECT id FROM live_data_sources 
+             WHERE source_type = 'internal_flag' AND name = 'KB_SETTINGS_ACCESS'
+           )
+           -- OR Full Access permission (all NULLs)
+           OR (category_id IS NULL AND subcategory_id IS NULL AND source_id IS NULL)
+         )
+       LIMIT 1`,
+      [employeeId]
+    );
+    res.json({ allowed: rows.length > 0 });
+  } catch (error) {
+    console.error('❌ KB Settings Access check error:', error);
+    res.json({ allowed: false });
+  }
+};
+
+export const permissionsStream = async (req, res) => {
+  try {
+    let userEmail = req.header('X-User-Email');
+    if (!userEmail) userEmail = req.query.email;
+    if (!userEmail) {
+      res.status(401).end();
+      return;
+    }
+    const [employees] = await pool.execute(
+      'SELECT id FROM employees WHERE email = ? AND is_active = TRUE',
+      [userEmail]
+    );
+    if (employees.length === 0) {
+      res.status(401).end();
+      return;
+    }
+    const employeeId = Number(employees[0].id);
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.flushHeaders?.();
+    const msg = JSON.stringify({ type: 'connected', employee_id: employeeId, ts: Date.now() });
+    res.write(`data: ${msg}\n\n`);
+    const set = permissionClients.get(employeeId) || new Set();
+    set.add(res);
+    permissionClients.set(employeeId, set);
+    const heartbeat = setInterval(() => {
+      try { res.write(`data: ${JSON.stringify({ type: 'heartbeat', ts: Date.now() })}\n\n`); } catch {}
+    }, 15000);
+    req.on('close', () => {
+      clearInterval(heartbeat);
+      const s = permissionClients.get(employeeId);
+      if (s) {
+        s.delete(res);
+        if (s.size === 0) permissionClients.delete(employeeId);
+      }
+    });
+  } catch {
+    res.status(500).end();
   }
 };
 
@@ -1102,6 +1546,7 @@ export const getSettings = async (req, res) => {
       settings = {
         systemName: 'ChatCDO',
         aiModel: 'gemini-2.0-flash-exp',
+        audioModel: 'gemini-2.5-flash-tts', // Default
         maxContext: 20,
         enableWebSearch: true,
         maintenanceMode: false,
@@ -1112,6 +1557,8 @@ export const getSettings = async (req, res) => {
       settings = {
         systemName: row.system_name,
         aiModel: row.ai_model,
+        // Handle case where column might not exist yet or is null
+        audioModel: row.audio_model || 'gemini-2.5-flash-tts', 
         maxContext: row.max_context,
         enableWebSearch: Boolean(row.enable_web_search),
         maintenanceMode: Boolean(row.maintenance_mode),
@@ -1127,13 +1574,15 @@ export const getSettings = async (req, res) => {
 };
 
 export const updateSettings = async (req, res) => {
-  const { systemName, aiModel, maxContext, enableWebSearch, maintenanceMode } = req.body;
+  const { systemName, aiModel, audioModel, maxContext, enableWebSearch, maintenanceMode } = req.body;
 
   try {
+    // Updates both ai_model and audio_model
     await pool.execute(`
       UPDATE system_settings 
       SET system_name = ?, 
           ai_model = ?, 
+          audio_model = ?,
           max_context = ?, 
           enable_web_search = ?, 
           maintenance_mode = ?
@@ -1141,6 +1590,7 @@ export const updateSettings = async (req, res) => {
     `, [
       systemName, 
       aiModel, 
+      audioModel || 'gemini-2.5-flash-tts', // Fallback
       maxContext, 
       enableWebSearch, 
       maintenanceMode
@@ -1237,15 +1687,102 @@ export const getSystemHealth = async (req, res) => {
 };
 
 // ==========================================
+// DYNAMIC MODEL LIST (UPDATED)
+// ==========================================
+
+export const getAvailableGeminiModels = async (req, res) => {
+  // FALLBACK LISTS (Used if API fails)
+  const fallbackText = [
+    { id: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash (Offline)' },
+    { id: 'gemini-1.5-pro', label: 'Gemini 1.5 Pro (Offline)' },
+    { id: 'gemini-1.5-flash', label: 'Gemini 1.5 Flash (Offline)' }
+  ];
+  const fallbackAudio = [
+    { id: 'gemini-2.0-flash-exp', label: 'Gemini 2.0 Flash Audio (Offline)' },
+    { id: 'gemini-2.5-flash-tts', label: 'Gemini 2.5 Flash TTS (Offline)' }
+  ];
+
+  try {
+    const apiKey = process.env.GEMINI_API_KEY; 
+    
+    if (!apiKey) {
+      console.warn('⚠️ GEMINI_API_KEY not found in environment variables.');
+      return res.json({ 
+        textModels: fallbackText,
+        audioModels: fallbackAudio
+      });
+    }
+
+    // Safety check for fetch availability
+    if (!globalThis.fetch) {
+        console.error('❌ Node.js version missing native fetch. Using fallback list.');
+        return res.json({ textModels: fallbackText, audioModels: fallbackAudio });
+    }
+
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+    
+    if (!response.ok) {
+      throw new Error(`Google API Error: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+
+    // Sorting Helper: Natural Sort (descending)
+    const sortModels = (a, b) => {
+      return b.id.localeCompare(a.id, undefined, { numeric: true, sensitivity: 'base' });
+    };
+
+    // 1. Process Text Models
+    const textModels = data.models
+      .filter(m => {
+        const id = m.name.toLowerCase();
+        return id.includes('gemini') && 
+               m.supportedGenerationMethods.includes('generateContent') &&
+               !id.includes('tts') && 
+               !id.includes('audio') &&
+               !id.includes('imagen') &&
+               !id.includes('veo');
+      })
+      .map(m => {
+        const id = m.name.replace('models/', '');
+        let label = m.displayName || id;
+        if (id.includes('flash')) label += ' (Fast)';
+        if (id.includes('pro')) label += ' (Reasoning)';
+        return { id, label };
+      })
+      .sort(sortModels);
+
+    // 2. Process Audio/TTS Models
+    const audioModels = data.models
+      .filter(m => {
+        const id = m.name.toLowerCase();
+        return id.includes('gemini') && (id.includes('tts') || id.includes('audio'));
+      })
+      .map(m => {
+        const id = m.name.replace('models/', '');
+        let label = m.displayName || id;
+        if (id.includes('native')) label += ' (Live API)';
+        return { id, label };
+      })
+      .sort(sortModels);
+
+    res.json({ textModels, audioModels });
+
+  } catch (error) {
+    console.error('❌ Failed to fetch Gemini models:', error.message);
+    res.json({ 
+        textModels: fallbackText,
+        audioModels: fallbackAudio
+    });
+  }
+};
+
+// ==========================================
 // SMART ASSISTANT ADMIN ROUTES (NEW)
 // ==========================================
 
 export const getSmartAssistantSessions = async (req, res) => {
     try {
-        // Since we're using in-memory storage for sessions in SmartPersonalAssistant,
-        // we can't query them from the database. For now, return a placeholder.
-        // In production, you'd want to store sessions in Redis or database.
-        
         console.log('📊 Admin accessing Smart Assistant sessions');
         
         // This is a placeholder - in production, you would:

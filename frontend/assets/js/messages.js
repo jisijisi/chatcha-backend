@@ -1,522 +1,374 @@
-// Message Actions: Copy, Edit, Regenerate, Follow-ups
-import { escapeHtml } from './utils.js';
+// messages.js - Fixed Edit/Cancel/Save Logic & Ghost Tooltip Issue
+import { CONFIG } from './config.js';
 
 export class MessageManager {
   constructor(chatApp) {
     this.app = chatApp;
-    // this.lastHoveredMessage = null; // No longer needed
-  }
-
-  initMessageActionButtons() {
-    // Ensure action buttons for existing messages immediately
-    this.ensureAllMessageActionButtons();
-    
-    /*
-    // REMOVED: These listeners are redundant.
-    // The MutationObserver and explicit calls in chat.js
-    // already handle button creation reliably.
-    // This removes the "flicker" bug when moving
-    // the mouse between messages.
-
-    this.app.elements.chatDiv.addEventListener('mouseover', (e) => {
-      const message = e.target.closest('.message');
-      if (message && message !== this.lastHoveredMessage && !message.querySelector('.typing')) {
-        this.lastHoveredMessage = message;
-        this.ensureActionButtons(message);
-      }
-    });
-    
-    this.app.elements.chatDiv.addEventListener('mouseout', (e) => {
-      if (!e.relatedTarget || !e.relatedTarget.closest('.message')) {
-        this.lastHoveredMessage = null;
-      }
-    });
-    */
-
-    // Observer for new messages - with immediate execution
-    const observer = new MutationObserver((mutations) => {
-      mutations.forEach((mutation) => {
-        mutation.addedNodes.forEach((node) => {
-          if (node.nodeType === 1 && node.classList && node.classList.contains('message')) {
-            // Immediate synchronous action button setup for non-typing messages
-            if (!node.querySelector('.typing')) {
-              // Use immediate approach
-              setTimeout(() => {
-                this.ensureActionButtons(node);
-              }, 0);
-            }
-          }
-        });
-      });
-    });
-
-    observer.observe(this.app.elements.chatDiv, {
-      childList: true,
-      subtree: false
-    });
-  }
-
-  ensureAllMessageActionButtons() {
-    const messages = this.app.elements.chatDiv.querySelectorAll('.message:not(.bot .typing)');
-    messages.forEach(message => {
-      this.ensureActionButtons(message);
-    });
+    this.followUpSuggestionsEnabled = true;
   }
 
   ensureActionButtons(message) {
-    if (!message) return;
-    if (message.querySelector('.typing')) return;
-    
-    // Check if buttons already exist and are properly set up
-    const actionsContainer = message.querySelector('.message-actions');
-    if (actionsContainer && actionsContainer.children.length > 0) {
-      return; // Buttons already added
-    }
-    
-    const isUser = message.classList.contains('user');
     const isBot = message.classList.contains('bot');
+    const content = message.querySelector('.message-content').textContent;
+    const actionsDiv = message.querySelector('.message-actions');
     
-    if (!isUser && !isBot) return;
+    if (!actionsDiv) return;
     
-    // Create or get actions container
-    let container = actionsContainer;
-    if (!container) {
-      container = document.createElement('div');
-      container.className = 'message-actions';
-      message.appendChild(container);
-    }
+    // Clear existing to avoid duplicates
+    actionsDiv.innerHTML = '';
     
-    container.innerHTML = '';
-    
-    if (isUser) {
-      container.appendChild(this.createCopyButton(message));
-      container.appendChild(this.createEditButton(message));
-    } else if (isBot) {
-      container.appendChild(this.createCopyButton(message));
-      container.appendChild(this.createRegenerateButton(message));
-    }
-  }
-
-  createCopyButton(message) {
+    // --- Copy Button ---
     const copyBtn = document.createElement('button');
-    copyBtn.className = 'message-action-btn copy-action';
+    copyBtn.className = 'message-action-btn copy-btn';
     copyBtn.innerHTML = `
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
         <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
       </svg>
-      <span class="action-tooltip">Copy</span>
     `;
-    copyBtn.setAttribute('aria-label', 'Copy message');
+    this.app.modalManager.addTooltip(copyBtn, 'Copy text', 'bottom');
     
-    copyBtn.addEventListener('click', async (e) => {
-      e.stopPropagation();
-      const content = message.querySelector('.message-content');
-      let textToCopy = content.textContent;
-      
-      const followupSuggestions = content.querySelector('.followup-suggestions');
-      if (followupSuggestions) {
-        const tempDiv = content.cloneNode(true);
-        const tempFollowup = tempDiv.querySelector('.followup-suggestions');
-        if (tempFollowup) tempFollowup.remove();
-        textToCopy = tempDiv.textContent;
-      }
-      
+    copyBtn.addEventListener('click', async () => {
       try {
-        await navigator.clipboard.writeText(textToCopy.trim());
+        await navigator.clipboard.writeText(content);
+        copyBtn.classList.add('copied');
         
-        const originalSVG = copyBtn.querySelector('svg').outerHTML;
-        copyBtn.querySelector('svg').outerHTML = `
+        const originalIcon = copyBtn.innerHTML;
+        copyBtn.innerHTML = `
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="20 6 9 17 4 12"></polyline>
           </svg>
         `;
-        const tooltip = copyBtn.querySelector('.action-tooltip');
-        tooltip.textContent = 'Copied!';
-        copyBtn.classList.add('copied');
+        
+        // Refresh tooltip
+        this.app.modalManager.addTooltip(copyBtn, 'Copied!', 'bottom');
         
         setTimeout(() => {
-          copyBtn.querySelector('svg').outerHTML = originalSVG;
-          tooltip.textContent = 'Copy';
           copyBtn.classList.remove('copied');
+          copyBtn.innerHTML = originalIcon;
+          this.app.modalManager.addTooltip(copyBtn, 'Copy text', 'bottom');
         }, 2000);
       } catch (err) {
         console.error('Failed to copy:', err);
-        this.app.showToast('Failed to copy message', 'error');
+        this.app.showToast('Failed to copy text', 'error');
       }
     });
     
-    return copyBtn;
+    actionsDiv.appendChild(copyBtn);
+    
+    // --- Bot Actions (Expand, Regenerate) ---
+    if (isBot) {
+      // Expand Button
+      const expandBtn = document.createElement('button');
+      expandBtn.className = 'message-action-btn expand-btn';
+      expandBtn.innerHTML = `
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="15 3 21 3 21 9"></polyline>
+          <polyline points="9 21 3 21 3 15"></polyline>
+          <line x1="21" y1="3" x2="14" y2="10"></line>
+          <line x1="3" y1="21" x2="10" y2="14"></line>
+        </svg>
+      `;
+      this.app.modalManager.addTooltip(expandBtn, 'Full Screen', 'bottom');
+
+      expandBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        
+        const modal = document.getElementById('data-view-modal');
+        const modalBody = document.getElementById('data-view-body');
+        const modalTitle = document.getElementById('data-view-title');
+        
+        if (!modal || !modalBody) return;
+        
+        const messageContent = message.querySelector('.message-content');
+        if (!messageContent) return;
+        
+        const contentClone = messageContent.cloneNode(true);
+        
+        // Remove interactive elements from clone
+        const existingBtn = contentClone.querySelector('.view-data-btn');
+        if (existingBtn) existingBtn.remove();
+        
+        // Unhide hidden content
+        const hiddenContent = contentClone.querySelector('.data-content-hidden');
+        if (hiddenContent) hiddenContent.style.display = 'block';
+        
+        modalBody.innerHTML = '';
+        modalBody.appendChild(contentClone);
+        
+        // Apply formatting to the modal
+        if (this.app.markdownParser) {
+           this.app.markdownParser.applySyntaxHighlighting(modalBody);
+           this.app.markdownParser.renderCharts(modalBody);
+        }
+        
+        if (modalTitle) modalTitle.textContent = '📄 Expanded View';
+        
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+      });
+      
+      actionsDiv.appendChild(expandBtn);
+
+      // Regenerate Button
+      const regenerateBtn = document.createElement('button');
+      regenerateBtn.className = 'message-action-btn regenerate-btn';
+      regenerateBtn.innerHTML = `
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+          <path d="M3 3v5h5"></path>
+          <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"></path>
+          <path d="M16 21h5v-5"></path>
+        </svg>
+      `;
+      this.app.modalManager.addTooltip(regenerateBtn, 'Regenerate', 'bottom');
+      
+      regenerateBtn.addEventListener('click', (e) => {
+        // FIX: Force tooltip cleanup before the element is removed
+        e.currentTarget.dispatchEvent(new MouseEvent('mouseleave'));
+        document.querySelectorAll('.tooltip, .tippy-box').forEach(t => t.remove());
+        
+        this.handleRegenerate(message);
+      });
+      
+      actionsDiv.appendChild(regenerateBtn);
+    } 
+    // --- User Actions (Edit) ---
+    else {
+      const editBtn = document.createElement('button');
+      editBtn.className = 'message-action-btn edit-btn';
+      editBtn.innerHTML = `
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+        </svg>
+      `;
+      this.app.modalManager.addTooltip(editBtn, 'Edit', 'bottom');
+      
+      editBtn.addEventListener('click', (e) => {
+        // FIX: Force tooltip cleanup before the element is hidden
+        e.currentTarget.dispatchEvent(new MouseEvent('mouseleave'));
+        document.querySelectorAll('.tooltip, .tippy-box').forEach(t => t.remove());
+
+        this.handleEdit(message);
+      });
+      
+      actionsDiv.appendChild(editBtn);
+    }
   }
 
-  createRegenerateButton(message) {
+  initMessageActionButtons() {
+    const messages = document.querySelectorAll('.message');
+    messages.forEach(msg => {
+      if (!msg.querySelector('.message-actions').hasChildNodes()) {
+        this.ensureActionButtons(msg);
+      }
+    });
+  }
+
+  handleRegenerate(botMessage) {
+    if (this.app.isLoading) return;
+    
     const allMessages = Array.from(this.app.elements.chatDiv.querySelectorAll('.message'));
-    const messageIndex = allMessages.indexOf(message);
-    const conversationIndex = Math.floor(messageIndex / 2);
+    const botIndex = allMessages.indexOf(botMessage);
     
-    if (conversationIndex < 0 || conversationIndex >= this.app.currentConversation.length) {
-      return document.createElement('div');
-    }
-    
-    const regenerateBtn = document.createElement('button');
-    regenerateBtn.className = 'message-action-btn regenerate-action';
-    regenerateBtn.innerHTML = `
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <polyline points="23 4 23 10 17 10"></polyline>
-        <polyline points="1 20 1 14 7 14"></polyline>
-        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-      </svg>
-      <span class="action-tooltip">Regenerate response</span>
-    `;
-    regenerateBtn.setAttribute('aria-label', 'Regenerate response');
-    
-    regenerateBtn.addEventListener('click', async (e) => {
-      e.stopPropagation();
-      await this.regenerateResponse(conversationIndex, message, regenerateBtn);
-    });
-    
-    return regenerateBtn;
-  }
-
-  async regenerateResponse(conversationIndex, messageElement, regenerateBtn) {
-    if (this.app.isLoading) {
-      this.app.showToast('Please wait for the current response to complete', 'warning');
-      return;
-    }
-    
-    const conversation = this.app.currentConversation[conversationIndex];
-    if (!conversation) return;
-    
-    if (regenerateBtn) {
-      regenerateBtn.classList.add('regenerating');
-      const tooltip = regenerateBtn.querySelector('.action-tooltip');
-      if (tooltip) tooltip.textContent = 'Regenerating...';
-    }
-    
-    this.app.isLoading = true;
-    this.app.elements.sendBtn.disabled = true;
-    this.app.elements.chatInput.disabled = true;
-    this.app.uiManager.toggleSendButton(true);
-    this.disableFollowUpSuggestions();
-    messageElement.classList.add('regenerating');
-    
-    let success = false;
-    
-    try {
-      const question = conversation.question;
-      const answer = await this.app.apiManager.getAIResponse(
-        question,
-        this.app.resumeData,
-        this.app.currentConversation.slice(0, conversationIndex),
-        this.app.userName,
-        messageElement
-      );
-      
-      const contentDiv = messageElement.querySelector('.message-content');
-      if (contentDiv) {
-        contentDiv.innerHTML = this.app.markdownParser.parseMarkdown(answer);
-        this.app.markdownParser.applySyntaxHighlighting(contentDiv);
+    if (botIndex > 0) {
+      const userMessage = allMessages[botIndex - 1];
+      if (userMessage.classList.contains('user')) {
+        const question = userMessage.querySelector('.message-content').textContent;
+        
+        // 1. Remove Bot Message from UI
+        botMessage.remove();
+        
+        // 2. Find the correct index in the conversation data
+        // We count User messages to find the corresponding index in the data array
+        const userMessages = Array.from(this.app.elements.chatDiv.querySelectorAll('.message.user'));
+        const userMsgIndex = userMessages.indexOf(userMessage);
+        
+        if (userMsgIndex >= 0) {
+          // CRITICAL FIX: 
+          // We slice the conversation up to (but NOT including) this index.
+          // This effectively "rewinds" history to before this question was asked.
+          // The submitQuestion function will treat it as a new question and add it back properly.
+          this.app.currentConversation = this.app.currentConversation.slice(0, userMsgIndex);
+        }
+        
+        // 3. Resubmit
+        this.app.isLoading = true;
+        this.app.uiManager.toggleSendButton(true);
+        this.app.elements.chatInput.disabled = true;
+        
+        // 4. Call submit
+        this.app.chatManager.submitQuestion(question, false);
       }
-      
-      this.app.currentConversation[conversationIndex].answer = answer;
-      this.app.chatManager.saveConversation();
-      
-      this.addFollowUpSuggestions(messageElement, question, answer);
-      
-      success = true;
-      this.app.showToast('Response regenerated successfully', 'success');
-    } catch (error) {
-      console.error('Regenerate error:', error);
-      if (error.name !== 'AbortError') {
-        this.app.showToast('Failed to regenerate response', 'error');
-      }
-    } finally {
-      this.app.isLoading = false;
-      this.app.elements.sendBtn.disabled = false;
-      this.app.elements.chatInput.disabled = false;
-      this.app.uiManager.toggleSendButton(false);
-      this.enableFollowUpSuggestions();
-      
-      if (regenerateBtn) {
-        regenerateBtn.classList.remove('regenerating');
-        // Restore original tooltip text
-        const tooltip = regenerateBtn.querySelector('.action-tooltip');
-        if (tooltip) tooltip.textContent = 'Regenerate response';
-      }
-      
-      messageElement.classList.remove('regenerating');
     }
   }
 
-  createEditButton(message) {
-    const allMessages = Array.from(this.app.elements.chatDiv.querySelectorAll('.message'));
-    const messageIndex = allMessages.indexOf(message);
-    const conversationIndex = Math.floor(messageIndex / 2);
+  handleEdit(userMessage) {
+    if (this.app.isLoading) return;
     
-    // Always create edit button for user messages, even if we can't find the conversation index
-    const editBtn = document.createElement('button');
-    editBtn.className = 'message-action-btn edit-action';
-    editBtn.innerHTML = `
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-      </svg>
-      <span class="action-tooltip">Edit message</span>
-    `;
-    editBtn.setAttribute('aria-label', 'Edit message');
+    const contentDiv = userMessage.querySelector('.message-content');
+    const actionsDiv = userMessage.querySelector('.message-actions');
     
-    editBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      this.enableMessageEdit(conversationIndex, message);
-    });
+    // Capture original state
+    const originalHTML = contentDiv.innerHTML;
     
-    return editBtn;
-  }
-
-  async enableMessageEdit(conversationIndex, messageElement) {
-    if (this.app.isLoading) {
-      this.app.showToast('Please wait for the current response to complete', 'warning');
-      return;
-    }
+    // Convert HTML breaks back to newlines for the textarea
+    const currentText = contentDiv.innerText; 
     
-    // Find the conversation data
-    let conversation = null;
-    if (conversationIndex >= 0 && conversationIndex < this.app.currentConversation.length) {
-      conversation = this.app.currentConversation[conversationIndex];
-    }
-    
-    if (!conversation) {
-      this.app.showToast('Cannot edit this message', 'error');
-      return;
-    }
-    
-    const contentDiv = messageElement.querySelector('.message-content');
-    if (!contentDiv) return;
-    
-    const originalText = conversation.question;
-    
-    const actionsContainer = messageElement.querySelector('.message-actions');
-    if (actionsContainer) actionsContainer.style.display = 'none';
-    
-    messageElement.classList.add('editing');
+    userMessage.classList.add('editing');
+    actionsDiv.style.display = 'none';
     
     contentDiv.innerHTML = `
       <div class="edit-input-wrapper">
-        <textarea class="edit-input" placeholder="Edit your message...">${escapeHtml(originalText)}</textarea>
+        <textarea class="edit-input"></textarea>
         <div class="edit-actions">
-          <button class="edit-cancel" type="button">Cancel</button>
-          <button class="edit-save" type="button">Save & Resend</button>
+          <button type="button" class="edit-cancel">Cancel</button>
+          <button type="button" class="edit-save">Save & Submit</button>
         </div>
       </div>
     `;
     
-    const textarea = contentDiv.querySelector('.edit-input');
+    const textarea = contentDiv.querySelector('textarea');
+    textarea.value = currentText; // Set value safely
+    
     const cancelBtn = contentDiv.querySelector('.edit-cancel');
     const saveBtn = contentDiv.querySelector('.edit-save');
     
-    textarea.focus();
-    textarea.setSelectionRange(textarea.value.length, textarea.value.length);
-    
+    // Auto-resize logic
     textarea.style.height = 'auto';
     textarea.style.height = textarea.scrollHeight + 'px';
-    textarea.addEventListener('input', () => {
+    textarea.focus();
+    
+    // Handlers
+    const closeEdit = () => {
+      userMessage.classList.remove('editing');
+      actionsDiv.style.display = '';
+    };
+
+    // CANCEL: Restore exact original HTML
+    cancelBtn.onclick = (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      contentDiv.innerHTML = originalHTML;
+      closeEdit();
+    };
+    
+    // SAVE: Process new text
+    saveBtn.onclick = (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      
+      const newText = textarea.value.trim();
+      
+      if (newText && newText !== currentText.trim()) {
+        // 1. Find index in the conversation array based on User Message Count
+        const userMessages = Array.from(this.app.elements.chatDiv.querySelectorAll('.message.user'));
+        const convIndex = userMessages.indexOf(userMessage);
+        
+        if (convIndex === -1) {
+          console.error("Could not find message index");
+          this.app.showToast("Error editing message", "error");
+          contentDiv.innerHTML = originalHTML;
+          closeEdit();
+          return;
+        }
+
+        // 2. Remove this message and EVERYTHING after it from UI
+        const allMessages = Array.from(this.app.elements.chatDiv.querySelectorAll('.message'));
+        const domIndex = allMessages.indexOf(userMessage);
+        
+        for (let i = allMessages.length - 1; i >= domIndex; i--) {
+          allMessages[i].remove();
+        }
+        
+        // 3. Update State: Keep conversation up to (but not including) this index
+        this.app.currentConversation = this.app.currentConversation.slice(0, convIndex);
+        
+        // 4. Submit new question
+        this.app.elements.chatInput.value = newText;
+        this.app.askQuestion();
+        
+      } else {
+        // If empty or unchanged, treat as cancel
+        contentDiv.innerHTML = originalHTML;
+        closeEdit();
+      }
+    };
+
+    // Resize on input
+    textarea.oninput = () => {
       textarea.style.height = 'auto';
       textarea.style.height = textarea.scrollHeight + 'px';
-    });
-    
-    const cancelEdit = () => {
-      messageElement.classList.remove('editing');
-      contentDiv.innerHTML = escapeHtml(originalText).replace(/\n/g, '<br>');
-      if (actionsContainer) actionsContainer.style.display = '';
     };
     
-    const saveEdit = async () => {
-      const newQuestion = textarea.value.trim();
-      
-      if (!newQuestion) {
-        this.app.showToast('Message cannot be empty', 'error');
-        return;
-      }
-      
-      if (newQuestion === originalText) {
-        cancelEdit();
-        return;
-      }
-      
-      const allMessages = Array.from(this.app.elements.chatDiv.querySelectorAll('.message'));
-      const messageIndex = allMessages.indexOf(messageElement);
-      
-      // Remove all messages after this one (including the bot response)
-      const botMessageIndex = messageIndex + 1;
-      if (botMessageIndex < allMessages.length) {
-        allMessages[botMessageIndex].remove();
-      }
-      
-      // Update the message content
-      messageElement.classList.remove('editing');
-      contentDiv.innerHTML = escapeHtml(newQuestion).replace(/\n/g, '<br>');
-      if (actionsContainer) {
-        actionsContainer.style.display = '';
-      }
-      
-      // Update the conversation with the new question and remove the old answer
-      this.app.currentConversation[conversationIndex].question = newQuestion;
-      this.app.currentConversation[conversationIndex].answer = ''; // Clear the old answer
-      
-      // Now get a new response for this edited question
-      await this.app.chatManager.getNewResponseForEdit(newQuestion, conversationIndex);
-      this.app.showToast('Message edited and response updated', 'success');
-    };
-    
-    cancelBtn.addEventListener('click', cancelEdit);
-    saveBtn.addEventListener('click', saveEdit);
-    
-    textarea.addEventListener('keydown', (e) => {
+    // Keyboard shortcuts
+    textarea.onkeydown = (e) => {
       if (e.key === 'Escape') {
-        e.preventDefault();
-        cancelEdit();
-      } else if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        saveEdit();
+        cancelBtn.click();
       }
-    });
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        saveBtn.click();
+      }
+    };
   }
 
-  // --- REVISED LOGIC FOR RELEVANT FOLLOW-UP SUGGESTIONS ---
-  generateFollowUpSuggestions(question, answer) {
-    const suggestions = [];
-    const lowerAnswer = answer.toLowerCase();
-    const lowerQuestion = question.toLowerCase();
+  async addFollowUpSuggestions(messageElement, originalQuestion, answer) {
+    if (!this.followUpSuggestionsEnabled) return;
+    
+    // Use the current conversation history from the app state
+    const history = Array.isArray(this.app.currentConversation) ? this.app.currentConversation : [];
+    
+    // Call the backend LLM to get smart suggestions
+    const suggestions = await this.app.apiManager.getFollowUpSuggestions(history, answer);
+    
+    if (!suggestions || suggestions.length === 0) return;
 
-    // Keywords in the answer that suggest specific follow-up needs
-    const policyKeywords = ['policy', 'guideline', 'document', 'handbook', 'procedure'];
-    const hiringKeywords = ['interview', 'stage', 'process', 'steps', 'candidacy', 'evaluation', 'hr'];
-    const benefitsKeywords = ['benefit', 'leave', 'vacation', 'sick', 'health', 'incentive'];
-    const locationKeywords = ['address', 'branch', 'store', 'location', 'operating hours', 'contact'];
+    const suggestionsDiv = document.createElement('div');
+    suggestionsDiv.className = 'followup-suggestions';
     
-    // Initial set of suggestions based on question type (if simple)
-    if (lowerQuestion.startsWith('what is') || lowerQuestion.startsWith('tell me')) {
-        suggestions.push("Can you elaborate on that point?");
-        suggestions.push("How does that policy affect my role?");
-    }
+    const title = document.createElement('div');
+    title.className = 'followup-suggestions-title';
+    title.textContent = 'Related questions:';
+    suggestionsDiv.appendChild(title);
     
-    // --- Prioritized Suggestions based on Answer Content ---
-    
-    // 1. Hiring/Recruitment Process
-    if (hiringKeywords.some(key => lowerAnswer.includes(key))) {
-        if (lowerAnswer.includes('stage') || lowerAnswer.includes('steps') || lowerAnswer.includes('process')) {
-            suggestions.push("What is the next stage in the process?");
-            suggestions.push("Where can I find the official *Recruitment Flowchart*?");
-        }
-        if (lowerAnswer.includes('interview')) {
-            suggestions.push("What topics are covered in the second interview?");
-            suggestions.push("Who conducts the final panel interview?");
-        }
-        if (lowerAnswer.includes('hr')) {
-            suggestions.push("What is the contact number for the HR department?");
-        }
-    }
-
-    // 2. Policy/Documentation Details
-    if (policyKeywords.some(key => lowerAnswer.includes(key))) {
-        suggestions.push("Where can I find the full text of that policy?");
-        suggestions.push("What are the conditions for compliance?");
-        suggestions.push("Is there an official document reference for that?");
-    }
-    
-    // 3. Benefits/Leave Information
-    if (benefitsKeywords.some(key => lowerAnswer.includes(key))) {
-        if (lowerAnswer.includes('leave') || lowerAnswer.includes('vacation')) {
-            suggestions.push("How many vacation leaves am I entitled to this year?");
-        }
-        if (lowerAnswer.includes('health') || lowerAnswer.includes('insurance')) {
-            suggestions.push("What are the key features of the company health plan?");
-        }
-    }
-
-    // 4. Location/Company Structure
-    if (locationKeywords.some(key => lowerAnswer.includes(key))) {
-        suggestions.push("Can you provide the address for the head office?");
-        suggestions.push("What are the operating hours for the Marulas branch?");
-        suggestions.push("Is the Fairview branch currently hiring?");
-    }
-    
-    // 5. General Next Steps (Always good to include)
-    suggestions.push("Can you summarize the main points in three bullet points?");
-    
-    // Filter out duplicates and limit to a maximum of 3 unique, relevant questions
-    return [...new Set(suggestions)].slice(0, 3);
-  }
-
-  addFollowUpSuggestions(messageElement, question, answer) {
-    const existingSuggestions = this.app.elements.chatDiv.querySelectorAll('.followup-suggestions');
-    existingSuggestions.forEach(suggestion => suggestion.remove());
-    
-    if (messageElement.querySelector('.followup-suggestions')) {
-      return;
-    }
-    
-    const suggestions = this.generateFollowUpSuggestions(question, answer);
-    
-    if (suggestions.length === 0) return;
-    
-    const contentDiv = messageElement.querySelector('.message-content');
-    if (!contentDiv) return;
-    
-    const followupDiv = document.createElement('div');
-    followupDiv.className = 'followup-suggestions';
-    followupDiv.innerHTML = `
-      <div class="followup-suggestions-title">💭 Follow-up questions:</div>
-      <div class="followup-chips"></div>
-    `;
-    
-    const chipsContainer = followupDiv.querySelector('.followup-chips');
+    const chipsDiv = document.createElement('div');
+    chipsDiv.className = 'followup-chips';
     
     suggestions.forEach(suggestion => {
       const chip = document.createElement('button');
       chip.className = 'followup-chip';
       chip.textContent = suggestion;
-      chip.type = 'button';
-      
       chip.addEventListener('click', () => {
-        if (this.app.isLoading) {
-          this.app.showToast('Please wait for the current response to complete', 'warning');
-          return;
-        }
-        
         this.app.elements.chatInput.value = suggestion;
-        this.app.updateCharacterCount();
         this.app.askQuestion();
       });
-      
-      chipsContainer.appendChild(chip);
+      chipsDiv.appendChild(chip);
     });
     
-    contentDiv.appendChild(followupDiv);
-    this.app.currentFollowUpElement = followupDiv;
+    suggestionsDiv.appendChild(chipsDiv);
+    
+    const contentDiv = messageElement.querySelector('.message-content');
+    if (contentDiv) {
+        contentDiv.appendChild(suggestionsDiv);
+        // Scroll to bottom again in case suggestions expanded the view
+        this.app.uiManager.scrollToBottom();
+    }
   }
 
+  // DEPRECATED: Old client-side generation logic
+  // generateSuggestions(ctx) { ... }
+
   disableFollowUpSuggestions() {
-    const followupSuggestions = this.app.elements.chatDiv.querySelector('.followup-suggestions');
-    if (followupSuggestions) {
-      followupSuggestions.classList.add('disabled');
-      const chips = followupSuggestions.querySelectorAll('.followup-chip');
-      chips.forEach(chip => {
-        chip.classList.add('disabled');
-        chip.disabled = true;
-      });
-    }
+    const allChips = document.querySelectorAll('.followup-chip');
+    allChips.forEach(chip => {
+      chip.classList.add('disabled');
+      chip.disabled = true;
+    });
   }
 
   enableFollowUpSuggestions() {
-    const followupSuggestions = this.app.elements.chatDiv.querySelector('.followup-suggestions');
-    if (followupSuggestions) {
-      followupSuggestions.classList.remove('disabled');
-      const chips = followupSuggestions.querySelectorAll('.followup-chip');
-      chips.forEach(chip => {
-        chip.classList.remove('disabled');
-        chip.disabled = false;
-      });
-    }
+    // Placeholder for future toggle logic
   }
 }

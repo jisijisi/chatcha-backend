@@ -1,5 +1,6 @@
 // controllers/chatController.js - FIXED with chat_sessions sync
 import { pool } from '../config/database.js';
+import { broadcastDashboardUpdate } from './adminController.js';
 
 export const loadChats = async (req, res) => {
     const userEmail = req.header('X-User-Email') || req.query.email;
@@ -193,6 +194,9 @@ export const saveChats = async (req, res) => {
             success: true, 
             message: "Data saved to NEW database schema",
         });
+        try {
+            broadcastDashboardUpdate({ event: 'chat_saved' });
+        } catch {}
     } catch (err) {
         console.error('❌ Error saving chat history to NEW schema:', err);
         res.json({ 

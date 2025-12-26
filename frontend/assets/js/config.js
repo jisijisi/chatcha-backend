@@ -1,29 +1,32 @@
-// config.js - Updated to handle local testing and production environments
+// frontend/assets/js/config.js
 
-// --- Environment Flag ---
-// Auto-detect production environment
+// 1. Determine if we are in production based on hostname
+// If the hostname is NOT localhost or 127.0.0.1, we assume it's production.
 const IS_PRODUCTION = window.location.hostname !== 'localhost' && 
-                      window.location.hostname !== '127.0.0.1' && 
-                      !window.location.hostname.includes('netlify.app');
+                      window.location.hostname !== '127.0.0.1';
 
-// --- Dynamic URLs ---
+// 2. Define API Base URLs
 const LOCAL_API_BASE = "http://localhost:3000";
-const PROD_API_BASE = "https://chatcha-backend.onrender.com"; // Your actual backend URL
+const PROD_API_BASE = "https://chatcha-backend.onrender.com"; // Replace if you use a different domain
 
+// 3. Select the correct base URL
 const API_BASE = IS_PRODUCTION ? PROD_API_BASE : LOCAL_API_BASE;
+
+console.log(`[Config] Running in ${IS_PRODUCTION ? 'Production' : 'Development'} mode.`);
+console.log(`[Config] API Base URL: ${API_BASE}`);
 
 export const CONFIG = {
   IS_PRODUCTION,
   API_BASE,
-  // Core AI Endpoint
+  // Core Endpoints
   API_URL: `${API_BASE}/ask`,
+  HISTORY_API_URL_BASE: `${API_BASE}/chats`,
+  TTS_VOICE_NAME: "leda",
+  ENABLE_LIVE_TTS: false,
+  LIVE_TTS_SAMPLE_RATE: 24000,
+  LIVE_TTS_JITTER_MS: 50,
   
-  // History Persistence Endpoints
-  HISTORY_API_URL_BASE: `${API_BASE}/chats`, // Use this base URL for /load and /save
-  
-  // Rest of your config...
-  GOOGLE_SCRIPT_URL: "",
-  
+  // Storage Keys
   STORAGE_KEYS: {
     CHATS: "chats",
     CURRENT_CONVERSATION: "currentConversation",
@@ -34,12 +37,18 @@ export const CONFIG = {
     CDO_CACHE_TIMESTAMP: "cdoCacheTimestamp"
   },
   
+  // App Constants
   MAX_TITLE_LENGTH: 30,
   MOBILE_BREAKPOINT: 1024,
   
+  // RAG Configuration
   RAG_CONFIG: {
     ENABLED: true,
     SEARCH_TOP_K: 12,
-    TIMEOUT_MS: 30000 // Increased timeout for production
+    TIMEOUT_MS: 30000 
   }
+  ,
+  // Microphone response behavior: 'thinking' = show thinking phrases (text response),
+  // 'full-duplex' = use voice full-duplex streaming (audio + streaming text)
+  MIC_RESPONSE_MODE: 'full-duplex'
 };

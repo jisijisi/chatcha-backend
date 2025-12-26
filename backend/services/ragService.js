@@ -574,8 +574,10 @@ export class MultiFolderSemanticRAG {
   formatKeyAsTitle(key) {
       return key
           .replace(/_/g, ' ')
-          .replace(/([A-Z])/g, ' $1')
+          .replace(/-/g, ' ') // Also replace hyphens with spaces
+          .replace(/([^ ])([A-Z])/g, '$1 $2') // Only add space if not already preceded by space
           .split(' ')
+          .filter(word => word.length > 0)
           .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
           .join(' ')
           .trim();
@@ -828,9 +830,20 @@ export class MultiFolderSemanticRAG {
     for (const [fileName, chunks] of Object.entries(groupedByFile)) {
         const sourceName = this.formatKeyAsTitle(fileName);
         
-        // Extract category from first chunk
-        const categoryName = chunks[0]?.path?.split('/')[0] || 'General';
-        const formattedCategory = this.formatKeyAsTitle(categoryName);
+        // Extract category and subcategory
+        const pathParts = chunks[0]?.path?.split('/') || [];
+        const categoryName = pathParts[0] || 'General';
+        
+        // Use raw category name from DB path to ensure consistency
+        let formattedCategory = (categoryName.includes(' ') || categoryName === 'General') 
+            ? categoryName 
+            : this.formatKeyAsTitle(categoryName);
+
+        // OMITTED: Appending subcategory to avoid redundancy with document titles
+        // Previous logic: formattedCategory = `${formattedSub} (${formattedCategory})`;
+        // The user feedback indicated that having the subcategory in the source citation was redundant
+        // when the document title often already implies the context.
+        // We will stick to Document Name (Category) format.
         
         contextParts.push(`\n### Context from: ${sourceName}\n`);
         contextParts.push(`**Category:** ${formattedCategory}\n\n`);

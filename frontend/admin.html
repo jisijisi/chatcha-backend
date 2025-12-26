@@ -1,0 +1,1449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel - ChatCDO</title>
+  <link rel="icon" type="image/png" href="assets/images/logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+  
+  <link rel="stylesheet" href="assets/css/base.css"> 
+  <link rel="stylesheet" href="assets/css/admin.css">
+  
+  <style>
+    /* LOADER STYLES */
+    #global-loader {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background-color: #f5f6fa; z-index: 9999;
+      display: flex; justify-content: center; align-items: center; flex-direction: column;
+      transition: opacity 0.5s ease, visibility 0.5s ease;
+    }
+    #global-loader.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+    .loader-spinner {
+      width: 50px; height: 50px; border: 4px solid rgba(215, 25, 33, 0.2);
+      border-top-color: #D71921; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px;
+    }
+    .loader-logo { width: 60px; height: 60px; object-fit: contain; margin-bottom: 15px; animation: pulse 2s infinite ease-in-out; }
+    .loader-text { color: #333; font-weight: 600; font-size: 0.9rem; letter-spacing: 0.5px; animation: pulse 1.5s infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes pulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.05); opacity: 0.8; } }
+
+    /* ADMIN SPECIFIC STYLES */
+    .th-select { background: transparent; border: none; font-weight: 600; color: #64748b; font-size: 0.813rem; text-transform: uppercase; cursor: pointer; padding-right: 15px; outline: none; font-family: inherit; width: 100%; letter-spacing: 0.025em; }
+    .th-select:hover { color: #D71921; }
+    .th-select option { color: #1e293b; background: white; font-weight: normal; text-transform: none; }
+    .file-upload-section { background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); padding: 24px; border-radius: 12px; margin-bottom: 24px; border: 2px dashed #cbd5e1; transition: all 0.3s ease; }
+    .file-upload-section:hover { border-color: #D71921; background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%); }
+    .file-upload-label { font-weight: 600; display: flex; align-items: center; gap: 10px; margin-bottom: 12px; color: #1e293b; font-size: 0.938rem; }
+    .ai-badge { background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: white; font-size: 0.688rem; padding: 3px 10px; border-radius: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
+    .btn-excel { background-color: #107c41; color: white; }
+    .btn-excel:hover { background-color: #0b5c30; }
+    .settings-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 24px; }
+    .settings-card { background: white; border-radius: 12px; padding: 24px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .settings-header { font-size: 1.1rem; font-weight: 700; margin-bottom: 20px; color: #1e293b; display: flex; align-items: center; gap: 10px; padding-bottom: 12px; border-bottom: 1px solid #f1f5f9; }
+    .health-indicator { display: flex; align-items: center; justify-content: space-between; padding: 12px; background: #f8fafc; border-radius: 8px; margin-bottom: 10px; }
+    .health-label { color: #64748b; font-size: 0.9rem; font-weight: 500; }
+    .health-value { font-weight: 600; color: #0f172a; }
+    .health-status-dot { height: 8px; width: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+    .dot-green { background-color: #22c55e; box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.2); }
+    .dot-red { background-color: #ef4444; box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2); }
+    .desc-textarea { min-height: 80px; resize: vertical; }
+    .active-sources-section { margin-top: 40px; background: white; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); overflow: hidden; }
+    .sources-header { padding: 20px; border-bottom: 1px solid #e2e8f0; background: #f8fafc; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+    .sources-header h3 { margin: 0; font-size: 1.1rem; color: #1e293b; display: flex; align-items: center; gap: 8px; }
+    .description-cell { max-width: 300px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #64748b; }
+    #logout-modal .modal-body p { margin: 0; text-align: center; }
+    
+    /* Code Block for Config View */
+    .config-view-block { background: #1e293b; color: #e2e8f0; padding: 15px; border-radius: 8px; font-family: 'Courier New', monospace; font-size: 0.85rem; overflow-x: auto; max-height: 300px; }
+
+    /* Conversion Status Modal Styles - REVISED */
+    .conversion-state { padding: 20px 0; }
+    
+    .conversion-spinner { 
+      position: relative; 
+      width: 80px; 
+      height: 80px; 
+      margin: 0 auto 24px; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+    }
+    
+    .spinner-ring { 
+      position: absolute; 
+      inset: 0; 
+      width: 100%; 
+      height: 100%; 
+      border-radius: 50%; 
+      border: 3px solid #e5e7eb; 
+      border-top-color: #D71921; 
+      box-sizing: border-box;
+      animation: spin 1s cubic-bezier(0.55, 0.055, 0.675, 0.19) infinite; 
+    }
+    
+    .spinner-icon { 
+      position: relative; 
+      z-index: 2; 
+      color: #D71921; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      animation: pulse-soft 2s ease-in-out infinite; 
+    }
+    
+    @keyframes pulse-soft { 
+      0%, 100% { transform: scale(1); opacity: 1; } 
+      50% { transform: scale(0.9); opacity: 0.8; } 
+    }
+
+    .conversion-progress { margin-top: 24px; }
+    .conversion-progress-bar { width: 100%; height: 8px; background: #f1f5f9; border-radius: 999px; overflow: hidden; }
+    .conversion-progress-fill { width: 0%; height: 100%; background: linear-gradient(90deg, #D71921 0%, #ff4444 100%); border-radius: 999px; transition: width 0.3s ease; }
+    .conversion-result-icon { width: 100px; height: 100px; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; border-radius: 50%; animation: scaleIn 0.5s ease; }
+    .conversion-result-icon.success { background: #d1fae5; }
+    .conversion-result-icon.error { background: #fee2e2; }
+    .conversion-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 24px; padding: 16px; background: #f8fafc; border-radius: 8px; }
+    .stat-item { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    .stat-label { font-size: 0.75rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+    .stat-value { font-size: 0.875rem; color: #1e293b; font-weight: 600; }
+    .error-details { margin-top: 16px; padding: 16px; background: #fef2f2; border-radius: 8px; border: 1px solid #fecaca; }
+    .error-details ul { line-height: 1.6; }
+    .error-details li { margin-bottom: 4px; }
+    @keyframes scaleIn { 0% { transform: scale(0); opacity: 0; } 50% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+    
+    /* API Modal Specific Styles */
+    .dynamic-row { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; }
+    .dynamic-row .form-control { margin-bottom: 0 !important; }
+    
+    /* Toolbar for Description Field */
+    .input-toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .toolbar-actions { display: flex; gap: 8px; }
+    .btn-xs { padding: 4px 8px; font-size: 0.75rem; border-radius: 4px; display: inline-flex; align-items: center; gap: 4px; cursor: pointer; border: 1px solid #e2e8f0; background: white; }
+    .btn-xs:hover { background: #f8fafc; border-color: #cbd5e1; }
+    .btn-ai { background: #f3e8ff; color: #7e22ce; border: 1px solid #d8b4fe; }
+    .btn-ai:hover { background: #e9d5ff; }
+
+    /* Full Screen Mode */
+    .form-group.fullscreen-mode {
+        position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+        background: white; z-index: 9999; padding: 20px;
+        display: flex; flex-direction: column;
+    }
+    .form-group.fullscreen-mode textarea { flex: 1; resize: none; }
+
+    body { margin: 0; padding: 0; }
+    .admin-container { opacity: 0; transition: opacity 0.3s ease-in; }
+    .admin-container.loaded { opacity: 1; }
+  </style>
+  
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <div id="global-loader">
+    <img src="assets/images/logo.png" alt="Loading..." class="loader-logo">
+    <div class="loader-spinner"></div>
+    <p class="loader-text">Loading Dashboard...</p>
+  </div>
+
+  <div class="admin-container" id="adminContainer">
+    <aside class="admin-sidebar" id="adminSidebar">
+      <div class="sidebar-header">
+        <img src="assets/images/logo.png" alt="Logo" class="sidebar-logo">
+        <h1 class="sidebar-title">Admin Panel</h1>
+      </div>
+      <nav class="sidebar-nav">
+        <a class="nav-item active" data-view="dashboard">
+          <span class="material-symbols-outlined nav-icon">grid_view</span>
+          <span>Dashboard</span>
+        </a>
+        <a class="nav-item" data-view="knowledge">
+          <span class="material-symbols-outlined nav-icon">menu_book</span>
+          <span>Knowledge Base</span>
+        </a>
+        <a class="nav-item" data-view="users">
+          <span class="material-symbols-outlined nav-icon">group</span>
+          <span>Users</span>
+        </a>
+        <a class="nav-item" data-view="permissions">
+          <span class="material-symbols-outlined nav-icon">admin_panel_settings</span>
+          <span>Access Control</span>
+        </a>
+        <a class="nav-item" data-view="chats">
+          <span class="material-symbols-outlined nav-icon">chat</span>
+          <span>Chat History</span>
+        </a>
+        <a class="nav-item" data-view="integrations">
+          <span class="material-symbols-outlined nav-icon">hub</span>
+          <span>Integration Hub</span>
+        </a>
+        <a class="nav-item" data-view="settings">
+          <span class="material-symbols-outlined nav-icon">settings</span>
+          <span>Settings</span>
+        </a>
+      </nav>
+    </aside>
+
+    <main class="admin-main">
+      <header class="admin-header">
+        <div class="header-left">
+          <button class="mobile-menu-toggle" id="mobileMenuToggle">
+            <span class="material-symbols-outlined">menu</span>
+          </button>
+          <h2 class="header-title" id="pageTitle">Dashboard</h2>
+        </div>
+        <div class="header-actions">
+          <div class="admin-user">
+            <span class="user-avatar">👤</span>
+            <span id="adminUsername">Admin</span>
+          </div>
+          <button class="logout-btn">Logout</button>
+        </div>
+      </header>
+
+      <div class="content-area">
+        
+        <section class="view-section active" id="dashboard-view">
+          <div class="timeframe-tabs">
+            <button class="timeframe-tab active" data-timeframe="overall">Overall</button>
+            <button class="timeframe-tab" data-timeframe="yearly">Yearly</button>
+            <button class="timeframe-tab" data-timeframe="monthly">Monthly</button>
+            <button class="timeframe-tab" data-timeframe="daily">Daily</button>
+          </div>
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-icon-wrapper red">
+                <span class="material-symbols-outlined stat-icon">chat_bubble</span>
+              </div>
+              <div class="stat-info"><div class="stat-value" id="totalMessages">0</div><div class="stat-label">Total Messages</div></div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon-wrapper blue">
+                <span class="material-symbols-outlined stat-icon">group</span>
+              </div>
+              <div class="stat-info"><div class="stat-value" id="activeUsers">0</div><div class="stat-label">Active Users</div></div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon-wrapper dark">
+                <span class="material-symbols-outlined stat-icon">fiber_new</span>
+              </div>
+              <div class="stat-info"><div class="stat-value" id="newSessions">0</div><div class="stat-label">New Sessions</div></div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon-wrapper green">
+                <span class="material-symbols-outlined stat-icon">badge</span>
+              </div>
+              <div class="stat-info"><div class="stat-value" id="totalEmployees">0</div><div class="stat-label">Total Employees</div></div>
+            </div>
+          </div>
+          <div class="chart-grid">
+            <div class="chart-card large"><div class="card-header"><h3>Messages Over Time</h3><div class="header-actions" id="timeframeHeaderControls"><select id="dashboardYearSelect" class="filter-select" aria-label="Year" style="display:none;"></select><select id="dashboardMonthSelect" class="filter-select" aria-label="Month" style="display:none;"></select></div></div><div class="card-body"><canvas id="messagesChart" height="120"></canvas></div></div>
+            <div class="chart-card"><div class="card-header"><h3>Top Categories</h3></div><div class="card-body split"><div class="chart-wrapper"><canvas id="categoryUsageChart"></canvas></div><div id="categoryUsageTable" class="chart-legend"></div></div><div class="card-footer" id="topDocumentsList"></div></div>
+          </div>
+          <div class="chart-grid">
+            <div class="chart-card large"><div class="card-header"><h3>Active Users Over Time</h3></div><div class="card-body"><canvas id="activeUsersChart" height="120"></canvas></div></div>
+            <div class="chart-card"><div class="card-header"><h3>Usage by Department</h3></div><div class="card-body"><canvas id="departmentUsageChart" height="80"></canvas></div></div>
+          </div>
+          <div class="chart-grid single">
+            <div class="chart-card"><div class="card-header"><h3>Top 10 Subcategories</h3></div><div class="card-body"><canvas id="subcategoryUsageChart" height="80"></canvas></div></div>
+          </div>
+          <div class="table-grid">
+            <div class="data-table-card"><div class="card-header"><h3>Recent Activity</h3></div><div class="table-wrapper"><table class="data-table"><thead><tr><th>User</th><th>Message</th><th>Time</th></tr></thead><tbody id="recentActivityTable"><tr><td colspan="3" class="loading-cell">Loading...</td></tr></tbody></table></div></div>
+            <div class="data-table-card"><div class="card-header"><h3>Most Active Users</h3></div><div class="table-wrapper"><table class="data-table"><thead><tr><th>User</th><th>Email</th><th>Messages</th></tr></thead><tbody id="mostActiveUsersTable"><tr><td colspan="3" class="loading-cell">Loading...</td></tr></tbody></table></div></div>
+          </div>
+        </section>
+
+        <section class="view-section" id="knowledge-view">
+          <div class="alert alert-warning" id="cache-alert"><strong>⚠️ Cache Update Needed:</strong> The Knowledge Base has been modified. Please regenerate the embeddings cache.</div>
+          <div class="cache-status-card">
+            <div class="cache-status-item"><div id="cache-status-indicator" class="status-indicator"><div class="status-dot"></div><span class="status-text">Checking...</span></div></div>
+            <div class="cache-status-item"><div class="stat-value" id="cache-files-count">-</div><div class="stat-label">Files</div></div>
+            <div class="cache-status-item"><div class="stat-value" id="cache-chunks-count">-</div><div class="stat-label">Chunks</div></div>
+            <div class="cache-status-item"><div class="stat-value small" id="cache-last-updated">-</div><div class="stat-label">Last Updated</div></div>
+            <div class="cache-status-item">
+                <button class="btn btn-primary" id="regenerate-cache-btn" type="button">
+                    <span class="btn-text" style="display: flex; align-items: center; gap: 6px;">
+                        <span class="material-symbols-outlined" style="font-size: 16px;">bolt</span> 
+                        Regenerate Cache
+                    </span>
+                    <span class="btn-loading">Processing...</span>
+                </button>
+            </div>
+          </div>
+          <div id="cache-progress-container" class="progress-container"><div class="progress-info"><span id="cache-progress-text">Processing...</span><span id="cache-progress-percent"></span></div><div class="progress-bar"><div id="cache-progress-fill" class="progress-fill"></div></div></div>
+          <div class="kb-tabs">
+            <button class="kb-tab active" data-kb-tab="documents">
+                <span class="material-symbols-outlined tab-icon">description</span>
+                <span>Documents</span>
+            </button>
+            <button class="kb-tab" data-kb-tab="categories">
+                <span class="material-symbols-outlined tab-icon">category</span>
+                <span>Categories</span>
+            </button>
+            <button class="kb-tab" data-kb-tab="subcategories">
+                <span class="material-symbols-outlined tab-icon">subdirectory_arrow_right</span>
+                <span>Subcategories</span>
+            </button>
+          </div>
+          <div class="kb-tab-content active" id="documents-tab"><div class="data-table-card"><div class="card-header"><h3>Knowledge Documents</h3><div class="header-actions"><input type="text" id="doc-search" placeholder="Search documents..." class="search-input"><select id="doc-status-filter" class="filter-select"><option value="">All Status</option><option value="draft">Draft</option><option value="published">Published</option><option value="archived">Archived</option></select><button class="btn btn-primary" id="add-document-btn"><span class="material-symbols-outlined" style="font-size: 18px;">add</span> Add Document</button></div></div><div class="table-wrapper"><table class="data-table"><thead><tr><th>Title</th><th>Category → Subcategory</th><th>Status</th><th>Updated</th><th>Actions</th></tr></thead><tbody id="documents-table-body"><tr><td colspan="5" class="loading-cell">Loading documents...</td></tr></tbody></table></div></div></div>
+          <div class="kb-tab-content" id="categories-tab"><div class="data-table-card"><div class="card-header"><h3>Knowledge Categories</h3><button class="btn btn-primary" id="add-category-btn"><span class="material-symbols-outlined" style="font-size: 18px;">add</span> Add Category</button></div><div class="table-wrapper"><table class="data-table"><thead><tr><th>Category Name</th><th>Subcategories</th><th>Description</th><th>Actions</th></tr></thead><tbody id="categories-table-body"><tr><td colspan="4" class="loading-cell">Loading categories...</td></tr></tbody></table></div></div></div>
+          <div class="kb-tab-content" id="subcategories-tab"><div class="data-table-card"><div class="card-header"><h3>Knowledge Subcategories</h3><div class="header-actions"><select id="subcat-category-filter" class="filter-select"><option value="">All Categories</option></select><button class="btn btn-primary" id="add-subcategory-btn"><span class="material-symbols-outlined" style="font-size: 18px;">add</span> Add Subcategory</button></div></div><div class="table-wrapper"><table class="data-table"><thead><tr><th>Subcategory Name</th><th>Parent Category</th><th>Description</th><th>Actions</th></tr></thead><tbody id="subcategories-table-body"><tr><td colspan="4" class="loading-cell">Loading subcategories...</td></tr></tbody></table></div></div></div>
+        </section>
+
+        <section class="view-section" id="users-view">
+           <div class="data-table-card"><div class="card-header"><h3>Employee List</h3><div class="header-actions"><input type="text" id="user-search" placeholder="Search name or email..." class="search-input"><button class="btn btn-excel" id="bulk-user-btn"><span class="material-symbols-outlined" style="font-size: 18px;">table_view</span> Upload Excel</button><button class="btn btn-primary" id="add-user-btn"><span class="material-symbols-outlined" style="font-size: 18px;">person_add</span> Add Employee</button></div></div><div class="table-wrapper"><table class="data-table"><thead><tr><th>Name / Email</th><th><select id="user-dept-filter" class="th-select"><option value="">Department (All)</option></select></th><th>Status</th><th>Activity</th><th>Actions</th></tr></thead><tbody id="users-table-body"><tr><td colspan="5" class="loading-cell">Loading employees...</td></tr></tbody></table></div></div>
+        </section>
+
+        <section class="view-section" id="permissions-view">
+           <div class="data-table-card"><div class="card-header"><h3>Access Permissions</h3><div id="perm-bulk-actions" class="bulk-actions"><span class="bulk-count"><span id="perm-selected-count">0</span> Selected</span><button class="btn btn-success" onclick="openBulkPermModal()"><span class="material-symbols-outlined" style="font-size: 18px;">lock_open</span> Grant Access</button></div><div class="header-actions"><input type="text" id="perm-search" placeholder="Search employee..." class="search-input"></div></div><div class="table-wrapper"><table class="data-table"><thead><tr><th style="width: 40px;"><input type="checkbox" id="perm-select-all" onchange="toggleSelectAllPerms(this)"></th><th>Employee</th><th><select id="perm-dept-filter" class="th-select"><option value="">Department (All)</option></select></th><th>Access Level</th><th>Actions</th></tr></thead><tbody id="permissions-table-body"><tr><td colspan="5" class="loading-cell">Loading...</td></tr></tbody></table></div></div>
+        </section>
+
+        <section class="view-section" id="chats-view">
+            <div class="kb-tabs">
+                <button class="kb-tab active" data-chat-tab="history">
+                    <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                    <span>Session History</span>
+                </button>
+                <button class="kb-tab" data-chat-tab="analytics">
+                    <span class="material-symbols-outlined tab-icon">bar_chart</span>
+                    <span>Analytics</span>
+                </button>
+            </div>
+            
+            <div class="chat-tab-content active" id="chat-history-tab">
+                <div class="data-table-card">
+                    <div class="card-header">
+                        <h3>Chat Sessions</h3>
+                        <div class="header-actions">
+                            <select id="chat-dept-filter" class="filter-select">
+                                <option value="">Department (All)</option>
+                            </select>
+                            <input type="text" id="chat-search" placeholder="Search employee or title..." class="search-input">
+                            <button class="btn btn-secondary" id="chat-export-btn">
+                                <span class="material-symbols-outlined" style="font-size: 16px;">download</span> 
+                                Export CSV
+                            </button>
+                        </div>
+                    </div>
+                    <div class="table-wrapper">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Employee</th>
+                                    <th>Session Title</th>
+                                    <th>Messages</th>
+                                    <th>Last Activity</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="chat-history-table-body">
+                                <tr><td colspan="5" class="loading-cell">Loading sessions...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chat-tab-content" id="chat-analytics-tab">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon-wrapper blue" style="background-color: rgba(66, 133, 244, 0.1); color: #4285F4;">
+                            <span class="material-symbols-outlined stat-icon">chat</span>
+                        </div>
+                        <div class="stat-info">
+                            <div class="stat-value" id="ana-total-sessions">-</div>
+                            <div class="stat-label">Total Sessions</div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon-wrapper green" style="background-color: rgba(52, 168, 83, 0.1); color: #34A853;">
+                            <span class="material-symbols-outlined stat-icon">message</span>
+                        </div>
+                        <div class="stat-info">
+                            <div class="stat-value" id="ana-total-messages">-</div>
+                            <div class="stat-label">Total Messages</div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon-wrapper warning" style="background-color: rgba(251, 188, 5, 0.1); color: #FBBC05;">
+                            <span class="material-symbols-outlined stat-icon">speed</span>
+                        </div>
+                        <div class="stat-info">
+                            <div class="stat-value" id="ana-avg-msg">-</div>
+                            <div class="stat-label">Avg. Msgs/Session</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="chart-grid">
+                    <div class="chart-card large">
+                        <div class="card-header"><h3>Activity Heatmap (Messages by Hour)</h3></div>
+                        <div class="card-body"><canvas id="activityHeatmapChart" height="100"></canvas></div>
+                    </div>
+                    <div class="chart-card">
+                        <div class="card-header"><h3>Sessions by Employee (Top 10)</h3></div>
+                        <div class="card-body"><canvas id="employeeSessionsChart" height="200"></canvas></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <section class="view-section" id="integrations-view">
+          <div class="integration-grid">
+            <div class="integration-card">
+              <div class="int-header">
+                <div class="int-icon img-wrapper" style="background:transparent; padding:0;">
+                  <img src="https://upload.wikimedia.org/wikipedia/commons/3/30/Google_Sheets_logo_%282014-2020%29.svg" alt="Google Sheets" style="width:100%; height:100%; object-fit:contain;">
+                </div>
+                <div class="int-status badge-connected">Live Tool</div>
+              </div>
+              <div class="int-body">
+                <h4>Google Sheets</h4>
+                <p>Link spreadsheets as real-time data sources. Ideal for sales reports, rosters, and inventory.</p>
+              </div>
+              <div class="int-footer">
+                <button class="btn btn-secondary full-width" id="btn-connect-sheet">Connect Sheet</button>
+              </div>
+            </div>
+
+            <div class="integration-card">
+              <div class="int-header">
+                <div class="int-icon" style="background:#f3e8ff; color:#9333ea;">
+                  <span class="material-symbols-outlined" style="font-size: 32px;">api</span>
+                </div>
+                <div class="int-status badge-connected">Live Tool</div>
+              </div>
+              <div class="int-body">
+                <h4>External API</h4>
+                <p>Connect REST or GraphQL APIs to provide live data from external systems.</p>
+              </div>
+              <div class="int-footer">
+                <button class="btn btn-secondary full-width" id="btn-connect-api">Connect API</button>
+              </div>
+            </div>
+
+            <div class="integration-card">
+              <div class="int-header">
+                <div class="int-icon" style="background:#e0f2fe; color:#0284c7;">
+                  <span class="material-symbols-outlined" style="font-size: 32px;">dns</span>
+                </div>
+                <div class="int-status badge-connected">Live Tool</div>
+              </div>
+              <div class="int-body">
+                <h4>Database</h4>
+                <p>Connect SQL databases (MySQL, PostgreSQL) for direct data access.</p>
+              </div>
+              <div class="int-footer">
+                <button class="btn btn-secondary full-width" id="btn-connect-db">Connect Database</button>
+              </div>
+            </div>
+
+            <div class="integration-card">
+              <div class="int-header">
+                <div class="int-icon" style="background:#fff7ed; color:#ea580c;">
+                  <span class="material-symbols-outlined" style="font-size: 32px;">settings_ethernet</span>
+                </div>
+                <div class="int-status badge-connected">Live Tool</div>
+              </div>
+              <div class="int-body">
+                <h4>SAP BAPI</h4>
+                <p>Execute SAP Business Application Programming Interfaces for enterprise data.</p>
+              </div>
+              <div class="int-footer">
+                <button class="btn btn-secondary full-width" id="btn-connect-sap">Connect SAP</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="active-sources-section">
+            <div class="sources-header">
+              <h3>
+                  <span class="material-symbols-outlined" style="margin-right: 8px;">sensors</span>
+                  Active Live Data Sources
+              </h3>
+              <div class="header-actions">
+                  <input type="text" id="source-search" placeholder="Search sources..." class="search-input">
+                  <select id="source-type-filter" class="filter-select">
+                      <option value="">All Types</option>
+                      <option value="google_sheet">Google Sheet</option>
+                      <option value="external_api">External API</option>
+                  </select>
+              </div>
+            </div>
+            <div class="table-wrapper">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th id="th-source-name" style="cursor:pointer" title="Click to sort">Source Name</th>
+                    <th id="th-type" style="cursor:pointer" title="Click to sort">Type</th>
+                    <th>AI Description (The "Label")</th>
+                    <th>Last Synced</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="live-sources-table-body">
+                  <tr><td colspan="5" class="loading-cell">Loading active sources...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="active-sources-section" id="system-flags-section" style="margin-top:24px;">
+            <div class="sources-header">
+              <h3>
+                  <span class="material-symbols-outlined" style="font-size: 20px; margin-right: 8px;">monitor_heart</span>
+                  System Flags
+              </h3>
+            </div>
+            <div class="table-wrapper">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Flag Name</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                    <th>Last Updated</th>
+                  </tr>
+                </thead>
+                <tbody id="internal-flags-table-body">
+                  <tr><td colspan="4" class="loading-cell">Loading system flags...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section class="view-section" id="settings-view">
+           <div class="settings-grid">
+             <div class="settings-card">
+               <div class="settings-header">
+                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg> 
+                 General Configuration
+               </div>
+               <div class="form-group">
+                 <label class="form-label">System Name</label>
+                 <input type="text" id="set-system-name" class="form-control" value="ChatCDO">
+               </div>
+               
+               <div class="form-group">
+                 <label class="form-label">AI Model (Chat/Text)</label>
+                 <select id="set-ai-model" class="form-control">
+                   <option value="" disabled selected>Loading available text models...</option>
+                 </select>
+               </div>
+
+               <div class="form-group">
+                 <label class="form-label">Text to Speech / Audio Model</label>
+                 <select id="set-audio-model" class="form-control">
+                   <option value="" disabled selected>Loading available audio models...</option>
+                 </select>
+                 <p style="font-size: 0.8rem; color: #666; margin-top: 5px;">
+                   * Both lists are automatically fetched using GEMINI_API_KEY.
+                 </p>
+               </div>
+
+               <div class="form-group">
+                 <label class="form-label">Max Context (Messages)</label>
+                 <input type="number" id="set-max-context" class="form-control" value="20">
+               </div>
+               
+               <div class="form-group">
+                 <label class="checkbox-label">
+                   <input type="checkbox" id="set-web-search">
+                   <div class="checkbox-content">
+                     <strong>Enable Web Search</strong>
+                     <p>Allow AI to browse the internet for company info.</p>
+                   </div>
+                 </label>
+               </div>
+               
+               <div class="form-group">
+                 <label class="checkbox-label">
+                   <input type="checkbox" id="set-maintenance">
+                   <div class="checkbox-content">
+                     <strong>Maintenance Mode</strong>
+                     <p>Disable user chat interface temporarily.</p>
+                   </div>
+                 </label>
+               </div>
+               
+               <button class="btn btn-primary" style="width:100%" id="settings-save-btn" type="button">
+                 <span class="btn-text">Save Changes</span>
+                 <span class="btn-loading">Saving...</span>
+               </button>
+             </div>
+             
+             <div class="settings-card">
+               <div class="settings-header">
+                 <span class="material-symbols-outlined" style="margin-right: 10px;">database</span>
+                 Cache Management
+               </div>
+               <div class="health-indicator"><span class="health-label">Cache Status</span><span class="health-value"><span class="health-status-dot dot-green" id="set-cache-dot"></span><span id="set-cache-status">Active</span></span></div>
+               <div class="health-indicator"><span class="health-label">Chunks Loaded</span><span class="health-value" id="set-chunks-count">-</span></div>
+               <div style="display: flex; gap: 10px; margin-top: 20px;">
+                 <button class="btn btn-primary" style="flex: 1;" id="set-cache-regen" type="button">
+                   <span class="btn-text" style="display: flex; align-items: center; justify-content: center; gap: 6px;">
+                     <span class="material-symbols-outlined" style="font-size: 18px;">refresh</span>
+                     Regenerate
+                   </span>
+                   <span class="btn-loading">Processing...</span>
+                 </button>
+                 <button class="btn btn-danger" style="flex: 1;" id="set-cache-clear" type="button">
+                   <span class="btn-text" style="display: flex; align-items: center; justify-content: center; gap: 6px;">
+                     <span class="material-symbols-outlined" style="font-size: 18px;">delete_forever</span>
+                     Clear
+                   </span>
+                   <span class="btn-loading">Clearing...</span>
+                 </button>
+               </div>
+               <p style="margin-top: 10px; font-size: 0.8rem; color: #64748b;">* Regenerating will rebuild embeddings from the Knowledge Base DB. Clearing will empty the RAG system.</p>
+             </div>
+             
+             <div class="settings-card">
+               <div class="settings-header">
+                 <span class="material-symbols-outlined" style="margin-right: 10px;">monitor_heart</span>
+                 System Health
+               </div>
+               <div class="health-indicator"><span class="health-label">Database Status</span><span class="health-value"><span class="health-status-dot dot-green"></span>Connected</span></div>
+               <div class="health-indicator"><span class="health-label">DB Latency</span><span class="health-value" id="health-db-latency">- ms</span></div>
+               <div class="health-indicator"><span class="health-label">Memory Usage</span><span class="health-value" id="health-memory">- MB</span></div>
+               <div class="health-indicator"><span class="health-label">Uptime</span><span class="health-value" id="health-uptime">-</span></div>
+               <div class="health-indicator"><span class="health-label">Platform</span><span class="health-value" id="health-platform">-</span></div>
+             </div>
+           </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <div class="modal" id="source-view-modal">
+    <div class="modal-content large">
+      <div class="modal-header">
+        <h3 id="source-view-title">Source Details</h3>
+        <button class="modal-close" id="source-view-close" type="button">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+            <label class="form-label">Full Description</label>
+            <div id="source-view-description" style="background:#f8fafc; padding:12px; border-radius:8px; font-size:0.9rem; line-height:1.5; color:#334155; white-space: pre-wrap;"></div>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Configuration (JSON)</label>
+            <div id="source-view-config" class="config-view-block"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="source-view-close-btn" type="button">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="bulk-upload-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Bulk Upload Employees</h3>
+        <button class="modal-close" id="bulk-upload-close" type="button">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="file-upload-section">
+          <div class="upload-controls">
+            <input type="file" id="bulk-excel-upload" class="form-control" accept=".xlsx, .xls, .csv">
+          </div>
+          <div class="upload-hint">Upload an Excel (.xlsx) file with columns: <strong>Name</strong>, <strong>Email</strong>, <strong>Department</strong>, <strong>Position</strong>.</div>
+        </div>
+        <div id="bulk-upload-status"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="bulk-upload-cancel" type="button">Cancel</button>
+        <button class="btn btn-primary" id="bulk-upload-save" type="button">
+          <span class="btn-text">Start Upload</span>
+          <span class="btn-loading">Uploading...</span>
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <div class="modal" id="document-editor-modal">
+    <div class="modal-content large">
+      <div class="modal-header">
+        <h2 id="editor-title">Add Document</h2>
+        <button class="modal-close" id="editor-close-btn" type="button">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="file-upload-section">
+          <div class="file-upload-label">
+            <span style="display: flex; align-items: center; gap: 8px;">
+              <span class="material-symbols-outlined" style="font-size: 20px;">auto_awesome</span>
+              AI Auto-Convert
+            </span>
+            <span class="ai-badge">Gemini Powered</span>
+          </div>
+          <div class="upload-controls">
+            <input type="file" id="ai-file-upload" class="form-control" accept=".pdf,.docx,.txt,.csv,.png,.jpg">
+            <button class="btn btn-secondary" id="btn-convert-file" type="button">
+              <span class="btn-text" style="display: flex; align-items: center; gap: 6px;">
+                <span class="material-symbols-outlined" style="font-size: 18px;">transform</span>
+                Convert to JSON
+              </span>
+              <span class="btn-loading">Converting...</span>
+            </button>
+          </div>
+          <div class="upload-hint">Upload a PDF, Image, or Document. Gemini will analyze it and extract the content into structured JSON below.</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Document Title *</label>
+          <input type="text" id="doc-title-input" class="form-control" placeholder="Enter document title" required>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Category *</label>
+            <select id="doc-category-select" class="form-control" required><option value="">Select category...</option></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Subcategory *</label>
+            <select id="doc-subcategory-select" class="form-control" required disabled><option value="">Select category first...</option></select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Status *</label>
+          <select id="doc-status-select" class="form-control" required>
+            <option value="draft">Draft</option>
+            <option value="published">Published</option>
+            <option value="archived">Archived</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Content (JSON) *</label>
+          <textarea id="doc-content-input" class="form-control json-editor" rows="12" placeholder='{"key": "value"}' required></textarea>
+          <div class="json-validator" id="json-validator"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="editor-cancel-btn" type="button">Cancel</button>
+        <button class="btn btn-primary" id="editor-save-btn" type="button">
+          <span class="btn-text">Save Document</span>
+          <span class="btn-loading">Saving...</span>
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <div class="modal" id="category-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="category-modal-title">Add Category</h3>
+        <button class="modal-close" id="category-modal-close" type="button">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label" id="category-modal-label">Category Name *</label>
+          <input type="text" id="category-modal-input" class="form-control" placeholder="Enter name" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Description</label>
+          <textarea id="category-modal-description" class="form-control" rows="3" placeholder="Optional description"></textarea>
+        </div>
+        <div class="form-group" id="category-modal-parent-group" style="display: none;">
+          <label class="form-label">Parent Category *</label>
+          <select id="category-modal-parent-select" class="form-control">
+            <option value="">Select parent category...</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="category-modal-cancel" type="button">Cancel</button>
+        <button class="btn btn-primary" id="category-modal-save" type="button">
+          <span class="btn-text">Save</span>
+          <span class="btn-loading">Saving...</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="document-preview-modal">
+    <div class="modal-content large">
+      <div class="modal-header">
+        <h2 id="preview-title">Document Preview</h2>
+        <button class="modal-close" id="preview-close-btn" type="button">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="preview-metadata">
+          <span class="meta-item"><strong>Category:</strong> <span id="preview-category"></span></span>
+          <span class="meta-item"><strong>Status:</strong> <span id="preview-status"></span></span>
+          <span class="meta-item"><strong>Updated:</strong> <span id="preview-updated"></span></span>
+        </div>
+        <pre id="preview-content" class="preview-content"></pre>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="preview-close-footer-btn" type="button">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="user-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="user-modal-title">Add Employee</h3>
+        <button class="modal-close" id="user-modal-close" type="button">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Full Name *</label>
+          <input type="text" id="user-name" class="form-control" placeholder="John Doe" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email Address *</label>
+          <input type="email" id="user-email" class="form-control" placeholder="john@company.com" required>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Department</label>
+            <input type="text" id="user-department" class="form-control" placeholder="e.g. HR">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Position</label>
+            <input type="text" id="user-position" class="form-control" placeholder="e.g. Manager">
+          </div>
+        </div>
+        <div class="form-group">
+            <label class="form-label">User Type *</label>
+            <select id="user-type" class="form-control">
+                <option value="Employee" selected>Employee (Full Access)</option>
+                <option value="External">External (Limited Access)</option>
+            </select>
+        </div>
+        <div class="form-group" id="user-status-group" style="display: none;">
+          <label class="form-label">Status</label>
+          <select id="user-status" class="form-control">
+            <option value="1">Active</option>
+            <option value="0">Inactive</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="user-modal-cancel" type="button">Cancel</button>
+        <button class="btn btn-primary" id="user-modal-save" type="button">
+          <span class="btn-text">Save Employee</span>
+          <span class="btn-loading">Saving...</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="perm-modal">
+    <div class="modal-content medium">
+      <div class="modal-header">
+        <div>
+          <h3 id="perm-modal-title">Manage Access</h3>
+          <div id="perm-modal-subtitle" class="modal-subtitle"></div>
+        </div>
+        <button class="modal-close" id="perm-modal-close" type="button">✕</button>
+      </div>
+      <div class="modal-body no-padding">
+        <div class="header-actions perm-toolbar" style="padding: 12px 16px; border-bottom: 1px solid var(--gray-200); background: #fff;">
+          <input type="text" id="perm-tree-search" class="search-input" placeholder="Filter categories, subcategories, or tools">
+          <div style="display:flex; gap:8px; margin-left:auto;">
+            <button class="btn btn-secondary btn-xs" id="perm-toggle-all" type="button">Expand All</button>
+          </div>
+        </div>
+        <div class="full-access-section">
+          <label class="checkbox-label">
+            <input type="checkbox" id="perm-full-access">
+            <div class="checkbox-content">
+              <strong>Full System Access</strong>
+              <p>Grant access to all current and future categories.</p>
+            </div>
+          </label>
+        </div>
+        <div id="perm-tree-container" class="perm-tree"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="perm-modal-cancel" type="button">Cancel</button>
+        <button class="btn btn-primary" id="perm-modal-save" type="button">
+          <span class="btn-text">Save Permissions</span>
+          <span class="btn-loading">Saving...</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="chat-view-modal">
+    <div class="modal-content large">
+      <div class="modal-header">
+        <div>
+          <h2 id="chat-view-title">Chat Session</h2>
+          <div class="chat-view-meta" id="chat-view-meta">User • Date</div>
+        </div>
+        <button class="modal-close" id="chat-view-close" type="button">✕</button>
+      </div>
+      <div class="modal-body chat-viewer-body" id="chat-viewer-container"></div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="chat-view-close-btn" type="button">Close</button>
+        <button class="btn btn-danger" id="chat-view-delete-btn" type="button">Delete Session</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="sheet-integration-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="sheet-modal-title">Connect Google Sheet</h3>
+        <button class="modal-close" id="sheet-modal-close" type="button">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-warning" style="display:block; margin-bottom: 15px;">
+          <small>⚠️ Ensure the "ChatCDO Service Account" has <strong>Viewer</strong> access to this sheet.</small>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Source Name (Optional)</label>
+          <input type="text" id="sheet-name" class="form-control" placeholder="e.g. Q4 Sales Report">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Google Sheet URL *</label>
+          <input type="text" id="sheet-url" class="form-control" placeholder="https://docs.google.com/spreadsheets/d/..." required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Category (Optional)</label>
+          <select id="sheet-category-select" class="form-control">
+            <option value="">None (General Tool)</option>
+          </select>
+          <small style="color: #666; font-size: 0.8rem; margin-top: 4px; display: block;">
+            Linking to a category allows users with access to that category to automatically use this sheet.
+          </small>
+        </div>
+
+        <div class="form-group" id="sheet-description-group" style="margin-bottom: 0;">
+          <div class="input-toolbar">
+              <label class="form-label" style="margin:0;">AI Description *</label>
+              <div class="toolbar-actions">
+                  <button type="button" class="btn-xs btn-ai" id="btn-analyze-sheet-manual">
+                      <span class="material-symbols-outlined" style="font-size: 14px;">auto_awesome</span>
+                      Auto-Generate
+                  </button>
+                  <button type="button" class="btn-xs" id="btn-expand-sheet-desc">
+                      <span class="material-symbols-outlined" style="font-size: 14px;">open_in_full</span>
+                      Expand
+                  </button>
+              </div>
+          </div>
+          <p style="font-size: 0.75rem; color: #666; margin-bottom: 8px;">
+            Tell the AI what is inside this sheet and when to use it. 
+          </p>
+          <textarea id="sheet-description" class="form-control desc-textarea" required placeholder="This sheet contains..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="sheet-modal-cancel" type="button">Cancel</button>
+        <button class="btn btn-primary" id="sheet-modal-save" type="button">
+          <span class="btn-text" style="display: flex; align-items: center; gap: 6px;"><span class="material-symbols-outlined" style="font-size: 18px;">link</span> Link Sheet</span>
+          <span class="btn-loading">Syncing...</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="api-integration-modal">
+    <div class="modal-content medium">
+      <div class="modal-header">
+        <h3 id="api-modal-title">Connect External API</h3>
+        <button class="modal-close" id="api-modal-close" type="button">✕</button>
+      </div>
+      <div class="modal-body">
+        
+        <div class="form-row" style="margin-bottom: 16px;">
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label">Tool Name *</label>
+                <input type="text" id="api-name" class="form-control" placeholder="e.g. OEE Web API" required>
+            </div>
+             <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label">HTTP Method</label>
+                <select id="api-method" class="form-control">
+                    <option value="GET">GET</option>
+                    <option value="POST">POST</option>
+                    <option value="PUT">PUT</option>
+                    <option value="DELETE">DELETE</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 16px;">
+          <label class="form-label">Endpoint URL *</label>
+          <input type="text" id="api-url" class="form-control" placeholder="https://api.example.com/v1/customers/{id}" required>
+          <small style="color:#666; font-size:0.75rem; margin-top: 5px; display:block;">Use <code>{param_name}</code> for path variables.</small>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 16px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 6px;">
+              <label class="form-label" style="margin:0;">Headers (Optional)</label>
+              <button class="btn-xs" id="btn-add-header" type="button">+ Add Header</button>
+          </div>
+          <div id="api-headers-container" style="background: #f8fafc; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0; min-height: 40px;">
+             </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 16px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 6px;">
+              <label class="form-label" style="margin:0;">Parameters (Text-to-Param) *</label>
+              <button class="btn-xs" id="btn-add-param" type="button">+ Add Parameter</button>
+          </div>
+          <p style="font-size:0.75rem; color:#666; margin-bottom:8px;">Define what data the AI should extract from the user's question.</p>
+          <div id="api-params-container" style="background: #f8fafc; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0; min-height: 40px;">
+             </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 16px;">
+          <label class="form-label">Category (Optional)</label>
+          <select id="api-category-select" class="form-control">
+            <option value="">None (General Tool)</option>
+          </select>
+          <small style="color: #666; font-size: 0.8rem; margin-top: 4px; display: block;">
+            Links this tool to a specific knowledge category.
+          </small>
+        </div>
+
+        <div class="form-group" id="api-description-group" style="margin-bottom: 0;">
+          <div class="input-toolbar">
+              <label class="form-label" style="margin:0;">AI Description *</label>
+              <div class="toolbar-actions">
+                  <button type="button" class="btn-xs btn-ai" id="btn-analyze-api-manual">
+                      <span class="material-symbols-outlined" style="font-size: 14px;">auto_awesome</span>
+                      Auto-Generate
+                  </button>
+                  <button type="button" class="btn-xs" id="btn-expand-desc">
+                      <span class="material-symbols-outlined" style="font-size: 14px;">open_in_full</span>
+                      Expand
+                  </button>
+              </div>
+          </div>
+          <textarea id="api-description" class="form-control desc-textarea" required placeholder="Describe what this tool does so the AI knows when to use it..."></textarea>
+        </div>
+
+      </div>
+      
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="api-modal-cancel" type="button">Cancel</button>
+        <button class="btn btn-primary" id="api-modal-save" type="button">
+          <span class="btn-text" style="display: flex; align-items: center; gap: 6px;"><span class="material-symbols-outlined" style="font-size: 18px;">api</span> Connect API</span>
+          <span class="btn-loading">Saving...</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="db-integration-modal">
+    <div class="modal-content medium">
+      <div class="modal-header">
+        <h3 id="db-modal-title">Connect Database</h3>
+        <button class="modal-close" id="db-modal-close" type="button">✕</button>
+      </div>
+      <div class="modal-body">
+        
+        <div class="form-row" style="margin-bottom: 16px;">
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label">Connection Name *</label>
+                <input type="text" id="db-name" class="form-control" placeholder="e.g. Production DB" required>
+            </div>
+             <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label">Database Type</label>
+                <select id="db-type" class="form-control">
+                    <option value="mysql">MySQL</option>
+                    <option value="postgresql">PostgreSQL</option>
+                    <option value="mssql">SQL Server (MSSQL)</option>
+                    <option value="oracle">Oracle DB</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="form-row" style="margin-bottom: 16px;">
+            <div class="form-group" style="margin-bottom: 0; flex: 3;">
+                <label class="form-label">Host *</label>
+                <input type="text" id="db-host" class="form-control" placeholder="localhost or IP" required>
+            </div>
+             <div class="form-group" style="margin-bottom: 0; flex: 1;">
+                <label class="form-label">Port</label>
+                <input type="number" id="db-port" class="form-control" placeholder="3306" required>
+            </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 16px;">
+          <label class="form-label">Database Name *</label>
+          <input type="text" id="db-database" class="form-control" placeholder="e.g. inventory_db" required>
+        </div>
+
+        <div class="form-row" style="margin-bottom: 16px;">
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label">Username *</label>
+                <input type="text" id="db-user" class="form-control" placeholder="db_user" required>
+            </div>
+             <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label">Password *</label>
+                <input type="password" id="db-password" class="form-control" placeholder="••••••••" required>
+            </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 16px;">
+          <label class="form-label">Category (Optional)</label>
+          <select id="db-category-select" class="form-control">
+            <option value="">None (General Tool)</option>
+          </select>
+          <small style="color: #666; font-size: 0.8rem; margin-top: 4px; display: block;">
+            Links this database to a specific knowledge category.
+          </small>
+        </div>
+
+        <div class="form-group" id="db-description-group" style="margin-bottom: 0;">
+          <div class="input-toolbar">
+              <label class="form-label" style="margin:0;">AI Description *</label>
+              <div class="toolbar-actions">
+                  <button type="button" class="btn-xs" id="btn-test-db-connection" style="border-color: #cbd5e1; background: #fff; color: #0f172a;">
+                      <span class="material-symbols-outlined" style="font-size: 14px;">network_check</span>
+                      Test Connection
+                  </button>
+                  <button type="button" class="btn-xs btn-ai" id="btn-analyze-db-manual">
+                      <span class="material-symbols-outlined" style="font-size: 14px;">auto_awesome</span>
+                      Auto-Generate
+                  </button>
+                  <button type="button" class="btn-xs" id="btn-expand-db-desc">
+                      <span class="material-symbols-outlined" style="font-size: 14px;">open_in_full</span>
+                      Expand
+                  </button>
+              </div>
+          </div>
+          <textarea id="db-description" class="form-control desc-textarea" required placeholder="Describe what data is in this database and when the AI should query it..."></textarea>
+        </div>
+
+      </div>
+      
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="db-modal-cancel" type="button">Cancel</button>
+        <button class="btn btn-primary" id="db-modal-save" type="button">
+          <span class="btn-text" style="display: flex; align-items: center; gap: 6px;"><span class="material-symbols-outlined" style="font-size: 18px;">dns</span> Connect Database</span>
+          <span class="btn-loading">Saving...</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="sap-integration-modal">
+    <div class="modal-content medium">
+      <div class="modal-header">
+        <h3 id="sap-modal-title">Connect SAP BAPI</h3>
+        <button class="modal-close" id="sap-modal-close" type="button">✕</button>
+      </div>
+      <div class="modal-body">
+        
+        <div class="form-group" style="margin-bottom: 16px;">
+            <label class="form-label">Connection Name *</label>
+            <input type="text" id="sap-name" class="form-control" placeholder="e.g. SAP ERP Production" required>
+        </div>
+
+        <div class="form-row" style="margin-bottom: 16px;">
+            <div class="form-group" style="margin-bottom: 0; flex: 2;">
+                <label class="form-label">Application Server (ASHOST) *</label>
+                <input type="text" id="sap-ashost" class="form-control" placeholder="sap.example.com" required>
+            </div>
+             <div class="form-group" style="margin-bottom: 0; flex: 1;">
+                <label class="form-label">System Number (SYSNR) *</label>
+                <input type="text" id="sap-sysnr" class="form-control" placeholder="00" required>
+            </div>
+        </div>
+
+        <div class="form-row" style="margin-bottom: 16px;">
+             <div class="form-group" style="margin-bottom: 0; flex: 1;">
+                <label class="form-label">Client (MANDT) *</label>
+                <input type="text" id="sap-client" class="form-control" placeholder="100" required>
+            </div>
+            <div class="form-group" style="margin-bottom: 0; flex: 2;">
+                <label class="form-label">Username *</label>
+                <input type="text" id="sap-user" class="form-control" placeholder="SAP_USER" required>
+            </div>
+        </div>
+        
+        <div class="form-group" style="margin-bottom: 16px;">
+            <label class="form-label">Password *</label>
+            <input type="password" id="sap-passwd" class="form-control" placeholder="••••••••" required>
+        </div>
+        
+        <div class="form-group" style="margin-bottom: 16px;">
+            <label class="form-label">BAPI Function Name *</label>
+            <input type="text" id="sap-function" class="form-control" placeholder="e.g. BAPI_USER_GET_DETAIL" required>
+            <small style="color:#666; font-size:0.75rem; margin-top: 5px; display:block;">The specific RFC function module to execute.</small>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 16px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 6px;">
+              <label class="form-label" style="margin:0;">Input Parameters (Text-to-SAP) *</label>
+              <button class="btn-xs" id="btn-add-sap-param" type="button">+ Add Parameter</button>
+          </div>
+          <p style="font-size:0.75rem; color:#666; margin-bottom:8px;">Map user inputs to BAPI Import Parameters.</p>
+          <div id="sap-params-container" style="background: #f8fafc; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0; min-height: 40px;">
+             </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 16px;">
+          <label class="form-label">Category (Optional)</label>
+          <select id="sap-category-select" class="form-control">
+            <option value="">None (General Tool)</option>
+          </select>
+          <small style="color: #666; font-size: 0.8rem; margin-top: 4px; display: block;">
+            Links this BAPI to a specific knowledge category.
+          </small>
+        </div>
+
+        <div class="form-group" id="sap-description-group" style="margin-bottom: 0;">
+          <div class="input-toolbar">
+              <label class="form-label" style="margin:0;">AI Description *</label>
+              <div class="toolbar-actions">
+                  <button type="button" class="btn-xs" id="btn-test-sap-connection" style="border-color: #cbd5e1; background: #fff; color: #0f172a;">
+                      <span class="material-symbols-outlined" style="font-size: 14px;">network_check</span>
+                      Test Connection
+                  </button>
+                  <button type="button" class="btn-xs btn-ai" id="btn-analyze-sap-manual">
+                      <span class="material-symbols-outlined" style="font-size: 14px;">auto_awesome</span>
+                      Auto-Generate
+                  </button>
+                  <button type="button" class="btn-xs" id="btn-expand-sap-desc">
+                      <span class="material-symbols-outlined" style="font-size: 14px;">open_in_full</span>
+                      Expand
+                  </button>
+              </div>
+          </div>
+          <textarea id="sap-description" class="form-control desc-textarea" required placeholder="Describe what this BAPI does and what data it returns..."></textarea>
+        </div>
+
+      </div>
+      
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="sap-modal-cancel" type="button">Cancel</button>
+        <button class="btn btn-primary" id="sap-modal-save" type="button">
+          <span class="btn-text" style="display: flex; align-items: center; gap: 6px;"><span class="material-symbols-outlined" style="font-size: 16px;">save</span> Connect SAP</span>
+          <span class="btn-loading">Saving...</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="logout-modal">
+    <div class="modal-content" style="max-width: 400px;">
+      <div class="modal-header">
+        <h3>Confirm Logout</h3>
+        <button class="modal-close" id="logout-modal-close" type="button">✕</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size: 0.938rem; color: #64748b; line-height: 1.6;">
+          Are you sure you want to logout? Any unsaved changes will be lost.
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="logout-cancel-btn" type="button">Cancel</button>
+        <button class="btn btn-danger" id="logout-confirm-btn" type="button">
+          <span>🚪 Logout</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="cache-progress-modal">
+    <div class="modal-content" style="max-width: 500px;">
+      <div class="modal-header">
+        <h3 id="cache-modal-title">Regenerating Cache...</h3>
+        <button class="modal-close" id="cache-progress-close" style="display: none;" type="button">✕</button>
+      </div>
+      <div class="modal-body">
+        <div id="cache-status-loading" class="conversion-state">
+          <div class="conversion-spinner">
+            <div class="spinner-ring"></div>
+            <div class="spinner-icon">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+              </svg>
+            </div>
+          </div>
+          <h4 id="cache-status-message" style="margin: 20px 0 10px; text-align: center; color: #1e293b;">Starting embedding process...</h4>
+          <p id="cache-status-subtext" style="text-align: center; color: #64748b; font-size: 0.875rem;">
+            This operation may take several minutes depending on the volume of knowledge data.
+          </p>
+          <div class="conversion-progress">
+            <div class="conversion-progress-bar">
+              <div class="conversion-progress-fill" id="cache-progress-fill-modal"></div>
+            </div>
+            <p id="cache-progress-text-modal" style="text-align: center; color: #64748b; font-size: 0.813rem; margin-top: 8px;">
+              0% Complete
+            </p>
+          </div>
+        </div>
+
+        <div id="cache-status-result" class="conversion-state" style="display: none;">
+          <div class="conversion-result-icon success" id="cache-result-icon">
+            <span style="font-size: 3rem;">✅</span>
+          </div>
+          <h4 id="cache-result-title" style="margin: 20px 0 10px; text-align: center; color: #10b981;">Regeneration Successful!</h4>
+          <p id="cache-result-subtext" style="text-align: center; color: #64748b; font-size: 0.875rem;">
+            The RAG system cache has been fully rebuilt and is now active.
+          </p>
+          <div class="conversion-stats">
+            <div class="stat-item">
+              <span class="stat-label">Files Processed</span>
+              <span class="stat-value" id="cache-result-files">—</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Total Chunks</span>
+              <span class="stat-value" id="cache-result-chunks">—</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer" id="cache-progress-footer">
+        <button class="btn btn-secondary" id="cache-progress-cancel" type="button">Cancel Operation</button>
+        <button class="btn btn-primary" id="cache-progress-finish" style="display: none;" type="button">Close</button>
+      </div>
+    </div>
+  </div>
+  
+  <div class="modal" id="confirmation-modal">
+    <div class="modal-content" style="max-width: 400px;">
+      <div class="modal-header">
+        <h3 id="confirm-modal-title">Confirm Action</h3>
+        <button class="modal-close" id="confirm-modal-close" type="button">✕</button>
+      </div>
+      <div class="modal-body">
+        <p id="confirm-modal-message" style="font-size: 0.938rem; color: #64748b; line-height: 1.6; text-align: center;">
+          Are you sure?
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="confirm-modal-cancel" type="button">Cancel</button>
+        <button class="btn btn-primary" id="confirm-modal-btn" type="button">
+          <span class="btn-text">Confirm</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="description-progress-modal">
+    <div class="modal-content" style="max-width: 500px;">
+      <div class="modal-header">
+        <h3 id="desc-progress-title">Generating AI Description</h3>
+        <button class="modal-close" id="desc-progress-close" style="display: none;" type="button">✕</button>
+      </div>
+      <div class="modal-body">
+        <div id="desc-progress-loading" class="conversion-state">
+          <div class="conversion-spinner">
+            <div class="spinner-ring"></div>
+            <div class="spinner-icon">
+              <span class="material-symbols-outlined" style="font-size: 32px;">auto_awesome</span>
+            </div>
+          </div>
+          <h4 id="desc-progress-message" style="margin: 20px 0 10px; text-align: center; color: #1e293b;">Initializing...</h4>
+          <p id="desc-progress-subtext" style="text-align: center; color: #64748b; font-size: 0.875rem;">
+            The assistant is analyzing your source and drafting a label.
+          </p>
+          <div class="conversion-progress">
+            <div class="conversion-progress-bar">
+              <div class="conversion-progress-fill" id="desc-progress-fill"></div>
+            </div>
+            <p id="desc-progress-text" style="text-align: center; color: #64748b; font-size: 0.813rem; margin-top: 8px;">
+              0% Complete
+            </p>
+          </div>
+        </div>
+        <div id="desc-progress-result" class="conversion-state" style="display: none;">
+          <div class="conversion-result-icon success" id="desc-result-icon">
+            <span style="font-size: 3rem;">✅</span>
+          </div>
+          <h4 id="desc-result-title" style="margin: 20px 0 10px; text-align: center; color: #10b981;">Description Ready</h4>
+          <p id="desc-result-subtext" style="text-align: center; color: #64748b; font-size: 0.875rem;">
+            The generated label has been inserted into the form.
+          </p>
+        </div>
+        <div id="desc-progress-error" class="conversion-state" style="display: none;">
+          <div class="conversion-result-icon error">
+            <span style="font-size: 3rem;">❌</span>
+          </div>
+          <h4 id="desc-error-title" style="margin: 20px 0 10px; text-align: center; color: #ef4444;">Generation Failed</h4>
+          <p id="desc-error-subtext" style="text-align: center; color: #64748b; font-size: 0.875rem;">
+            Please check the connection details and try again.
+          </p>
+        </div>
+      </div>
+      <div class="modal-footer" id="desc-progress-footer">
+        <button class="btn btn-secondary" id="desc-progress-cancel" type="button">Cancel</button>
+        <button class="btn btn-primary" id="desc-progress-finish" style="display: none;" type="button">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="conversion-status-modal">
+    <div class="modal-content" style="max-width: 500px;">
+      <div class="modal-header">
+        <h3 id="conversion-status-title">Converting File</h3>
+        <button class="modal-close" id="conversion-status-close" style="display: none;" type="button">✕</button>
+      </div>
+      <div class="modal-body">
+        
+        <div id="conversion-loading" class="conversion-state">
+          <div class="conversion-spinner">
+            <div class="spinner-ring"></div>
+            <div class="spinner-icon">
+              <span class="material-symbols-outlined" style="font-size: 32px;">autorenew</span>
+            </div>
+          </div>
+          <p style="text-align: center; color: #64748b; margin-top: 15px; margin-bottom: 15px;">
+             Gemini is analyzing your document...
+          </p>
+          <div class="conversion-progress">
+            <div class="conversion-progress-bar">
+              <div class="conversion-progress-fill" id="conversion-progress-fill"></div>
+            </div>
+            <p id="conversion-progress-text" style="text-align: center; color: #64748b; font-size: 0.813rem; margin-top: 8px;">
+              Initializing...
+            </p>
+          </div>
+        </div>
+  
+        <div id="conversion-success" class="conversion-state" style="display: none;">
+          <div class="conversion-result-icon success">
+            <span style="font-size: 3rem;">✅</span>
+          </div>
+          <h4 style="margin: 20px 0 10px; text-align: center; color: #10b981;">Conversion Successful!</h4>
+          <div class="conversion-stats">
+            <div class="stat-item">
+              <span class="stat-label">File Name</span>
+              <span class="stat-value" id="conversion-filename">-</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">JSON Size</span>
+              <span class="stat-value" id="conversion-size">-</span>
+            </div>
+          </div>
+        </div>
+  
+        <div id="conversion-error" class="conversion-state" style="display: none;">
+          <div class="conversion-result-icon error">
+            <span style="font-size: 3rem;">❌</span>
+          </div>
+          <h4 style="margin: 20px 0 10px; text-align: center; color: #ef4444;">Conversion Failed</h4>
+          <div class="error-details">
+            <p id="conversion-error-message" style="color: #b91c1c; font-size: 0.9rem;">Unknown error</p>
+          </div>
+        </div>
+  
+      </div>
+      <div class="modal-footer" id="conversion-footer" style="display: none;">
+        <button class="btn btn-primary" id="conversion-close-btn" type="button">Close & View JSON</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+  <script type="module" src="assets/js/admin/main.js"></script>
+</body>
+</html>

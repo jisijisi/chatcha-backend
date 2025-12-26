@@ -14,4 +14,9 @@ router.put("/admin/integrations/:id", integrationController.updateLiveDataSource
 router.delete("/admin/integrations/:id", integrationController.deleteLiveDataSource);
 router.post("/admin/integrations/analyze-sheet", integrationController.analyzeGoogleSheet);
 
+// Database Integrations
+router.post("/admin/integrations/database", integrationController.linkDatabase);
+router.post("/admin/integrations/test-db", integrationController.testDatabaseConnection);
+router.post("/admin/integrations/analyze-db", integrationController.analyzeDatabase);
+
 export default router;
