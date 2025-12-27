@@ -776,13 +776,15 @@ class ChatApp {
   addSuggestedQuestions() {
     const container = document.createElement('div');
     container.className = 'suggested-questions';
-    
+
     const currentLang = localStorage.getItem('app_language') || 'en';
     const t = TRANSLATIONS[currentLang] || TRANSLATIONS.en;
     const questions = t.suggested;
-    
-    const selectedQuestions = this.getRandomQuestions(questions, 6);
-    
+
+    const count = this.getSuggestedCount();
+    this._lastSuggestedCount = count;
+    const selectedQuestions = this.getRandomQuestions(questions, count);
+
     selectedQuestions.forEach(question => {
       const button = document.createElement('button');
       button.className = 'suggested-question';
@@ -796,11 +798,25 @@ class ChatApp {
       });
       container.appendChild(button);
     });
-    
+
     const existingContainer = this.elements.welcomeDiv.querySelector('.suggested-questions');
     if (existingContainer) existingContainer.remove();
-    
     this.elements.welcomeDiv.appendChild(container);
+
+    // Ensure suggestions update when viewport crosses breakpoints
+    if (!this._suggestedResizeHandler) {
+      let tid = null;
+      this._suggestedResizeHandler = () => {
+        clearTimeout(tid);
+        tid = setTimeout(() => {
+          const newCount = this.getSuggestedCount();
+          if (newCount !== this._lastSuggestedCount) {
+            this.addSuggestedQuestions();
+          }
+        }, 120);
+      };
+      window.addEventListener('resize', this._suggestedResizeHandler);
+    }
   }
 
   rotateSuggestedQuestions() {
@@ -814,8 +830,9 @@ class ChatApp {
       const t = TRANSLATIONS[currentLang] || TRANSLATIONS.en;
       const questions = t.suggested;
 
-      const selectedQuestions = this.getRandomQuestions(questions, 6);
-      container.innerHTML = ''; 
+      const count = this.getSuggestedCount();
+      const selectedQuestions = this.getRandomQuestions(questions, count);
+      container.innerHTML = '';
 
       selectedQuestions.forEach(question => {
         const button = document.createElement('button');
@@ -823,16 +840,29 @@ class ChatApp {
         button.textContent = question;
         button.type = 'button';
         button.addEventListener('click', () => {
-        this.elements.chatInput.value = question;
-        this.updateCharacterCount();
-        this.isVoiceInput = false; // Explicitly disable voice mode
-        this.askQuestion();
-      });
+          this.elements.chatInput.value = question;
+          this.updateCharacterCount();
+          this.isVoiceInput = false; // Explicitly disable voice mode
+          this.askQuestion();
+        });
         container.appendChild(button);
       });
 
       container.classList.remove('fading');
     }, 500); 
+  }
+
+  getSuggestedCount() {
+    // Determine suggested question count based on viewport width.
+    // Minimum 4, maximum 8. Breakpoints approximate mobile/tablet/desktop.
+    try {
+      const w = window.innerWidth || 1024;
+      if (w <= 600) return 4;         // small/mobile
+      if (w <= 900) return 6;         // tablet / small laptop
+      return 8;                        // large screens
+    } catch (e) {
+      return 4;
+    }
   }
 
   startSuggestedQuestionsInterval() {
@@ -1180,7 +1210,15 @@ class ChatApp {
         const recognition = new SpeechRecognition();
         recognition.continuous = false;
         recognition.interimResults = true;
-        recognition.lang = 'en-US'; 
+        recognition.maxAlternatives = 1;
+
+        // Set language based on current app language
+        const langMap = {
+          'en': 'en-US',
+          'tl': 'fil-PH'
+        };
+        recognition.lang = langMap[this.currentLang] || 'en-US';
+
         let isRecognizing = false;
 
         recognition.onresult = (event) => {
@@ -1206,14 +1244,35 @@ class ChatApp {
             const t = TRANSLATIONS[this.currentLang] || TRANSLATIONS.en;
             this.showToast(t.toasts.voiceCaptured, 'success', 2000);
             this.isVoiceInput = true; 
-            this.askQuestion(true);
+            
+            // Small delay to ensure UI updates before sending
+            setTimeout(() => {
+                this.askQuestion(true);
+            }, 100);
           }
         };
 
         recognition.onerror = (event) => {
           console.error('Speech recognition error:', event.error);
           const t = TRANSLATIONS[this.currentLang] || TRANSLATIONS.en;
-          this.showToast(`${t.toasts.voiceError} ${event.error}`, 'error');
+          
+          let errorMsg = event.error;
+          if (event.error === 'no-speech') {
+              errorMsg = 'No speech detected. Please try again.';
+          } else if (event.error === 'network') {
+              errorMsg = 'Network error. Please check your connection.';
+          } else if (event.error === 'not-allowed') {
+              errorMsg = 'Microphone permission denied.';
+          }
+          
+          this.showToast(`${t.toasts.voiceError}: ${errorMsg}`, 'error');
+          isRecognizing = false;
+          micBtn.classList.remove('recording');
+        };
+        
+        recognition.onnomatch = (event) => {
+            const t = TRANSLATIONS[this.currentLang] || TRANSLATIONS.en;
+            this.showToast('No speech matched. Please try again.', 'warning');
         };
         
         recognition.onend = () => {
@@ -1222,13 +1281,27 @@ class ChatApp {
           micBtn.setAttribute('aria-label', 'Use voice input');
         };
 
-        micBtn.addEventListener('click', () => {
+        const toggleMic = (e) => {
+          // Use standard click handling
+          // e.preventDefault(); // Removed to allow standard behavior unless necessary
+          e.stopPropagation();
+
+          // 1. Security Check for Mobile
+          if (!window.isSecureContext && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+            this.showToast("Voice input requires a secure HTTPS connection.", "error", 4000);
+            return;
+          }
+
+          // Update language just in case it changed
+          recognition.lang = langMap[this.currentLang] || 'en-US';
+
           if (micBtn.classList.contains('speaking-mode')) {
             if (window.speechSynthesis) window.speechSynthesis.cancel();
             if (this.chatManager && this.chatManager.stopAudio) this.chatManager.stopAudio();
             this.uiManager.hideMicStopSpeakingMode();
             return;
           }
+
           if (isRecognizing) {
             recognition.stop();
           } else {
@@ -1237,19 +1310,126 @@ class ChatApp {
               this.showToast(t.toasts.pleaseWait, 'warning');
               return;
             }
+            
             if (window.speechSynthesis) window.speechSynthesis.cancel();
             if (this.chatManager && this.chatManager.stopAudio) this.chatManager.stopAudio();
-            recognition.start();
-            isRecognizing = true;
-            micBtn.classList.add('recording');
-            micBtn.setAttribute('aria-label', 'Stop listening');
-            const t = TRANSLATIONS[this.currentLang] || TRANSLATIONS.en;
-            this.showToast(t.toasts.listening, 'info', 2000);
+            
+            try {
+                // iOS Safari fix: Abort before starting to clear any stuck state
+                recognition.abort();
+                
+                recognition.start();
+                isRecognizing = true;
+                micBtn.classList.add('recording');
+                micBtn.setAttribute('aria-label', 'Stop listening');
+                
+                const t = TRANSLATIONS[this.currentLang] || TRANSLATIONS.en;
+                this.showToast(t.toasts.listening, 'info', 2000);
+            } catch (err) {
+                console.error("Failed to start recognition:", err);
+                isRecognizing = false;
+                micBtn.classList.remove('recording');
+                
+                if (err.name === 'NotAllowedError' || err.message.includes('permission')) {
+                     this.showToast("Microphone access denied. Please check browser settings.", "error");
+                } else {
+                     this.showToast("Could not start microphone. Refresh and try again.", "error");
+                }
+            }
           }
-        });
+        };
+
+        // Revert to click-only to avoid conflicts, but keep it robust
+        // Removing touchstart as it can sometimes trigger security blocks in some mobile browsers if not handled perfectly
+        micBtn.onclick = toggleMic;
+
       } else {
-        micBtn.style.display = 'none';
-        console.warn('Web Speech API not supported in this browser.');
+        // Fallback: use getUserMedia + MediaRecorder when SpeechRecognition
+        // is not available. This enables mobile recording and uploads the
+        // audio to the backend at POST /stt/transcribe (field name: file).
+        if (micBtn) {
+          if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            micBtn.style.display = 'none';
+            console.warn('No getUserMedia support in this browser.');
+          } else {
+            micBtn.style.display = '';
+
+            let mediaRecorder = null;
+            let activeStream = null;
+            let audioChunks = [];
+
+            const startRecording = async () => {
+              try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                activeStream = stream;
+                mediaRecorder = new MediaRecorder(stream);
+                audioChunks = [];
+
+                mediaRecorder.ondataavailable = (ev) => {
+                  if (ev.data && ev.data.size > 0) audioChunks.push(ev.data);
+                };
+
+                mediaRecorder.onstop = async () => {
+                  micBtn.classList.remove('recording');
+                  micBtn.setAttribute('aria-label', 'Use voice input');
+
+                  const blob = new Blob(audioChunks, { type: 'audio/webm' });
+                  const formData = new FormData();
+                  formData.append('file', blob, 'recording.webm');
+
+                  try {
+                    const resp = await fetch('/stt/transcribe', {
+                      method: 'POST',
+                      body: formData
+                    });
+                    const data = await resp.json();
+                    if (data && data.transcript) {
+                      chatInput.value = data.transcript;
+                      this.isVoiceInput = true;
+                      setTimeout(() => this.askQuestion(true), 100);
+                    } else {
+                      const t = TRANSLATIONS[this.currentLang] || TRANSLATIONS.en;
+                      this.showToast('Transcription unavailable. Server received audio.', 'warning');
+                    }
+                  } catch (err) {
+                    console.error('Failed to upload audio for transcription', err);
+                    this.showToast('Could not upload audio for transcription.', 'error');
+                  }
+
+                  // stop tracks
+                  if (activeStream) {
+                    activeStream.getTracks().forEach((t) => t.stop());
+                    activeStream = null;
+                  }
+                };
+
+                mediaRecorder.start();
+                micBtn.classList.add('recording');
+                micBtn.setAttribute('aria-label', 'Stop listening');
+                const t = TRANSLATIONS[this.currentLang] || TRANSLATIONS.en;
+                this.showToast(t.toasts.listening || 'Recording...', 'info', 2000);
+              } catch (err) {
+                console.error('getUserMedia error:', err);
+                this.showToast('Microphone access denied or unavailable.', 'error');
+              }
+            };
+
+            const stopRecording = () => {
+              try {
+                if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+              } catch (e) {}
+            };
+
+            micBtn.onclick = (e) => {
+              e.stopPropagation();
+              if (micBtn.classList.contains('recording')) {
+                stopRecording();
+              } else {
+                startRecording();
+              }
+            };
+          }
+        }
       }
     }
   }

@@ -315,10 +315,14 @@ export class UIManager {
       welcomeDiv.classList.add("show");
       chatContainer.classList.add("centered");
       chatDiv.style.display = "none";
+      // remove conversation mode class so decorative waves show
+      document.body.classList.remove('conversation-active');
     } else {
       welcomeDiv.classList.remove("show");
       chatContainer.classList.remove("centered");
       chatDiv.style.display = "flex";
+      // when in conversation mode hide decorative waves
+      document.body.classList.add('conversation-active');
     }
     this.updateScrollButton();
   }
@@ -392,8 +396,9 @@ export class UIManager {
         toggleBtn.addEventListener('click', (e) => {
           e.stopPropagation();
           const isSidebarMinimized = this.app.elements.sidebar.classList.contains('minimized');
+          const isMobile = window.innerWidth <= 768;
           
-          if (isSidebarMinimized) {
+          if (isSidebarMinimized && !isMobile) {
             this.toggleHistoryDropdown();
           } else {
             this.app.historyCollapsed = !this.app.historyCollapsed;
@@ -648,10 +653,34 @@ export class UIManager {
     
     document.querySelectorAll(".dropdown.show").forEach(menu => {
       if (menu !== dropdown) {
+        // Retrieve the original parent from the menu's data attribute if possible,
+        // or finding the ellipsis that owns it.
+        // But for simplicity, we just hide it. Ideally we should put it back.
+        // If we move it to body, we must move it back to hide it properly or remove it.
+        
         menu.classList.remove("show");
         menu.style.display = 'none';
-        const otherEllipsis = menu.parentElement?.querySelector('.ellipsis');
+        
+        // If it was moved to body, move it back to its placeholder or original list item
+        if (menu.parentElement === document.body && menu.dataset.originalParentId) {
+             // This is tricky without unique IDs. 
+             // Let's use the reference we have if we can.
+        }
+        // Since we are iterating all .dropdown.show, we don't easily have the listItem reference 
+        // unless we stored it.
+        
+        const otherEllipsis = menu._associatedEllipsis; // We'll attach this property
         if (otherEllipsis) otherEllipsis.setAttribute("aria-expanded", "false");
+        
+        if (menu.parentElement === document.body) {
+             menu.remove(); // Remove from body
+             // Re-append to original parent is safer if we want to reuse, 
+             // but 'createDropdownMenu' creates it fresh? No, it's created once per item.
+             // We should put it back.
+             if (menu._originalParent) {
+                 menu._originalParent.appendChild(menu);
+             }
+        }
       }
     });
     
@@ -661,6 +690,13 @@ export class UIManager {
       
       const ellipsisRect = ellipsis.getBoundingClientRect();
       const listItemRect = listItem.getBoundingClientRect();
+      
+      // Store original parent and ellipsis for cleanup
+      dropdown._originalParent = dropdown.parentElement;
+      dropdown._associatedEllipsis = ellipsis;
+      
+      // Move to body to avoid clipping
+      document.body.appendChild(dropdown);
       
       dropdown.style.position = 'fixed';
       dropdown.style.zIndex = '1010';
@@ -675,6 +711,12 @@ export class UIManager {
       } else {
         dropdown.style.top = `${listItemRect.top}px`;
         dropdown.style.left = `${listItemRect.right + 5}px`;
+      }
+      
+      // Adjust if off-screen (basic check)
+      const dropdownRect = dropdown.getBoundingClientRect();
+      if (dropdownRect.right > window.innerWidth) {
+          dropdown.style.left = `${window.innerWidth - dropdownRect.width - 10}px`;
       }
       
       const tooltip = ellipsis.querySelector('.tooltip');
@@ -703,6 +745,11 @@ export class UIManager {
     dropdown.style.display = 'none';
     ellipsis.setAttribute("aria-expanded", "false");
     
+    // Move back to original parent
+    if (dropdown.parentElement === document.body && dropdown._originalParent) {
+        dropdown._originalParent.appendChild(dropdown);
+    }
+    
     const tooltip = ellipsis.querySelector('.tooltip');
     if (tooltip && window.innerWidth > CONFIG.MOBILE_BREAKPOINT) {
       tooltip.classList.add('show');
@@ -713,11 +760,17 @@ export class UIManager {
     document.querySelectorAll(".dropdown.show").forEach(menu => {
       menu.classList.remove("show");
       menu.style.display = 'none';
-    });
-    document.querySelectorAll(".ellipsis[aria-expanded='true']").forEach(el => {
-      el.setAttribute("aria-expanded", "false");
-      const tooltip = el.querySelector('.tooltip');
-      if (tooltip && window.innerWidth > CONFIG.MOBILE_BREAKPOINT) tooltip.classList.add('show');
+      
+      const ellipsis = menu._associatedEllipsis;
+      if (ellipsis) {
+          ellipsis.setAttribute("aria-expanded", "false");
+          const tooltip = ellipsis.querySelector('.tooltip');
+          if (tooltip && window.innerWidth > CONFIG.MOBILE_BREAKPOINT) tooltip.classList.add('show');
+      }
+      
+      if (menu.parentElement === document.body && menu._originalParent) {
+          menu._originalParent.appendChild(menu);
+      }
     });
     this.closeHistoryDropdown();
   }

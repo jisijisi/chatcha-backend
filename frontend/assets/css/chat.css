@@ -10,11 +10,18 @@
 }
 
 #chat-container.centered {
-  justify-content: center;
+  justify-content: center; /* Restore vertical centering */
   align-items: center;
   text-align: center;
-  overflow: hidden;
+  overflow: hidden; /* Prevent scrolling, force elements to fit */
   background: var(--bg-body); /* UPDATED: Uses variable */
+  height: 100%; /* Ensure full height for flex distribution */
+  /* safe area to avoid overlapping the top/bottom waves */
+  --wave-safe: clamp(120px, 18vh, 36vh);
+  padding-top: calc(var(--wave-safe) + 18px);
+  padding-bottom: calc(var(--wave-safe) + 18px);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
 }
 
 #chat-container.centered #chat {
@@ -25,7 +32,9 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-bottom: 20px;
+  /* Safe centering: pushes content to center if space permits, top if not */
+  margin-top: auto;
+  margin-bottom: 0;
 }
 
 /* Welcome Message */
@@ -43,54 +52,55 @@
   box-sizing: border-box;
   width: 100%;
   margin: 0 auto;
+  /* Reset rigid margin-top to allow true centering */
+  margin-top: 0;
+  /* Ensure content doesn't get too spread out on tall screens */
+  gap: clamp(4px, 1.5vh, 20px);
+  flex-shrink: 0; /* Prevent welcome message from shrinking */
+  /* Add top padding to balance the layout against the input area */
+  padding-top: clamp(20px, 4vh, 40px);
 }
 
 #welcome-message.show {
   display: flex;
   opacity: 1;
   transform: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
 }
 
-/* Background Wave - Light Mode (Default) */
+/* Use inline SVG waves for pixel-perfect rendering. Hide the
+   older pseudo-element fallback to avoid double-rendering. */
 #chat-container.centered::before,
 #chat-container.centered::after {
-  content: "";
+  content: none !important;
+  display: none !important;
+}
+
+/* Inline SVG wave styling */
+.page-wave {
   position: absolute;
   left: 0;
   width: 100%;
-  height: clamp(175px, 13.9vw, 250px);
+  height: clamp(120px, 18vh, 36vh);
+  pointer-events: none;
   z-index: 0;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 200'%3E%3Cpath fill='%23FFC700' fill-opacity='1' d='M0,128C480,128,480,64,960,64C1440,64,1440,128,1440,128L1440,0L0,0Z'%3E%3C/path%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-size: cover;
-  border-radius: 0;
-  opacity: 1;
-  transition: opacity 0.3s ease;
+  display: block;
+  transform: translateZ(0);
 }
+.page-wave path { shape-rendering: geometricPrecision; }
+.page-wave-top { top: 0; }
+.page-wave-bottom { bottom: 0; transform: scaleY(-1); }
 
-/* --- NEW: Background Wave - Dark Mode Override --- */
-[data-theme="dark"] #chat-container.centered::before,
-[data-theme="dark"] #chat-container.centered::after {
-  opacity: 0.05; 
-  filter: grayscale(100%);
-}
+/* Dark mode subtle treatment for inline waves */
+[data-theme="dark"] .page-wave path { opacity: 0.06; filter: grayscale(100%); }
 
-#chat-container.centered::before {
-  top: 0;
-  left: 0;
-}
-
-#chat-container.centered::after {
-  bottom: 0;
-  transform: rotate(180deg);
-  left: 0;
-}
+/* Hide decorative waves when a conversation is active */
+.conversation-active .page-wave { display: none !important; }
 
 @media (max-width: 540px) {
-  #chat-container.centered::before,
-  #chat-container.centered::after {
-    height: clamp(150px, 12vw, 200px);
-  }
+  /* Removed wave height override since it's now handled by clamp globally */
 }
 
 /* Input Area Layout */
@@ -102,28 +112,35 @@
 
 #chat-container.centered .input-area {
   background-color: transparent;
-  padding: 20px max(10px, env(safe-area-inset-left, 10px), env(safe-area-inset-right, 10px)) 15px;
+  padding: 12px max(10px, env(safe-area-inset-left, 10px), env(safe-area-inset-right, 10px)) 15px;
   box-sizing: border-box;
   width: 100%;
-  max-width: min(500px, 92vw);
+  max-width: 768px;
+  /* Remove margin-top/bottom auto to let flex handle it */
   margin: 0 auto;
+  flex-shrink: 0; /* Never shrink the input area */
+  /* Add padding bottom to avoid touching the bottom wave */
+  padding-bottom: clamp(20px, 4vh, 40px);
+  z-index: 2; /* sit above bottom wave */
 }
+
+#chat-container .input-wrapper { max-width: 720px; margin: 0 auto; }
 
 /* Avatar Styles */
 #welcome-message .welcome-avatar {
-  width: 100px;
-  height: 100px;
+  width: clamp(40px, 10vh, 100px);
+  height: clamp(40px, 10vh, 100px);
   border-radius: 50%;
   object-fit: cover;
-  margin-bottom: 24px;
+  margin-bottom: 0; /* Handled by parent gap */
   box-shadow: 0 8px 24px rgba(215, 25, 33, 0.15);
 }
 
 .welcome-avatar-container {
   position: relative;
-  width: 180px;
-  height: 155px;
-  margin-bottom: 24px;
+  width: clamp(70px, 14vh, 140px);
+  height: clamp(60px, 12vh, 140px);
+  margin-bottom: clamp(6px, 1.5vh, 24px);
 }
 
 .welcome-avatar-border {
@@ -150,8 +167,8 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 85px;
-  height: 85px;
+  width: clamp(30px, 50%, 85px); /* Responsive to container */
+  height: clamp(30px, 50%, 85px);
   border-radius: 50%;
   object-fit: cover;
   box-shadow: none;
@@ -161,18 +178,19 @@
 
 /* === WELCOME MESSAGE TITLE (Good evening, Jisi) === */
 #welcome-message h2 {
-  font-size: clamp(2rem, 5vw, 2.5rem);
-  margin-bottom: 12px;
+  font-size: clamp(1rem, 3vh, 2rem); /* Scaled with height */
+  margin-bottom: clamp(6px, 1vh, 12px);
   font-weight: 700;
-  color: var(--text-brand); /* UPDATED: Uses Yellow #FFC700 in dark mode */
+  color: var(--text-brand);
   animation: slideUpWelcome 0.6s ease-out 0.2s both;
+  line-height: 1.15;
 }
 
 #welcome-message p {
   color: var(--text-muted); /* UPDATED */
-  font-size: clamp(1rem, 3vw, 1.15rem);
-  max-width: min(450px, 90vw);
-  line-height: 1.6;
+  font-size: clamp(0.75rem, 1.6vh, 1rem);
+  max-width: min(520px, 88vw);
+  line-height: 1.4;
   animation: slideUpWelcome 0.6s ease-out 0.3s both;
 }
 
@@ -499,12 +517,16 @@
   background: var(--bg-card); /* UPDATED */
   border: 1px solid var(--border-color); /* UPDATED */
   border-radius: 16px;
-  padding: 6px 12px;
+  padding: 8px 12px;
   font-size: 0.8rem;
   color: var(--text-main); /* UPDATED */
   cursor: pointer;
   transition: all 0.2s ease;
-  white-space: nowrap;
+  white-space: normal; /* Allow text wrapping */
+  text-align: left;
+  line-height: 1.4;
+  max-width: 100%;
+  word-wrap: break-word;
 }
 
 .followup-chip:hover {
@@ -922,14 +944,15 @@
 }
 
 /* ============================================
-   SUGGESTED QUESTIONS
+   SUGGESTED QUESTIONS (Modern UI)
    ============================================ */
 .suggested-questions {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 12px;
-  margin-top: 24px;
-  max-width: min(800px, 90vw);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-top: clamp(20px, 4vh, 40px);
+  max-width: 900px;
   width: 100%;
   padding: 0 16px;
   box-sizing: border-box;
@@ -942,32 +965,82 @@
 }
 
 .suggested-question {
-  background: var(--bg-secondary); /* UPDATED */
-  border: 1px solid var(--border-color); /* UPDATED */
-  border-radius: 30px;
-  padding: 14px 20px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 12px 18px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
   text-align: left;
-  font-size: clamp(0.85rem, 2vw, 0.9rem);
-  color: var(--text-main); /* UPDATED */
+  font-size: 0.9rem;
+  color: var(--text-muted);
   font-weight: 500;
   line-height: 1.4;
-  word-wrap: break-word;
-  overflow-wrap: break-word;
-  min-height: 60px;
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  justify-content: flex-start;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  position: relative;
+  overflow: hidden;
 }
 
+/* Hover Effect */
 .suggested-question:hover {
-  background: var(--primary-color);
-  color: #ffffff;
+  background: var(--bg-card);
   border-color: var(--primary-color);
+  color: var(--primary-color);
   transform: translateY(-3px);
-  box-shadow: 0 5px 15px rgba(215, 25, 33, 0.3);
+  box-shadow: 0 6px 16px rgba(215, 25, 33, 0.12);
+}
+
+/* Add a subtle icon via CSS */
+.suggested-question::after {
+  content: "→";
+  display: inline-block;
+  margin-left: 8px;
+  opacity: 0;
+  transform: translateX(-8px);
+  transition: all 0.2s ease;
+  font-weight: bold;
+}
+
+.suggested-question:hover::after {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* Mobile: Stack items or limit them */
+@media (max-width: 600px) {
+  .suggested-questions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+  
+  .suggested-question {
+    width: 100%;
+    justify-content: space-between;
+    padding: 14px 18px;
+  }
+  
+  .suggested-question::after {
+    opacity: 0.5;
+    transform: none;
+    content: "›";
+    font-size: 1.2em;
+  }
+  
+  /* Show up to 4 suggestions on small screens */
+  .suggested-questions .suggested-question:nth-child(n+5) { display: none; }
+}
+
+@media (min-width: 601px) and (max-width: 900px) {
+  /* Show up to 6 suggestions on medium screens */
+  .suggested-questions .suggested-question:nth-child(n+7) { display: none; }
+}
+
+@media (min-width: 901px) {
+  /* Show up to 8 suggestions on large screens */
+  .suggested-questions .suggested-question:nth-child(n+9) { display: none; }
 }
 
 /* ============================================

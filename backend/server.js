@@ -25,6 +25,7 @@ import adminRoutes from "./routes/admin.routes.js";
 import integrationRoutes from "./routes/integration.routes.js";
 import ragRoutes from "./routes/rag.routes.js";
 import ttsRoutes from "./routes/tts.routes.js";
+import sttRoutes from "./routes/stt.routes.js";
 import attachFullDuplexWS from "./ws/full_duplex_ws.js";
  
 import * as userController from "./controllers/userController.js";
@@ -86,6 +87,7 @@ app.use(adminRoutes);
 app.use(integrationRoutes);
 app.use(ragRoutes);
 app.use("/tts", ttsRoutes);
+app.use("/stt", sttRoutes);
 
 // User Profile Routes
 app.get("/api/user/profile", userController.getUserProfile);

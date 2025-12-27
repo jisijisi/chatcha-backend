@@ -213,16 +213,19 @@ export const TRANSLATIONS = {
         "Tell me about the history of CDO.",
         "What are CDO's main products?",
         "What is the company's mission or vision?",
+        "Who is the founder of CDO?",
       ],
       hrPolicies: [
         "What is the company policy on remote work?",
         "How do I file for a vacation leave?",
         "What are the company holidays?",
+        "How do I claim overtime pay?",
       ],
       dataAnalysis: [
         "Show me a chart of department project distribution",
         "Compare employee counts by department",
-        "What's the trend of project completion rates?"
+        "What's the trend of project completion rates?",
+        "List the top performing departments",
       ]
     }
   },
@@ -439,16 +442,19 @@ export const TRANSLATIONS = {
         "Ikwento mo ang kasaysayan ng CDO.",
         "Ano ang mga pangunahing produkto ng CDO?",
         "Ano ang misyon at bisyon ng kumpanya?",
+        "Sino ang nagtatag ng CDO?",
       ],
       hrPolicies: [
         "Ano ang patakaran sa remote work?",
         "Paano mag-file ng vacation leave?",
         "Ano ang mga holiday ng kumpanya?",
+        "Paano mag-claim ng overtime pay?",
       ],
       dataAnalysis: [
         "Ipakita ang chart ng mga proyekto kada departamento",
         "Paghambingin ang bilang ng empleyado",
-        "Ano ang trend ng pagtatapos ng mga proyekto?"
+        "Ano ang trend ng pagtatapos ng mga proyekto?",
+        "Ilista ang mga nangungunang departamento",
       ]
     }
   }

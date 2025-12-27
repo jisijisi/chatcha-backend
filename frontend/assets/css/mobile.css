@@ -40,9 +40,7 @@
     display: none;
   }
   
-  #chat-container.centered #welcome-message {
-    margin-top: 0;
-  }
+  /* Removed #chat-container.centered #welcome-message margin override to allow safe centering from chat.css */
   
   .input-area {
     padding-bottom: max(15px, env(safe-area-inset-bottom));
@@ -177,15 +175,27 @@
   ========================================
   */
   .message .message-actions {
+    position: relative;
+    top: auto;
+    left: auto;
+    right: auto;
+    margin-top: 8px;
     opacity: 1;
     pointer-events: auto;
-    z-index: 5; /* Was 1. This needs to be > 1 to overlap the next message */
+    z-index: 1;
+    padding-bottom: 4px;
   }
   /* ======================================== */
 
   .input-area {
     padding: 12px;
     gap: 8px;
+  }
+
+  /* Reduce blur/gradient height on mobile to emphasize action buttons */
+  #chat-container:not(.centered) .input-area::before {
+    height: 15px;
+    top: -15px;
   }
 
   .input-area .input-wrapper {
@@ -239,7 +249,6 @@
   }
 
   .suggested-questions {
-    grid-template-columns: 1fr;
     gap: 8px;
     margin-top: 16px;
     max-width: 95vw;
@@ -255,35 +264,15 @@
 
 /* Specific fix for 540px width dimension */
 @media (max-width: 540px) and (min-width: 481px) {
-  .welcome-avatar-container {
-    width: 120px;
-    height: 100px;
-    margin-bottom: 20px;
-  }
-
-  #welcome-message .welcome-avatar {
-    width: 70px;
-    height: 70px;
-  }
-
-  .welcome-avatar-border {
-    width: 120px;
-    height: 100px;
-  }
-
-  #welcome-message h2 {
-    font-size: 1.4rem;
-    margin-bottom: 10px;
-  }
-
-  #welcome-message p {
-    font-size: 0.9rem;
-    max-width: 90vw;
-    line-height: 1.5;
-  }
+  /* Removed rigid overrides to allow chat.css clamps to work
+  .welcome-avatar-container { ... }
+  #welcome-message .welcome-avatar { ... }
+  .welcome-avatar-border { ... }
+  #welcome-message h2 { ... }
+  #welcome-message p { ... }
+  */
 
   .suggested-questions {
-    grid-template-columns: 1fr;
     max-width: 90vw;
     gap: 8px;
   }
@@ -332,13 +321,7 @@
     height: calc(100dvh - 56px);
   }
 
-  #welcome-message h2 {
-    font-size: 1.3rem;
-  }
-
-  #welcome-message p {
-    font-size: 0.85rem;
-  }
+  /* Removed overrides for #welcome-message h2/p to use chat.css clamps */
 
   #chat {
     padding: 16px 12px;
@@ -401,22 +384,7 @@
     min-height: 48px;
   }
 
-  /* Small mobile devices - Welcome Avatar Fix */
-  .welcome-avatar-container {
-    width: 100px;
-    height: 85px;
-    margin-bottom: 16px;
-  }
-
-  #welcome-message .welcome-avatar {
-    width: 55px;
-    height: 55px;
-  }
-
-  .welcome-avatar-border {
-    width: 100px;
-    height: 85px;
-  }
+  /* Small mobile devices - Welcome Avatar Fix - REMOVED to use chat.css clamps */
 }
 
 /* Very small mobile devices - 375px and below */
@@ -445,16 +413,7 @@
     height: calc(100dvh - 52px);
   }
 
-  #welcome-message h2 {
-    font-size: 1.2rem;
-    margin-bottom: 8px;
-  }
-
-  #welcome-message p {
-    font-size: 0.8rem;
-    max-width: 92vw;
-    line-height: 1.4;
-  }
+  /* Removed rigid overrides for welcome message to use chat.css clamps */
 
   #chat {
     padding: 14px 10px;
@@ -532,22 +491,7 @@
     line-height: 1.3;
   }
 
-  /* Very small mobile devices - Welcome Avatar Fix */
-  .welcome-avatar-container {
-    width: 90px;
-    height: 75px;
-    margin-bottom: 14px;
-  }
-
-  #welcome-message .welcome-avatar {
-    width: 50px;
-    height: 50px;
-  }
-
-  .welcome-avatar-border {
-    width: 90px;
-    height: 75px;
-  }
+  /* Removed rigid overrides for welcome avatar to use chat.css clamps */
 
   /* Ensure proper spacing for 375x667 */
   #welcome-message {
@@ -619,32 +563,9 @@
 
 /* Extra small mobile devices (very small phones) */
 @media (max-width: 360px) {
-  .welcome-avatar-container {
-    width: 85px;
-    height: 70px;
-    margin-bottom: 12px;
-  }
+  /* Removed rigid overrides for welcome avatar to use chat.css clamps */
 
-  #welcome-message .welcome-avatar {
-    width: 45px;
-    height: 45px;
-  }
-
-  .welcome-avatar-border {
-    width: 85px;
-    height: 70px;
-  }
-
-  #welcome-message h2 {
-    font-size: 1.1rem;
-    margin-bottom: 6px;
-  }
-
-  #welcome-message p {
-    font-size: 0.75rem;
-    max-width: 92vw;
-    line-height: 1.3;
-  }
+  /* Removed rigid overrides for welcome message to use chat.css clamps */
 
   .suggested-questions {
     gap: 3px;
@@ -741,6 +662,8 @@
   background: white;
   border-bottom: 1px solid #e8e8e8; /* Adds a clean separator line */
   box-shadow: none; /* Removes any existing shadow */
+  position: relative; /* Ensure dropdown can be positioned relative to header */
+  z-index: 1000;
 }
 
 .mobile-menu-toggle.in-header {
@@ -767,6 +690,56 @@
   display: block;
   stroke: #D71921;
 }
+
+/* === NEW: Mobile Header Dropdown Styles === */
+.mobile-header-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 12px;
+  background: var(--bg-card);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border: 1px solid var(--border-color);
+  min-width: 150px;
+  z-index: 1001;
+  display: none;
+  padding: 6px 0;
+}
+
+.mobile-header-dropdown.show {
+  display: block;
+  animation: fadeIn 0.2s ease;
+}
+
+.mobile-header-dropdown .dropdown-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  width: 100%;
+  border: none;
+  background: none;
+  color: var(--text-main);
+  font-size: 0.9rem;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.mobile-header-dropdown .dropdown-option:hover {
+  background-color: var(--bg-secondary);
+}
+
+.mobile-header-dropdown .dropdown-option svg {
+  width: 18px;
+  height: 18px;
+  stroke-width: 2px;
+}
+
+.mobile-header-dropdown .dropdown-option.delete {
+  color: var(--primary-color);
+}
+/* =========================================== */
 
 /* * This is the WELCOME PAGE state (Request 1)
  * It uses :has() to check if the #chat-container.centered class exists.

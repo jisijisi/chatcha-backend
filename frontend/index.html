@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>ChatCDO - Company AI Assistant</title>
   <meta name="description" content="Chat with Cindy - Your Company AI Assistant">
   <link rel="icon" type="image/png" href="assets/images/logo.png">
@@ -82,6 +82,10 @@
       </div>
     </aside>
     <main id="chat-container" class="centered">
+      <!-- Top wave SVG: scales with viewport and guarantees no seams -->
+      <svg class="page-wave page-wave-top" viewBox="0 0 1440 200" preserveAspectRatio="none" aria-hidden="true">
+        <path fill="#FFC700" d="M0,128 C480,128 480,64 960,64 C1440,64 1440,128 1440,128 L1440,0 L0,0 Z"></path>
+      </svg>
       <button id="mobile-menu-toggle" class="mobile-menu-toggle" aria-label="Open menu" aria-expanded="false"><span class="hamburger"><span></span><span></span><span></span></span></button>
       <section id="welcome-message" class="show" aria-live="polite">
         <div class="welcome-avatar-container"><div class="welcome-avatar-border"></div><img src="assets/images/avatar.png" alt="Cindy Avatar" class="welcome-avatar"></div>
@@ -105,6 +109,10 @@
         </div>
       </form>
     </main>
+      <!-- Bottom wave SVG: flipped vertically to mirror the top wave -->
+      <svg class="page-wave page-wave-bottom" viewBox="0 0 1440 200" preserveAspectRatio="none" aria-hidden="true">
+        <path fill="#FFC700" d="M0,128 C480,128 480,64 960,64 C1440,64 1440,128 1440,128 L1440,0 L0,0 Z"></path>
+      </svg>
   </div>
   <div id="sidebar-overlay" aria-hidden="true"></div>
   <div id="history-dropdown" class="history-dropdown" aria-hidden="true">
@@ -118,8 +126,8 @@
       <div class="modal-footer"><button id="modal-cancel" class="modal-btn modal-btn-cancel">Cancel</button><button id="modal-confirm" class="modal-btn modal-btn-confirm">Confirm</button></div>
     </div>
   </div>
-  <div class="modal" id="confirmation-modal">
-    <div class="modal-content" style="max-width: 400px;">
+  <div class="modal-overlay" id="confirmation-modal" aria-hidden="true">
+    <div class="modal" style="max-width: 400px;">
       <div class="modal-header"><h3 id="confirm-modal-title">Confirm Action</h3><button class="modal-close" id="confirm-modal-close">✕</button></div>
       <div class="modal-body"><p id="confirm-modal-message" style="font-size: 0.938rem; color: var(--text-muted); line-height: 1.6; text-align: center;">Are you sure?</p></div>
       <div class="modal-footer"><button class="btn btn-secondary" id="confirm-modal-cancel">Cancel</button><button class="btn btn-primary" id="confirm-modal-btn"><span class="btn-text">Confirm</span></button></div>
@@ -506,5 +514,27 @@
   <script type="module" src="assets/js/app.js"></script>
 </script>
 <!-- TTS initialization handled in app.js via TTSManager (see frontend/assets/js/tts-manager.js) -->
+</script>
+<script>
+(function(){
+  const W = 1440, H = 200;
+  function updateWavePath(){
+    // amplitude and base adapt to viewport aspect ratio
+    const vw = window.innerWidth;
+    const vh = Math.max(320, window.innerHeight);
+    const ratio = vw / vh;
+    const amp = Math.round(Math.max(24, Math.min(160, vw / 16)));
+    const base = Math.round(Math.max(56, Math.min(150, H/2 + (ratio - 1) * 24)));
+    const p1x = W * 0.25; const p2x = W * 0.75;
+    const d = `M0,${base} C ${p1x},${base + amp} ${p2x},${base - amp} ${W},${base} L ${W},0 L0,0 Z`;
+    document.querySelectorAll('.page-wave path').forEach(p => p.setAttribute('d', d));
+  }
+  let tid;
+  function onResize(){ clearTimeout(tid); tid = setTimeout(updateWavePath, 80); }
+  if (document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', ()=>{ updateWavePath(); window.addEventListener('resize', onResize); });
+  } else { updateWavePath(); window.addEventListener('resize', onResize); }
+})();
+</script>
 </body>
 </html>
