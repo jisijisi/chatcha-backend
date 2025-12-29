@@ -105,8 +105,13 @@ async function startServer() {
         const dbConnected = await testDatabaseConnection();
         if (!dbConnected) console.warn('⚠️ No DB connection');
         
-        console.log('🚀 Initializing RAG System...');
-        await ragSystem.initializeRAG();
+        console.log('🚀 Initializing RAG System in background...');
+        // Non-blocking RAG initialization to allow faster server startup
+        ragSystem.initializeRAG().then(() => {
+            console.log('✅ RAG System Initialized (Background)');
+        }).catch(err => {
+            console.error('❌ RAG System Initialization Failed:', err);
+        });
 
         server.listen(PORT, () => {
             console.log(`\n✅ SERVER RUNNING: http://localhost:${PORT}`);

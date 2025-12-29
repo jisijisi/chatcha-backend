@@ -366,15 +366,18 @@
     gap: 6px;
   }
 
+  /* --- FIX FOR MOBILE TOUCH TARGET --- */
   .input-area #mic-btn {
-    width: 30px;
-    height: 30px;
+    width: 44px; /* Increased from 30px */
+    height: 44px; /* Increased from 30px */
+    touch-action: manipulation;
   }
 
   .input-area #mic-btn svg {
-    width: 16px;
-    height: 16px;
+    width: 20px; /* Slight increase */
+    height: 20px;
   }
+  /* ---------------------------------- */
 
   .input-area button#send-btn {
     width: 32px;

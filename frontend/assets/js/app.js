@@ -109,8 +109,6 @@ class ChatApp {
     this.updateUserInfo();
     
     // CRITICAL: Check Profile Completion
-    // This will trigger the custom modal with Dropdowns if user is Company Employee and missing details
-    // It will also trigger for External users if they lack a Name
     await this.checkProfileOnboarding();
     
     await this.loadHRKnowledge();
@@ -128,7 +126,7 @@ class ChatApp {
     this.loadVoices(); 
     this.userIntegrations.handleOAuthReturn();
     
-    // If userName is still null (e.g. guest who skipped?), show default welcome
+    // If userName is still null
     if (!this.userName) {
       const defaultName = this.authManager.getDefaultDisplayName();
       this.modalManager.showWelcomeModal((name) => {
@@ -164,7 +162,7 @@ class ChatApp {
     this.modalManager.initializeTooltips();
     this.settingsManager.init();
 
-    // Initialize TTS audio context on first user gesture to avoid autoplay restrictions
+    // Initialize TTS audio context on first user gesture
     const initTTSOnGesture = async () => {
       try {
         document.removeEventListener('click', initTTSOnGesture);
@@ -174,12 +172,10 @@ class ChatApp {
     };
     document.addEventListener('click', initTTSOnGesture);
     
-    // ADD TOOLTIP TO MICROPHONE BUTTON
     if (this.elements.micBtn) {
       this.modalManager.addTooltip(this.elements.micBtn, 'Use microphone', 'bottom');
     }
     
-    // ADD TOOLTIP TO SEND BUTTON
     if (this.elements.sendBtn) {
       this.modalManager.addTooltip(this.elements.sendBtn, 'Send message', 'bottom');
     }
@@ -204,20 +200,6 @@ class ChatApp {
         }
       }
       this.uiManager.scrollToStartOfResponse(messageElement);
-
-      // Feed semantic final chunks into TTSManager (text-only input only)
-      // REVISED: Remove this block completely to stop any implicit TTS
-      /* 
-      try {
-        if (!plain && chunk && this.ttsManager && typeof this.ttsManager.enqueue === 'function') {
-          const candidate = (chunk || '').trim();
-          const isSentence = /[.!?]\s*$/.test(candidate) || isFinal;
-          if (candidate && isSentence) {
-            this.ttsManager.enqueue(candidate).catch(() => {});
-          }
-        }
-      } catch (e) { console.warn('TTS feed error', e); }
-      */
     });
     
     console.log('Cindy CDO Assistant initialized successfully!');
@@ -229,7 +211,6 @@ class ChatApp {
   }
 
   async loadInitialData() {
-      // Check for auth before attempting network calls
       if (!this.authManager.isAuthenticated()) {
           console.warn('Skipping data load: User not authenticated');
           this.chats = [];
@@ -253,7 +234,6 @@ class ChatApp {
           const localIndex = localStorage.getItem('chat_ui_active_index');
           this.activeChatIndex = localIndex ? JSON.parse(localIndex) : null;
           
-          // Validate index against loaded chats
           if (this.activeChatIndex !== null && this.chats[this.activeChatIndex]) {
              this.currentConversation = this.chats[this.activeChatIndex].conversation || [];
              this.hasConversation = true;
@@ -334,11 +314,9 @@ class ChatApp {
         this.elements.userDisplayName.textContent = this.userName || username || email;
         this.elements.userTypeLabel.textContent = 'Employee';
       } else if (userType === 'external' && email) {
-        // Handle External Users (Gmail/Yahoo etc)
         this.elements.userDisplayName.textContent = this.userName || username || email;
         this.elements.userTypeLabel.textContent = 'External User';
       } else {
-        // Handle Anonymous Guests
         this.elements.userDisplayName.textContent = this.userName || 'Guest';
         this.elements.userTypeLabel.textContent = 'Guest User';
       }
@@ -367,10 +345,8 @@ class ChatApp {
     if (!session || !session.email) return;
 
     const email = session.email;
-    // Check if domain matches company
     const isCompany = email.toLowerCase().endsWith('@cdo.com.ph'); 
 
-    // Immediate onboarding for NEW external users based on session flag
     if (session.userType === 'external' && session.isNewUser === true) {
       const currentName = session.username || '';
       await this.showOnboardingModal({
@@ -408,35 +384,17 @@ class ChatApp {
 
   async showOnboardingModal({ isCompany, currentName, currentDept, currentPos }) {
     return new Promise((resolve) => {
-        // 1. Define Dropdown Options
         const DEPARTMENTS = [
-            "Administration",
-            "Finance & Accounting",
-            "Human Resources",
-            "Information Technology",
-            "Logistics & Supply Chain",
-            "Marketing",
-            "Production / Manufacturing",
-            "Quality Assurance",
-            "Research & Development",
-            "Sales",
-            "Legal"
+            "Administration", "Finance & Accounting", "Human Resources", "Information Technology",
+            "Logistics & Supply Chain", "Marketing", "Production / Manufacturing", "Quality Assurance",
+            "Research & Development", "Sales", "Legal"
         ];
 
         const ROLES = [
-            "Staff / Associate",
-            "Analyst",
-            "Specialist",
-            "Supervisor",
-            "Team Lead",
-            "Manager",
-            "Senior Manager",
-            "Director",
-            "Vice President",
-            "Executive"
+            "Staff / Associate", "Analyst", "Specialist", "Supervisor", "Team Lead",
+            "Manager", "Senior Manager", "Director", "Vice President", "Executive"
         ];
 
-        // 2. Create Modal Elements
         const overlay = document.createElement('div');
         overlay.className = 'modal-overlay active';
         overlay.style.zIndex = '10300'; 
@@ -445,12 +403,10 @@ class ChatApp {
         modal.className = 'modal';
         modal.style.maxWidth = '450px';
         
-        // Header
         const header = document.createElement('div');
         header.className = 'modal-header';
         header.innerHTML = `<h3>👋 Welcome to ChatCDO!</h3>`;
         
-        // Body
         const body = document.createElement('div');
         body.className = 'modal-body';
         
@@ -465,7 +421,6 @@ class ChatApp {
         form.style.display = 'grid';
         form.style.gap = '15px';
         
-        // --- Field: Display Name (Everyone) ---
         const nameGroup = document.createElement('div');
         nameGroup.innerHTML = `<label class="form-label" style="display:block;margin-bottom:5px;font-weight:500">Display Name *</label>`;
         const nameInput = document.createElement('input');
@@ -478,24 +433,17 @@ class ChatApp {
         
         let roleInput, deptInput;
 
-        // --- Fields: Role & Dept (Company Only) ---
         if (isCompany) {
-            // 1. Department Dropdown
             const deptGroup = document.createElement('div');
             deptGroup.innerHTML = `<label class="form-label" style="display:block;margin-bottom:5px;font-weight:500">Department *</label>`;
-            
-            deptInput = document.createElement('select'); // Select
+            deptInput = document.createElement('select'); 
             deptInput.className = 'form-input modal-input';
-            
-            // Default placeholder
             const defaultDeptOpt = document.createElement('option');
             defaultDeptOpt.value = "";
             defaultDeptOpt.textContent = "Select Department...";
             defaultDeptOpt.disabled = true;
             defaultDeptOpt.selected = !currentDept;
             deptInput.appendChild(defaultDeptOpt);
-
-            // Populate Departments
             DEPARTMENTS.forEach(dept => {
                 const opt = document.createElement('option');
                 opt.value = dept;
@@ -506,22 +454,16 @@ class ChatApp {
             deptGroup.appendChild(deptInput);
             form.appendChild(deptGroup);
 
-            // 2. Role/Position Dropdown
             const roleGroup = document.createElement('div');
             roleGroup.innerHTML = `<label class="form-label" style="display:block;margin-bottom:5px;font-weight:500">Job Position *</label>`;
-            
-            roleInput = document.createElement('select'); // Select
+            roleInput = document.createElement('select'); 
             roleInput.className = 'form-input modal-input';
-            
-            // Default placeholder
             const defaultRoleOpt = document.createElement('option');
             defaultRoleOpt.value = "";
             defaultRoleOpt.textContent = "Select Role...";
             defaultRoleOpt.disabled = true;
             defaultRoleOpt.selected = !currentPos;
             roleInput.appendChild(defaultRoleOpt);
-
-            // Populate Roles
             ROLES.forEach(role => {
                 const opt = document.createElement('option');
                 opt.value = role;
@@ -535,14 +477,11 @@ class ChatApp {
 
         body.appendChild(form);
 
-        // Footer
         const footer = document.createElement('div');
         footer.className = 'modal-footer';
-        
         const saveBtn = document.createElement('button');
         saveBtn.className = 'modal-btn modal-btn-confirm';
         saveBtn.innerHTML = 'Let\'s Get Started! 🚀';
-        
         footer.appendChild(saveBtn);
         
         modal.appendChild(header);
@@ -551,54 +490,42 @@ class ChatApp {
         overlay.appendChild(modal);
         document.body.appendChild(overlay);
 
-        // Logic
         saveBtn.onclick = async () => {
             const nameVal = nameInput.value.trim();
-            // Fallbacks for External Users
             const roleVal = isCompany ? roleInput.value : 'External User';
             const deptVal = isCompany ? deptInput.value : 'External';
 
-            // Validation
-            if (!nameVal) {
-                alert("Please enter your name");
-                return;
-            }
-            if (isCompany && (!roleVal || !deptVal)) {
-                alert("Please select your Department and Role");
-                return;
-            }
+            if (!nameVal) { alert("Please enter your name"); return; }
+            if (isCompany && (!roleVal || !deptVal)) { alert("Please select your Department and Role"); return; }
 
             saveBtn.textContent = 'Setting up...';
             saveBtn.disabled = true;
 
             const email = this.authManager.getUserEmail();
             
-        try {
-            await this.apiManager.upsertUserProfile({
-                email, 
-                name: nameVal,
-                department: deptVal,
-                position: roleVal,
-                activate: true
-            });
+            try {
+                await this.apiManager.upsertUserProfile({
+                    email, 
+                    name: nameVal,
+                    department: deptVal,
+                    position: roleVal,
+                    activate: true
+                });
 
-            // Update local state
-            this.userName = nameVal;
-            this.updateUserInfo();
-            this.uiManager.updateWelcomeMessage();
-            
-            // Persist session username and clear isNewUser flag
-            const session = this.authManager.getSession();
-            if (session) {
-              const updated = { ...session, username: nameVal, isNewUser: false };
-              localStorage.setItem('chatcdo_session', JSON.stringify(updated));
-            }
-            
-            // Cleanup
-            document.body.removeChild(overlay);
-            const t = TRANSLATIONS[this.currentLang] || TRANSLATIONS.en;
-            this.showToast(`${t.toasts.welcomeMsg} ${this.userName}!`, 'success');
-            resolve();
+                this.userName = nameVal;
+                this.updateUserInfo();
+                this.uiManager.updateWelcomeMessage();
+                
+                const session = this.authManager.getSession();
+                if (session) {
+                  const updated = { ...session, username: nameVal, isNewUser: false };
+                  localStorage.setItem('chatcdo_session', JSON.stringify(updated));
+                }
+                
+                document.body.removeChild(overlay);
+                const t = TRANSLATIONS[this.currentLang] || TRANSLATIONS.en;
+                this.showToast(`${t.toasts.welcomeMsg} ${this.userName}!`, 'success');
+                resolve();
             } catch (err) {
                 console.error(err);
                 saveBtn.textContent = 'Try Again';
@@ -615,9 +542,7 @@ class ChatApp {
     const lang = localStorage.getItem('app_language') || 'en';
     const t = TRANSLATIONS[lang] || TRANSLATIONS.en;
 
-    const message = isGuest 
-      ? t.modals.logoutMessageGuest
-      : t.modals.logoutMessageEmp;
+    const message = isGuest ? t.modals.logoutMessageGuest : t.modals.logoutMessageEmp;
     
     this.modalManager.showModal({
       title: t.modals.logoutTitle,
@@ -644,9 +569,7 @@ class ChatApp {
         const toastMessage = isGuest ? t.toasts.loggedOutGuest : t.toasts.loggedOut;
         this.showToast(toastMessage, 'success');
         
-        setTimeout(() => {
-          window.location.href = 'login.html';
-        }, 1000);
+        setTimeout(() => { window.location.href = 'login.html'; }, 1000);
       }
     });
   }
@@ -674,12 +597,8 @@ class ChatApp {
 
   stopGeneration() {
     this.apiManager.stopGeneration();
-    if (window.speechSynthesis) {
-      window.speechSynthesis.cancel();
-    }
-    if (this.chatManager && this.chatManager.stopAudio) {
-      this.chatManager.stopAudio();
-    }
+    if (window.speechSynthesis) { window.speechSynthesis.cancel(); }
+    if (this.chatManager && this.chatManager.stopAudio) { this.chatManager.stopAudio(); }
     this.uiManager.hideMicStopSpeakingMode(); 
     const typingIndicator = this.elements.chatDiv.querySelector('.message.bot:last-child .typing');
     if (typingIndicator) typingIndicator.closest('.message').remove();
@@ -793,7 +712,7 @@ class ChatApp {
       button.addEventListener('click', () => {
         this.elements.chatInput.value = question;
         this.updateCharacterCount();
-        this.isVoiceInput = false; // Explicitly disable voice mode for suggested questions
+        this.isVoiceInput = false;
         this.askQuestion();
       });
       container.appendChild(button);
@@ -803,7 +722,6 @@ class ChatApp {
     if (existingContainer) existingContainer.remove();
     this.elements.welcomeDiv.appendChild(container);
 
-    // Ensure suggestions update when viewport crosses breakpoints
     if (!this._suggestedResizeHandler) {
       let tid = null;
       this._suggestedResizeHandler = () => {
@@ -842,7 +760,7 @@ class ChatApp {
         button.addEventListener('click', () => {
           this.elements.chatInput.value = question;
           this.updateCharacterCount();
-          this.isVoiceInput = false; // Explicitly disable voice mode
+          this.isVoiceInput = false; 
           this.askQuestion();
         });
         container.appendChild(button);
@@ -853,13 +771,11 @@ class ChatApp {
   }
 
   getSuggestedCount() {
-    // Determine suggested question count based on viewport width.
-    // Minimum 4, maximum 8. Breakpoints approximate mobile/tablet/desktop.
     try {
       const w = window.innerWidth || 1024;
-      if (w <= 600) return 4;         // small/mobile
-      if (w <= 900) return 6;         // tablet / small laptop
-      return 8;                        // large screens
+      if (w <= 600) return 4;         
+      if (w <= 900) return 6;         
+      return 8;                        
     } catch (e) {
       return 4;
     }
@@ -984,12 +900,8 @@ class ChatApp {
     });
 
     newChatBtn.addEventListener("click", () => {
-      if (window.speechSynthesis) {
-        window.speechSynthesis.cancel();
-      }
-      if (this.chatManager && this.chatManager.stopAudio) {
-        this.chatManager.stopAudio();
-      }
+      if (window.speechSynthesis) { window.speechSynthesis.cancel(); }
+      if (this.chatManager && this.chatManager.stopAudio) { this.chatManager.stopAudio(); }
       this.uiManager.hideMicStopSpeakingMode(); 
       this.currentConversation = [];
       this.hasConversation = false;
@@ -1131,9 +1043,7 @@ class ChatApp {
           }
           this.modalManager.removeSidebarTooltips();
           logoContainer.style.transform = 'scale(0.95)';
-          setTimeout(() => {
-            logoContainer.style.transform = '';
-          }, 150);
+          setTimeout(() => { logoContainer.style.transform = ''; }, 150);
         }
       });
     }
@@ -1212,11 +1122,7 @@ class ChatApp {
         recognition.interimResults = true;
         recognition.maxAlternatives = 1;
 
-        // Set language based on current app language
-        const langMap = {
-          'en': 'en-US',
-          'tl': 'fil-PH'
-        };
+        const langMap = { 'en': 'en-US', 'tl': 'fil-PH' };
         recognition.lang = langMap[this.currentLang] || 'en-US';
 
         let isRecognizing = false;
@@ -1245,10 +1151,7 @@ class ChatApp {
             this.showToast(t.toasts.voiceCaptured, 'success', 2000);
             this.isVoiceInput = true; 
             
-            // Small delay to ensure UI updates before sending
-            setTimeout(() => {
-                this.askQuestion(true);
-            }, 100);
+            setTimeout(() => { this.askQuestion(true); }, 100);
           }
         };
 
@@ -1282,17 +1185,13 @@ class ChatApp {
         };
 
         const toggleMic = (e) => {
-          // Use standard click handling
-          // e.preventDefault(); // Removed to allow standard behavior unless necessary
           e.stopPropagation();
 
-          // 1. Security Check for Mobile
           if (!window.isSecureContext && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
             this.showToast("Voice input requires a secure HTTPS connection.", "error", 4000);
             return;
           }
 
-          // Update language just in case it changed
           recognition.lang = langMap[this.currentLang] || 'en-US';
 
           if (micBtn.classList.contains('speaking-mode')) {
@@ -1314,11 +1213,12 @@ class ChatApp {
             if (window.speechSynthesis) window.speechSynthesis.cancel();
             if (this.chatManager && this.chatManager.stopAudio) this.chatManager.stopAudio();
             
+            // --- FIX FOR MOBILE START ---
             try {
-                // iOS Safari fix: Abort before starting to clear any stuck state
-                recognition.abort();
+                // REMOVED: recognition.abort() to preserve user gesture
                 
                 recognition.start();
+                
                 isRecognizing = true;
                 micBtn.classList.add('recording');
                 micBtn.setAttribute('aria-label', 'Stop listening');
@@ -1330,23 +1230,21 @@ class ChatApp {
                 isRecognizing = false;
                 micBtn.classList.remove('recording');
                 
-                if (err.name === 'NotAllowedError' || err.message.includes('permission')) {
-                     this.showToast("Microphone access denied. Please check browser settings.", "error");
-                } else {
-                     this.showToast("Could not start microphone. Refresh and try again.", "error");
+                if (err.name === 'NotAllowedError') {
+                     this.showToast("Microphone access denied. Check settings.", "error");
+                } else if (err.name !== 'InvalidStateError') {
+                    // Ignore InvalidStateError (means already running)
+                    this.showToast("Could not start microphone.", "error");
                 }
             }
+            // --- FIX FOR MOBILE END ---
           }
         };
 
-        // Revert to click-only to avoid conflicts, but keep it robust
-        // Removing touchstart as it can sometimes trigger security blocks in some mobile browsers if not handled perfectly
         micBtn.onclick = toggleMic;
 
       } else {
-        // Fallback: use getUserMedia + MediaRecorder when SpeechRecognition
-        // is not available. This enables mobile recording and uploads the
-        // audio to the backend at POST /stt/transcribe (field name: file).
+        // Fallback for browsers without SpeechRecognition
         if (micBtn) {
           if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
             micBtn.style.display = 'none';
@@ -1396,7 +1294,6 @@ class ChatApp {
                     this.showToast('Could not upload audio for transcription.', 'error');
                   }
 
-                  // stop tracks
                   if (activeStream) {
                     activeStream.getTracks().forEach((t) => t.stop());
                     activeStream = null;
@@ -1436,7 +1333,6 @@ class ChatApp {
 
   toggleMobileHeaderDropdown() {
     const { mobileHeaderDropdown } = this.elements;
-    // Check if element exists before accessing classList
     if (mobileHeaderDropdown && mobileHeaderDropdown.classList.contains('show')) {
       this.closeMobileHeaderDropdown();
     } else {
