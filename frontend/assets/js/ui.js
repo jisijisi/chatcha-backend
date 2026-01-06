@@ -1194,65 +1194,6 @@ export class UIManager {
       modalBody.scrollTop = 0;
     });
   }
-
-  showRateLimitTimer(waitTimeMs) {
-    let timerDiv = document.getElementById('tts-rate-limit-timer');
-    if (!timerDiv) {
-        timerDiv = document.createElement('div');
-        timerDiv.id = 'tts-rate-limit-timer';
-        timerDiv.style.cssText = `
-            position: fixed;
-            bottom: 150px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.8);
-            color: white;
-            padding: 10px 20px;
-            border-radius: 20px;
-            z-index: 10000;
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            backdrop-filter: blur(4px);
-            transition: opacity 0.3s ease;
-        `;
-        document.body.appendChild(timerDiv);
-    }
-
-    const updateTimer = () => {
-        const remaining = Math.max(0, Math.ceil(waitTimeMs / 1000));
-        timerDiv.innerHTML = `
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="10"></circle>
-                <polyline points="12 6 12 12 16 14"></polyline>
-            </svg>
-            <span>Voice limit reached. Resuming in ${remaining}s...</span>
-        `;
-        if (remaining <= 0) {
-            this.hideRateLimitTimer();
-        } else {
-            waitTimeMs -= 1000;
-            this._rateLimitTimeout = setTimeout(updateTimer, 1000);
-        }
-    };
-
-    updateTimer();
-    timerDiv.style.opacity = '1';
-  }
-
-  hideRateLimitTimer() {
-    const timerDiv = document.getElementById('tts-rate-limit-timer');
-    if (timerDiv) {
-        timerDiv.style.opacity = '0';
-        setTimeout(() => timerDiv.remove(), 300);
-    }
-    if (this._rateLimitTimeout) {
-        clearTimeout(this._rateLimitTimeout);
-        this._rateLimitTimeout = null;
-    }
-  }
 }
 
 export function showToast(message, type, duration) {

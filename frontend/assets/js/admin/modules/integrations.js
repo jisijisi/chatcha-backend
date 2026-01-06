@@ -140,9 +140,6 @@ function setupIntegrationsView() {
       addHeaderRow();
       addParameterRow();
       
-      // Ensure visibility check on open
-      toggleSmartFillVisibility();
-
       openModal('api-integration-modal');
     });
   }
@@ -153,87 +150,6 @@ function setupIntegrationsView() {
   }
   if (addParamBtn) {
       addParamBtn.onclick = (e) => { e.preventDefault(); addParameterRow(); };
-  }
-
-  // --- NEW: SMART FILL BUTTON ---
-  const btnSmartFill = document.getElementById('btn-smart-fill');
-  const smartFillModal = document.getElementById('smart-fill-modal');
-  const smartFillClose = document.getElementById('smart-fill-close');
-  const smartFillCancel = document.getElementById('smart-fill-cancel');
-  const smartFillAnalyze = document.getElementById('smart-fill-analyze');
-
-  // Logic to toggle visibility of Smart Fill
-  const toggleSmartFillVisibility = () => {
-      const methodSelect = document.getElementById('api-method');
-      if (!methodSelect || !btnSmartFill) return;
-      
-      const val = methodSelect.value;
-      if (val === 'POST' || val === 'PUT' || val === 'DELETE') {
-          btnSmartFill.style.display = 'inline-flex';
-      } else {
-          btnSmartFill.style.display = 'none';
-      }
-  };
-
-  // Bind to Method Change
-  const apiMethodSelect = document.getElementById('api-method');
-  if (apiMethodSelect) {
-      apiMethodSelect.addEventListener('change', toggleSmartFillVisibility);
-  }
-
-  const closeSmartFillModal = () => closeModal('smart-fill-modal');
-
-  if (smartFillClose) smartFillClose.onclick = closeSmartFillModal;
-  if (smartFillCancel) smartFillCancel.onclick = closeSmartFillModal;
-
-  if (btnSmartFill) {
-      btnSmartFill.onclick = (e) => {
-          e.preventDefault();
-          const input = document.getElementById('smart-fill-input');
-          if (input) input.value = ''; // Clear previous input
-          openModal('smart-fill-modal');
-      };
-  }
-
-  if (smartFillAnalyze) {
-      smartFillAnalyze.onclick = async (e) => {
-          e.preventDefault();
-          const inputEl = document.getElementById('smart-fill-input');
-          const input = inputEl?.value?.trim();
-          
-          if (!input) {
-              showToast('Please paste some text or JSON.', 'warning');
-              return;
-          }
-          
-          setButtonLoading(smartFillAnalyze, true);
-          
-          try {
-              const response = await apiFetch('/admin/integrations/analyze-params', {
-                  method: 'POST',
-                  body: JSON.stringify({ text: input })
-              });
-              
-              if (response.success && Array.isArray(response.parameters)) {
-                  // Clear existing rows
-                  const paramCont = document.getElementById('api-params-container');
-                  if (paramCont) paramCont.innerHTML = '';
-                  
-                  // Add new rows
-                  response.parameters.forEach(p => addParameterRow(p));
-                  
-                  showToast(`✨ Auto-filled ${response.parameters.length} parameters!`, 'success');
-                  closeSmartFillModal();
-              } else {
-                  showToast('Could not detect parameters.', 'warning');
-              }
-          } catch (error) {
-              console.error(error);
-              showToast('Smart Fill failed: ' + error.message, 'error');
-          } finally {
-              setButtonLoading(smartFillAnalyze, false);
-          }
-      };
   }
 
   // Bind Auto Generate Button for API
@@ -291,7 +207,6 @@ function setupIntegrationsView() {
           const pType = row.querySelector('.param-type')?.value;
           const pIn = row.querySelector('.param-in')?.value;
           const pDesc = row.querySelector('.param-desc')?.value.trim();
-          const pExample = row.querySelector('.param-example')?.value.trim();
           
           if (pName) {
               parameters.push({
@@ -299,7 +214,6 @@ function setupIntegrationsView() {
                   type: pType,
                   in: pIn,
                   description: pDesc,
-                  exampleValue: pExample,
                   required: true
               });
           }
@@ -946,29 +860,7 @@ async function handleAnalyzeClick(btn, textarea, urlInputId) {
             }
         });
 
-        // Collect parameters for analysis
-        const parameters = [];
-        document.querySelectorAll('.param-row').forEach(row => {
-            const pName = row.querySelector('.param-name')?.value.trim();
-            const pType = row.querySelector('.param-type')?.value;
-            const pIn = row.querySelector('.param-in')?.value;
-            const pDesc = row.querySelector('.param-desc')?.value.trim();
-            const pExample = row.querySelector('.param-example')?.value.trim();
-            
-            if (pName) {
-                parameters.push({
-                    name: pName,
-                    type: pType,
-                    in: pIn,
-                    description: pDesc,
-                    exampleValue: pExample,
-                    required: true
-                });
-            }
-        });
-
-        const api_config = { method, headers, parameters };
-        payload = { url, source_type: 'external_api', api_config };
+        payload = { url, source_type: 'external_api', method, headers };
     } else if (urlInputId === 'sheet-url') {
         payload = { url, source_type: 'google_sheet' };
     } else {
@@ -1184,7 +1076,6 @@ function addParameterRow(param = {}) {
             <option value="path" ${param.in === 'path' ? 'selected' : ''}>Path</option>
             <option value="body" ${param.in === 'body' ? 'selected' : ''}>Body</option>
         </select>
-        <input type="text" class="form-control param-example" placeholder="Example" value="${param.exampleValue || ''}" style="flex:1; min-width: 80px;">
         <input type="text" class="form-control param-desc" placeholder="Description" value="${param.description || ''}" style="flex:2; min-width: 100px;">
         <button class="btn btn-danger btn-icon remove-row" style="padding: 8px 12px;">✕</button>
     `;
@@ -1458,9 +1349,6 @@ async function editLiveSource(id) {
         } catch(e) {
             console.error("Error parsing config for edit", e);
         }
-
-        // Ensure visibility check on open (edit)
-        toggleSmartFillVisibility();
 
         openModal('api-integration-modal');
     } else if (source.source_type === 'sap_bapi') {

@@ -118,6 +118,11 @@ IMPORTANT INSTRUCTIONS FOR VOICE MODE:
 4. Keep your first sentence extremely short (under 5 words) to ensure fast audio playback.
 5. Use the provided CONTEXT to answer the question. If the answer is not in the context, say you don't know politely.
 
+STRICT LANGUAGE RULE:
+- You MUST answer in English if the user speaks in English.
+- You MUST answer in Tagalog if the user speaks in Tagalog.
+- EXCEPTION: If the user explicitly asks to respond in a specific language, you MUST follow that instruction.
+
 CONTEXT:
 ${finalContext}
 `;

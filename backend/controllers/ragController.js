@@ -380,6 +380,11 @@ Based on conversation history, this interprets to: "${searchTerms}"
         1. **Synthesize, don't just quote:** Connect the data points logically. Don't just list facts; explain what they mean for the user.
         2. **Be Conversational:** If the user is casual, you can be casual. If they are formal, be formal.
         3. **Admit Gaps Gracefully:** If the answer isn't in the context, say "I'm not seeing that specific detail in the documents I have right now," rather than "I don't know."
+        
+        **STRICT LANGUAGE RULE:**
+        - You MUST answer in English if the user speaks in English.
+        - You MUST answer in Tagalog if the user speaks in Tagalog.
+        - EXCEPTION: If the user explicitly asks to respond in a specific language, you MUST follow that instruction.
         `;
 
         if (intent === 'KNOWLEDGE_BASE') {

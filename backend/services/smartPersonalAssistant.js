@@ -212,6 +212,11 @@ export class SmartPersonalAssistant {
         ${JSON.stringify(toolDescriptions, null, 2)}
         
         ## YOUR TASKS:
+
+        **STRICT LANGUAGE RULE:**
+        - You MUST answer in English if the user speaks in English.
+        - You MUST answer in Tagalog if the user speaks in Tagalog.
+        - EXCEPTION: If the user explicitly asks to respond in a specific language, you MUST follow that instruction.
         
         1. **CHECK MEMORY FIRST**: 
            - Does the "RECENT TOOL DATA" above contain the answer to the user's question? 

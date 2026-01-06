@@ -880,24 +880,6 @@ export class GoogleService {
             let statusCode;
             
             try {
-                // Separate parameters by type
-                const queryParams = [];
-                const bodyParams = {};
-                const pathParams = {};
-                
-                parameters.forEach(param => {
-                    const val = param.exampleValue || "example";
-                    if (param.in === 'path') {
-                        pathParams[param.name] = val;
-                    } else if (param.in === 'body') {
-                        bodyParams[param.name] = param.type === 'number' ? Number(val) : 
-                                               param.type === 'boolean' ? (val === 'true') : val;
-                    } else {
-                        // Default to query if not specified or 'query'
-                        queryParams.push({ name: param.name, value: val });
-                    }
-                });
-
                 const fetchOptions = {
                     method: method,
                     headers: {
@@ -906,30 +888,22 @@ export class GoogleService {
                     },
                     timeout: 60000 // Increased to 60 seconds
                 };
-
-                // Add Body for non-GET methods if body params exist
-                if (method !== 'GET' && Object.keys(bodyParams).length > 0) {
-                    fetchOptions.body = JSON.stringify(bodyParams);
-                }
                 
-                // Construct URL with Path and Query params
+                // Add query parameters if any
                 let url = endpoint;
-                
-                // Replace path params
-                Object.entries(pathParams).forEach(([key, val]) => {
-                    url = url.replace(`{${key}}`, val).replace(`:${key}`, val);
-                });
-
-                // Append Query params
-                if (queryParams.length > 0) {
-                    const qs = new URLSearchParams();
-                    queryParams.forEach(p => qs.append(p.name, p.value));
-                    url += (url.includes('?') ? '&' : '?') + qs.toString();
+                if (parameters && parameters.length > 0) {
+                    const queryParams = new URLSearchParams();
+                    parameters.forEach(param => {
+                        if (param.exampleValue) {
+                            queryParams.append(param.name, param.exampleValue);
+                        }
+                    });
+                    if (queryParams.toString()) {
+                        url += (url.includes('?') ? '&' : '?') + queryParams.toString();
+                    }
                 }
                 
                 console.log(`🌐 Making API call to: ${url}`);
-                if (fetchOptions.body) console.log(`📦 Request Body:`, fetchOptions.body);
-
                 const response = await fetch(url, fetchOptions);
                 statusCode = response.status;
                 
@@ -1031,7 +1005,6 @@ export class GoogleService {
             4. **RESPONSE STRUCTURE**: What the API returns and how to interpret it
             5. **EXAMPLE QUERIES**: Natural language questions that would trigger this API
             6. **LIMITATIONS & NOTES**: Any restrictions, rate limits, or special considerations
-            7. **REQUEST BODY STRUCTURE**: If this is a POST/PUT request, explicitly list the keys expected in the JSON body.
 
             **IMPORTANT FORMATTING RULES:**
             - Use clear, concise language
@@ -1054,18 +1027,10 @@ export class GoogleService {
 
             📋 PARAMETERS:
             [Parameter 1 Name] ([type], [required]): [Description]
-              • Location: [Query/Body/Path]
-              • Example: [example value] - [what this does]
+              Example: [example value] - [what this does]
 
             [Parameter 2 Name] ([type], [required]): [Description]
-              • Location: [Query/Body/Path]
-              • Example: [example value]
-
-            📝 REQUEST BODY (JSON Format):
-            (Only if Method is POST/PUT/PATCH. Otherwise "N/A")
-            {
-                "key_name": [type] // Description
-            }
+              Example: [example value]
 
             📊 RESPONSE FORMAT:
             The API returns [data format] containing:
@@ -1105,8 +1070,7 @@ export class GoogleService {
 
             🔍 SAMPLE API CALL:
             \`\`\`
-            ${method} ${endpoint}
-            // If POST/PUT, include body here
+            ${method} ${endpoint}${parameters.length > 0 ? '?param1=value1&param2=value2' : ''}
             \`\`\`
             ==============================================
             `;
@@ -1223,80 +1187,6 @@ export class GoogleService {
         } catch (error) {
             console.error("Analysis Error:", error);
             throw error;
-        }
-    }
-
-    // =========================================================
-    // 🧠 SMART PARAMETER DETECTION (FROM TEXT/JSON/CURL)
-    // =========================================================
-    static async detectApiParameters(text) {
-        try {
-            // Fetch active model from database
-            let activeModel = "gemini-2.0-flash-exp";
-            try {
-                const [settings] = await pool.execute("SELECT ai_model FROM system_settings WHERE id = 1");
-                if (settings.length > 0 && settings[0].ai_model) {
-                    activeModel = settings[0].ai_model;
-                }
-            } catch (e) { console.warn("Using default model, DB fetch failed:", e.message); }
-            
-            const model = genAI.getGenerativeModel({ model: activeModel });
-            
-            const prompt = `
-            You are an API Integration Helper.
-            Extract API parameters from the following text (which could be a JSON body, a cURL command, or a natural language description).
-            
-            **INPUT TEXT:**
-            ${text}
-            
-            **YOUR TASK:**
-            Identify all parameters mentioned or implied in the input.
-            Return ONLY a valid JSON array of objects.
-            
-            **OUTPUT FORMAT (JSON Array Only):**
-            [
-                {
-                    "name": "param_name",
-                    "type": "string" | "number" | "boolean",
-                    "in": "body" | "query" | "path",
-                    "description": "Short description inferred from context",
-                    "exampleValue": "example value found in text"
-                }
-            ]
-            
-            **RULES:**
-            1. If input is JSON, assume keys are parameter names and values are examples.
-            2. If input is cURL, parse '-d' or '--data' as body params, and URL query strings as query params.
-            3. If input is text, extract logical parameters.
-            4. Default "in" to "body" for POST/PUT-like context, or "query" for GET-like.
-            5. Do NOT include Markdown formatting (like \`\`\`json). Just the raw JSON array.
-            `;
-            
-            const result = await this.generateContentWithRetry(model, prompt);
-            const rawText = result.response.text();
-            
-            // Clean up Markdown if present
-            const cleanJson = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
-            
-            return JSON.parse(cleanJson);
-            
-        } catch (error) {
-            console.error("Smart Parameter Detection Error:", error);
-            // Fallback: Try basic JSON parsing if AI fails and input looks like JSON
-            try {
-                const parsed = JSON.parse(text);
-                if (typeof parsed === 'object' && parsed !== null) {
-                    return Object.entries(parsed).map(([key, val]) => ({
-                        name: key,
-                        type: typeof val,
-                        in: 'body',
-                        description: 'Auto-detected from JSON',
-                        exampleValue: String(val)
-                    }));
-                }
-            } catch (e) { /* Ignore fallback error */ }
-            
-            throw new Error("Failed to detect parameters. Please check the input format.");
         }
     }
 

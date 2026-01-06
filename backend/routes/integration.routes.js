@@ -13,7 +13,6 @@ router.get("/admin/integrations", integrationController.getLiveDataSources);
 router.put("/admin/integrations/:id", integrationController.updateLiveDataSource);
 router.delete("/admin/integrations/:id", integrationController.deleteLiveDataSource);
 router.post("/admin/integrations/analyze-sheet", integrationController.analyzeGoogleSheet);
-router.post("/admin/integrations/analyze-params", integrationController.analyzeApiParameters);
 
 // Database Integrations
 router.post("/admin/integrations/database", integrationController.linkDatabase);

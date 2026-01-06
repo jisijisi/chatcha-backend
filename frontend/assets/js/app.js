@@ -150,19 +150,6 @@ class ChatApp {
     this.uiManager.initScrollToBottom();
     this.uiManager.setupDataViewModal();
     this.initCharacterCounter();
-
-    // Listen for TTS Rate Limit Events
-    document.addEventListener('tts-rate-limit', (e) => {
-        if (this.uiManager) {
-            this.uiManager.showRateLimitTimer(e.detail.waitTime);
-        }
-    });
-
-    document.addEventListener('tts-rate-limit-resolved', () => {
-        if (this.uiManager) {
-            this.uiManager.hideRateLimitTimer();
-        }
-    });
     
     const { adjustHeight, resetHeight } = this.autoResizeTextarea();
     this.resetTextareaHeight = resetHeight; 
