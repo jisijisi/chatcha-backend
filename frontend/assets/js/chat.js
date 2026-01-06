@@ -1643,11 +1643,48 @@ export class ChatManager {
   }
 
   async speakResponse(text) {
-    const speechText = this.prepareTextForSpeech(text);
-    if (!speechText || speechText.length < 5) return;
+    const cleanText = this.prepareTextForSpeech(text);
+    if (!cleanText || cleanText.length < 1) return;
+
     this.stopAudio();
     this._ttsStop = false;
-    this.speakWithGemini(speechText);
+
+    // Improved sentence splitting that preserves all text
+    // Matches sentences ending in punctuation or the final fragment
+    const chunks = cleanText.match(/[^.!?\n]+[.!?\n]+|[^.!?\n]+$/g) || [cleanText];
+
+    // Pipelined Fetching: Start all fetches in parallel (subject to rate limit), but enqueue in order.
+    if (this.app.ttsManager && typeof this.app.ttsManager.fetchAudio === 'function') {
+      const promises = chunks.map(chunk => {
+        const trimmed = chunk.trim();
+        if (trimmed.length > 0) {
+          return this.app.ttsManager.fetchAudio(trimmed);
+        }
+        return Promise.resolve(null);
+      });
+
+      for (const p of promises) {
+        if (this._ttsStop) break;
+        try {
+          const result = await p;
+          if (this._ttsStop) break;
+          if (result) {
+            this.app.ttsManager.enqueueBuffer(result);
+          }
+        } catch (e) {
+          console.warn("TTS pipeline error:", e);
+        }
+      }
+    } else {
+      // Fallback: Sequential
+      for (const chunk of chunks) {
+        if (this._ttsStop) break;
+        const trimmedChunk = chunk.trim();
+        if (trimmedChunk.length > 0) {
+          await this.speakWithGemini(trimmedChunk);
+        }
+      }
+    }
   }
 
   splitTextIntoChunks(text) {
@@ -1755,6 +1792,9 @@ export class ChatManager {
   prepareTextForSpeech(text) {
     if (!text) return "";
     let t = String(text);
+    // Remove "Sources" section strictly
+    t = t.replace(/\n\s*---\s*\n\s*\*\*Sources\*\*[\s\S]*$/i, "");
+    t = t.replace(/\n\s*---\s*\n\s*Sources[\s\S]*$/i, "");
     t = t.replace(/^\s*(?:SOURCES_USED:|Sources?:).*$/gmi, "");
     t = t.replace(/^\s*---+\s*$/gmi, "");
     t = t.replace(/[\u{1F600}-\u{1F64F}]/gu, "");

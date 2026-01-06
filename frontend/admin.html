@@ -992,7 +992,13 @@
         <div class="form-group" style="margin-bottom: 16px;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 6px;">
               <label class="form-label" style="margin:0;">Parameters (Text-to-Param) *</label>
-              <button class="btn-xs" id="btn-add-param" type="button">+ Add Parameter</button>
+              <div style="display: flex; gap: 8px;">
+                  <button class="btn-xs btn-ai" id="btn-smart-fill" type="button">
+                      <span class="material-symbols-outlined" style="font-size: 14px;">magic_button</span>
+                      Smart Fill
+                  </button>
+                  <button class="btn-xs" id="btn-add-param" type="button">+ Add Parameter</button>
+              </div>
           </div>
           <p style="font-size:0.75rem; color:#666; margin-bottom:8px;">Define what data the AI should extract from the user's question.</p>
           <div id="api-params-container" style="background: #f8fafc; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0; min-height: 40px;">
@@ -1439,6 +1445,39 @@
       </div>
       <div class="modal-footer" id="conversion-footer" style="display: none;">
         <button class="btn btn-primary" id="conversion-close-btn" type="button">Close & View JSON</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="smart-fill-modal">
+    <div class="modal-content medium">
+      <div class="modal-header">
+        <h3 id="smart-fill-title">✨ Smart Fill Parameters</h3>
+        <button class="modal-close" id="smart-fill-close" type="button">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+            <label class="form-label">Paste Input</label>
+            <p style="font-size:0.8rem; color:#64748b; margin-bottom:10px;">
+                Paste a <strong>JSON body</strong>, <strong>cURL command</strong>, or just a <strong>description</strong> of what parameters are needed. The AI will extract them automatically.
+            </p>
+            <textarea id="smart-fill-input" class="form-control" rows="8" placeholder='Example JSON:
+{
+  "ticket_id": 12345,
+  "status": "open",
+  "priority": "high"
+}'></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="smart-fill-cancel" type="button">Cancel</button>
+        <button class="btn btn-primary" id="smart-fill-analyze" type="button">
+          <span class="btn-text" style="display: flex; align-items: center; gap: 6px;">
+            <span class="material-symbols-outlined" style="font-size: 16px;">auto_awesome</span> 
+            Analyze & Fill
+          </span>
+          <span class="btn-loading">Analyzing...</span>
+        </button>
       </div>
     </div>
   </div>

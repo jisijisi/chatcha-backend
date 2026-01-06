@@ -326,6 +326,28 @@ export const analyzeGoogleSheet = async (req, res) => {
     }
 };
 
+// 5.5 ANALYZE PARAMETERS (Smart Fill)
+export const analyzeApiParameters = async (req, res) => {
+    const { text } = req.body;
+
+    if (!text || !text.trim()) {
+        return res.status(400).json({ error: "No text provided for analysis." });
+    }
+
+    try {
+        console.log("🧠 Analyzing API parameters from text...");
+        const parameters = await GoogleService.detectApiParameters(text);
+        
+        res.json({
+            success: true,
+            parameters
+        });
+    } catch (error) {
+        console.error("❌ Parameter Analysis Failed:", error);
+        res.status(500).json({ error: "Failed to analyze parameters: " + error.message });
+    }
+};
+
 // 6. LINK DATABASE (Dedicated Handler)
 export const linkDatabase = async (req, res) => {
     // This is essentially a wrapper around linkLiveGoogleSheet but specific for clean routing

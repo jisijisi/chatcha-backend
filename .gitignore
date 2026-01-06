@@ -1,29 +1,23 @@
-# Create .gitignore file
-@"
 # Dependencies
 node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+# Build outputs
+dist/
+build/
+out/
+
 # Environment variables
 .env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env.*
 
 # Logs
-logs
+logs/
 *.log
 
-# Runtime data
-pids
-*.pid
-*.seed
-*.pid.lock
-
-# Coverage directory used by tools like istanbul
+# Coverage
 coverage/
 
 # IDE and editor files
@@ -34,22 +28,13 @@ coverage/
 
 # OS generated files
 .DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
 Thumbs.db
-"@ | Out-File -FilePath ".gitignore" -Encoding UTF8
 
-# Cache files
-# embeddings-cache.json
-# cache-info.json
-# *.cache
-# npm-debug.log*
-# .DS_Store
+# Archives
+*.zip
 
-# Client ID and Client Secret
-client_secret.json
-service-account.json
-service-account.json:1
+# Backend caches and secrets
+backend/cache-info.json
+backend/embeddings-cache.json
+backend/client_secret.json
+backend/service-account.json

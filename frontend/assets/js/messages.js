@@ -5,6 +5,26 @@ export class MessageManager {
   constructor(chatApp) {
     this.app = chatApp;
     this.followUpSuggestionsEnabled = true;
+    
+    // Listen for TTS playback completion to reset button states
+    document.addEventListener('tts-playback-ended', () => {
+        document.querySelectorAll('.speak-btn.speaking').forEach(btn => {
+            btn.classList.remove('speaking');
+            // Revert to "Read Aloud" (Play) icon
+            btn.innerHTML = `
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                  <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                </svg>
+            `;
+            // Reset tooltip
+            if (this.app && this.app.modalManager) {
+                const existingTooltip = btn.querySelector('.tooltip');
+                if (existingTooltip) existingTooltip.remove();
+                this.app.modalManager.addTooltip(btn, 'Read Aloud', 'bottom');
+            }
+        });
+    });
   }
 
   ensureActionButtons(message) {
@@ -56,8 +76,69 @@ export class MessageManager {
     
     actionsDiv.appendChild(copyBtn);
     
-    // --- Bot Actions (Expand, Regenerate) ---
+    // --- Bot Actions (Expand, Regenerate, Speak) ---
     if (isBot) {
+      // Speak Button
+      const speakBtn = document.createElement('button');
+      speakBtn.className = 'message-action-btn speak-btn';
+      speakBtn.innerHTML = `
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+          <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+        </svg>
+      `;
+      this.app.modalManager.addTooltip(speakBtn, 'Read Aloud', 'bottom');
+
+      speakBtn.addEventListener('click', (e) => {
+        // FIX: Force tooltip cleanup
+        e.currentTarget.dispatchEvent(new MouseEvent('mouseleave'));
+        document.querySelectorAll('.tooltip, .tippy-box').forEach(t => t.remove());
+
+        if (speakBtn.classList.contains('speaking')) {
+            this.app.chatManager.stopAudio();
+            speakBtn.classList.remove('speaking');
+            speakBtn.innerHTML = `
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                  <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                </svg>
+            `;
+            this.app.modalManager.addTooltip(speakBtn, 'Read Aloud', 'bottom');
+        } else {
+            // Stop any other speaking instances first
+            this.app.chatManager.stopAudio();
+            document.querySelectorAll('.speak-btn.speaking').forEach(btn => {
+                btn.classList.remove('speaking');
+                btn.innerHTML = `
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                      <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                    </svg>
+                `;
+            });
+
+            speakBtn.classList.add('speaking');
+            speakBtn.innerHTML = `
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="6" y="4" width="4" height="16"></rect>
+                  <rect x="14" y="4" width="4" height="16"></rect>
+                </svg>
+            `;
+            this.app.modalManager.addTooltip(speakBtn, 'Stop Speaking', 'bottom');
+            
+            // Clean text for speech
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = content;
+            const textToSpeak = tempDiv.textContent || tempDiv.innerText;
+            
+            this.app.chatManager.speakResponse(textToSpeak).catch(() => {
+                speakBtn.click(); // Reset if fail
+            });
+        }
+      });
+
+      actionsDiv.appendChild(speakBtn);
+
       // Expand Button
       const expandBtn = document.createElement('button');
       expandBtn.className = 'message-action-btn expand-btn';
@@ -118,7 +199,7 @@ export class MessageManager {
           <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
           <path d="M3 3v5h5"></path>
           <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"></path>
-          <path d="M16 21h5v-5"></path>
+          <path d="M16 16h5v5"></path>
         </svg>
       `;
       this.app.modalManager.addTooltip(regenerateBtn, 'Regenerate', 'bottom');
