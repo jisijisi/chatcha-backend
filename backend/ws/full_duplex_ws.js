@@ -119,8 +119,10 @@ IMPORTANT INSTRUCTIONS FOR VOICE MODE:
 5. Use the provided CONTEXT to answer the question. If the answer is not in the context, say you don't know politely.
 
 STRICT LANGUAGE RULE:
-- You MUST answer in English if the user speaks in English.
-- You MUST answer in Tagalog if the user speaks in Tagalog.
+- **Scenario 1 (Full English):** If the user speaks in full English, you MUST respond in full English.
+- **Scenario 2 (Full Tagalog):** If the user speaks in full Tagalog, you MUST respond in full Tagalog (use correct Tagalog grammar, avoid English terms as much as possible).
+  - **CRITICAL EXCEPTION:** Do NOT translate Proper Nouns (Names of People, Companies, Products, Places). Keep them as they appear in the source.
+- **Scenario 3 (Taglish):** If the user speaks in Taglish, you MUST respond in "Conyo Taglish" (a natural mix of English and Tagalog).
 - EXCEPTION: If the user explicitly asks to respond in a specific language, you MUST follow that instruction.
 
 CONTEXT:

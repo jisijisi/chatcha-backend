@@ -72,6 +72,29 @@ app.get("/health", async (req, res) => {
     });
 });
 
+// Warmup endpoint: triggers RAG initialization non-blocking
+app.get("/warmup", (req, res) => {
+    if (ragSystem.isInitialized) {
+        return res.json({ status: 'ready', rag_initialized: true });
+    }
+    if (ragSystem.initializing) {
+        return res.json({ status: 'initializing', rag_initialized: false });
+    }
+
+    // Trigger background initialization without blocking the request
+    (async () => {
+        try {
+            console.log('🟡 /warmup requested: starting background RAG init');
+            await ragSystem.initializeRAG();
+            console.log('🟢 Background RAG init complete');
+        } catch (err) {
+            console.error('❌ Background RAG init failed:', err);
+        }
+    })();
+
+    return res.status(202).json({ status: 'warming', rag_initialized: false });
+});
+
 app.get("/", (req, res) => {
     res.json({ status: "✅ ChatCHA backend running", version: "v2.0-optimized" });
 });
@@ -102,15 +125,24 @@ async function startServer() {
     try {
         const dbConnected = await testDatabaseConnection();
         if (!dbConnected) console.warn('⚠️ No DB connection');
-        
-        console.log('🚀 Initializing RAG System...');
-        await ragSystem.initializeRAG();
 
+        // Start listening immediately so the process responds quickly on cold start.
         server.listen(PORT, () => {
             console.log(`\n✅ SERVER RUNNING: http://localhost:${PORT}`);
             console.log(`📊 Mode: ${process.env.NODE_ENV || 'development'}`);
             console.log(`🔊 TTS Service: Active`);
         });
+
+        // Initialize RAG asynchronously in the background to avoid blocking startup.
+        (async () => {
+            try {
+                console.log('🚀 Initializing RAG System (background)...');
+                await ragSystem.initializeRAG();
+                console.log('✅ RAG System ready');
+            } catch (e) {
+                console.error('❌ RAG initialization failed:', e);
+            }
+        })();
     } catch (err) {
         console.error("❌ Startup failed:", err);
         process.exit(1);

@@ -321,10 +321,10 @@
 }
 
 /* Typography Colors in Bot Messages */
-.message.bot .message-content strong { color: var(--text-main); }
+.message.bot .message-content strong { color: var(--primary-color); }
 .message.bot .message-content h1, 
 .message.bot .message-content h2, 
-.message.bot .message-content h3 { color: var(--text-main); }
+.message.bot .message-content h3 { color: var(--primary-color); }
 .message.bot .message-content p { color: var(--bot-msg-text); }
 
 /* Message Actions Bar */
@@ -579,7 +579,7 @@
 
 .message-content strong {
   font-weight: 700;
-  color: var(--text-main);
+  color: var(--primary-color);
 }
 
 .message-content em {
@@ -600,7 +600,7 @@
 .message-content h3,
 .message-content h4 {
   font-weight: 700;
-  color: var(--text-main);
+  color: var(--primary-color);
   line-height: 1.4;
   margin-top: 20px;
   margin-bottom: 12px;
@@ -623,17 +623,17 @@
   font-size: 1.35rem;
   border-bottom: 1px solid var(--border-color);
   padding-bottom: 6px;
-  color: var(--text-main);
+  color: var(--primary-color);
 }
 
 .message-content h3 {
   font-size: 1.15rem;
-  color: var(--text-main);
+  color: var(--primary-color);
 }
 
 .message-content h4 {
   font-size: 1.05rem;
-  color: var(--text-muted);
+  color: var(--primary-color);
 }
 
 /* ============================================
@@ -980,7 +980,7 @@
   align-items: center;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
   position: relative;
-  overflow: hidden;
+  overflow: visible;
 }
 
 /* Hover Effect */
@@ -1042,6 +1042,40 @@
   /* Show up to 8 suggestions on large screens */
   .suggested-questions .suggested-question:nth-child(n+9) { display: none; }
 }
+
+/* Stabilize suggested questions and input area to avoid layout jumps */
+/* Reserve vertical space for the suggestions so changes won't push the input */
+#chat-container.centered {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+#chat-container.centered .suggested-questions {
+  width: 100%;
+  max-width: 900px;
+  box-sizing: border-box;
+  /* Reserve space for up to ~3 rows of suggestion pills; adjust as needed */
+  min-height: 140px; /* increased to give hover space */
+  padding-top: 10px;
+  padding-bottom: 12px;
+  overflow: visible; /* allow shadows and transforms to extend outside container */
+}
+
+/* Make the input area visually fixed near the bottom of the centered column
+   so small changes in suggestion height don't push it around. */
+#chat-container.centered .input-area {
+  position: sticky;
+  bottom: 24px;
+  z-index: 300;
+  margin-top: 12px;
+}
+
+@media (max-width: 600px) {
+  #chat-container.centered .suggested-questions { min-height: 120px; }
+  #chat-container.centered .input-area { bottom: 18px; }
+}
+
 
 /* ============================================
    SCROLL BUTTON

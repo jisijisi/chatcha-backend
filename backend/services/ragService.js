@@ -201,6 +201,7 @@ export class MultiFolderSemanticRAG {
       this.chunks = [];
       this.embeddings = [];
       this.isInitialized = false;
+      this.initializing = false;
       this.embeddingsCachePath = path.join(__dirname, '..', 'embeddings-cache.json');
       this.progressCallback = null; // NEW: Progress callback for real-time updates
       console.log("🔧 Initializing RAG with NEW DATABASE SCHEMA...");
@@ -255,6 +256,15 @@ export class MultiFolderSemanticRAG {
   }
 
   async initializeRAG() {
+      if (this.isInitialized) {
+          console.log('ℹ️ RAG already initialized - skipping');
+          return;
+      }
+      if (this.initializing) {
+          console.log('ℹ️ RAG initialization already in progress - skipping duplicate call');
+          return;
+      }
+      this.initializing = true;
       try {
           console.log("🔄 Initializing RAG system from NEW database schema...");
           this.knowledgeBase = await this.loadKnowledgeBaseFromDatabase();
@@ -294,6 +304,8 @@ export class MultiFolderSemanticRAG {
           console.error("❌ RAG initialization failed:", error);
           this.isInitialized = true;
           this.embeddings = [];
+      } finally {
+          this.initializing = false;
       }
   }
 

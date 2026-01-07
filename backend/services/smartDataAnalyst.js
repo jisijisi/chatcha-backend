@@ -327,12 +327,17 @@ export class SmartDataAnalyst {
             - Dominant Values: ${JSON.stringify(stats)}
             
             RULES:
-            1. Start with "Here is the result..." or "The value is..." (or "There are ${count}..." if it is a count).
-            2. If the result is a DATE, mention it clearly (e.g., "The latest malfunction occurred on...").
-            3. Keep it professional and concise.
-            4. Do NOT mention "null" or "undefined".
-            5. If count is 1 and it's an aggregate query, just state the value clearly.
-            6. **PREDICTIVE/PROBABILISTIC QUESTIONS**:
+            1. **STRICT LANGUAGE RULE:**
+               - **Scenario 1 (Full English):** If the user speaks in full English, you MUST respond in full English.
+               - **Scenario 2 (Full Tagalog):** If the user speaks in full Tagalog, you MUST respond in full Tagalog (use correct Tagalog grammar, avoid English terms as much as possible).
+                 - **CRITICAL EXCEPTION:** Do NOT translate Proper Nouns (Names of People, Companies, Products, Places). Keep them as they appear in the source.
+               - **Scenario 3 (Taglish):** If the user speaks in Taglish, you MUST respond in "Conyo Taglish" (a natural mix of English and Tagalog).
+            2. Start with "Here is the result..." or "The value is..." (or "There are ${count}..." if it is a count) - translated if needed.
+            3. If the result is a DATE, mention it clearly (e.g., "The latest malfunction occurred on...").
+            4. Keep it professional and concise.
+            5. Do NOT mention "null" or "undefined".
+            6. If count is 1 and it's an aggregate query, just state the value clearly.
+            7. **PREDICTIVE/PROBABILISTIC QUESTIONS**:
                - If the user query asks for "likelihood", "probability", "forecast", or "prediction":
                - **State Assumptions**: Start with "Based on historical data..." or "Assuming current trends continue..."
                - **Avoid Certainty**: Use "it is likely that...", "the estimated probability is...", "we project..."

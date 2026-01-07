@@ -304,7 +304,7 @@
 /* === NEW CHAT BUTTON === */
 #sidebar button#new-chat {
   background: #FFC700; 
-  color: var(--text-main); 
+  color: var(--primary-color); 
   border: none;
   padding: 12px 18px;
   border-radius: 10px;
@@ -321,7 +321,7 @@
   position: relative;
   overflow: hidden; 
   min-height: 44px;
-  box-shadow: 0 4px 12px rgba(255, 199, 0, 0.3);
+  box-shadow: none;
   letter-spacing: 0.3px;
   flex-shrink: 0; /* Prevent button from shrinking */
 }
@@ -345,7 +345,7 @@
 }
 
 #sidebar button#new-chat:hover {
-  box-shadow: 0 6px 16px rgba(255, 199, 0, 0.4); 
+  box-shadow: none; 
 }
 
 #sidebar button#new-chat:hover svg {
@@ -354,7 +354,7 @@
 
 #sidebar button#new-chat:active {
   transform: translateY(0px);
-  box-shadow: 0 2px 8px rgba(255, 199, 0, 0.35); 
+  box-shadow: none; 
 }
 
 /* MINIMIZED New Chat State */

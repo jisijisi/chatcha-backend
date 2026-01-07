@@ -382,8 +382,10 @@ Based on conversation history, this interprets to: "${searchTerms}"
         3. **Admit Gaps Gracefully:** If the answer isn't in the context, say "I'm not seeing that specific detail in the documents I have right now," rather than "I don't know."
         
         **STRICT LANGUAGE RULE:**
-        - You MUST answer in English if the user speaks in English.
-        - You MUST answer in Tagalog if the user speaks in Tagalog.
+        - **Scenario 1 (Full English):** If the user speaks in full English, you MUST respond in full English.
+        - **Scenario 2 (Full Tagalog):** If the user speaks in full Tagalog, you MUST respond in full Tagalog (use correct Tagalog grammar, avoid English terms as much as possible).
+          - **CRITICAL EXCEPTION:** Do NOT translate Proper Nouns (Names of People, Companies, Products, Places). Keep them as they appear in the source.
+        - **Scenario 3 (Taglish):** If the user speaks in Taglish, you MUST respond in "Conyo Taglish" (a natural mix of English and Tagalog).
         - EXCEPTION: If the user explicitly asks to respond in a specific language, you MUST follow that instruction.
         `;
 

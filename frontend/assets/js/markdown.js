@@ -363,6 +363,37 @@ export class MarkdownParser {
         html = html.replace(new RegExp(`@@COLORSPAN${i}@@`, 'g'), restoredSpan);
     });
 
+    // 12. Linkify plain URLs and angle-bracketed URLs so they become clickable
+    // Handle &lt;https://...&gt; (escaped angle brackets) and plain URLs
+    const linkify = (input) => {
+      if (!input) return input;
+      // 1) Angle-bracketed URLs, e.g. &lt;https://...&gt; or &lt;http://...&gt;
+      input = input.replace(/&lt;(https?:\/\/[^\s&>]+)&gt;/g, (m, url) => {
+        const safeUrl = url.replace(/"/g, '%22');
+        return `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer">${url}</a>`;
+      });
+
+      // 2) Plain URLs that are not already inside an anchor tag
+      // This looks for http(s):// sequences and avoids converting inside existing tags
+      input = input.replace(/(?<!\=")(?<!href=\")(?<!\">)(https?:\/\/[\w\-._~:\/?#\[\]@!$&'()*+,;=%]+)/g, (m, url) => {
+        // Avoid double-linking if already within an <a>
+        if (/^<a\s/i.test(m)) return m;
+        const safeUrl = url.replace(/"/g, '%22');
+        return `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer">${url}</a>`;
+      });
+
+      // 3) www. links without protocol
+      input = input.replace(/(?<!href=\"|href=')(?:www\.[^\s<]+)/g, (m) => {
+        const url = m.startsWith('http') ? m : `https://${m}`;
+        const safeUrl = url.replace(/"/g, '%22');
+        return `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer">${m}</a>`;
+      });
+
+      return input;
+    };
+
+    html = linkify(html);
+
     return html;
   }
 
