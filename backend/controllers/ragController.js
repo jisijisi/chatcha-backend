@@ -245,13 +245,13 @@ export const askQuestion = async (req, res) => {
         if (intent === 'LIVE_DATA') {
             try {
                 const dataAnalyst = new SmartDataAnalyst();
-                
+
                 // Extract last bot response for context merging
                 const lastHistoryItem = history.length > 0 ? history[history.length - 1] : null;
                 const lastBotResponse = lastHistoryItem ? (lastHistoryItem.answer || lastHistoryItem.content) : null;
 
                 const analystResult = await dataAnalyst.processQuery(prompt, history, lastBotResponse, activeSessionId, userEmail);
-                
+
                 return res.json({
                     answer: analystResult.text,
                     intent: intent,

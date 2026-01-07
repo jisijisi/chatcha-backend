@@ -2,6 +2,11 @@
 import { pool } from '../config/database.js';
 import { databaseCacheManager } from '../services/ragService.js';
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import * as xlsx from 'xlsx';
+import mammoth from 'mammoth';
+import AdmZip from 'adm-zip';
+import { parseStringPromise } from 'xml2js';
+import path from 'path';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
@@ -22,8 +27,63 @@ export const convertFileToJson = async (req, res) => {
 
     console.log("📄 Converting file:", req.file.originalname, "Size:", req.file.size, "Type:", req.file.mimetype);
 
-    const fileBase64 = req.file.buffer.toString("base64");
+    const originalName = req.file.originalname || '';
     const mimeType = req.file.mimetype;
+    const ext = path.extname(originalName).toLowerCase();
+
+    let plainTextContent = null;
+
+    try {
+      if (ext === '.docx' || ext === '.doc') {
+        const result = await mammoth.extractRawText({ buffer: req.file.buffer });
+        plainTextContent = (result && result.value) ? result.value : null;
+      } else if (ext === '.xlsx' || ext === '.xls' || ext === '.csv') {
+        try {
+          const workbook = xlsx.read(req.file.buffer, { type: 'buffer' });
+          const parts = [];
+          workbook.SheetNames.forEach((sheetName) => {
+            const sheet = workbook.Sheets[sheetName];
+            const rows = xlsx.utils.sheet_to_json(sheet, { header: 1 });
+            parts.push(`Sheet: ${sheetName}`);
+            rows.forEach((row) => {
+              parts.push(row.map((c) => (c === undefined || c === null) ? '' : String(c)).join('\t'));
+            });
+            parts.push('\n');
+          });
+          plainTextContent = parts.join('\n');
+        } catch (e) {
+          plainTextContent = null;
+        }
+      } else if (ext === '.pptx' || ext === '.ppt') {
+        try {
+          const zip = new AdmZip(req.file.buffer);
+          const entries = zip.getEntries();
+          const slideTexts = [];
+          for (const entry of entries) {
+            const name = entry.entryName;
+            if (/^ppt\/slides\/slide[0-9]+\.xml$/.test(name)) {
+              const xml = entry.getData().toString('utf8');
+              // quick extraction of <a:t> nodes
+              const re = /<a:t[^>]*>([^<]*)<\/a:t>/g;
+              let m;
+              const buf = [];
+              while ((m = re.exec(xml)) !== null) {
+                buf.push(m[1]);
+              }
+              if (buf.length) slideTexts.push(buf.join(' '));
+            }
+          }
+          plainTextContent = slideTexts.join('\n\n');
+        } catch (e) {
+          plainTextContent = null;
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to pre-extract office content:', e.message || e);
+      plainTextContent = null;
+    }
+
+    const fileBase64 = req.file.buffer.toString("base64");
 
     const prompt = `
     Analyze this document and convert it into a structured JSON format optimized for knowledge retrieval.
@@ -77,15 +137,21 @@ export const convertFileToJson = async (req, res) => {
         }
       });
 
-      const result = await model.generateContent([
-        {
-          inlineData: {
-            mimeType: mimeType,
-            data: fileBase64
-          }
-        },
-        prompt
-      ]);
+      let result;
+      if (plainTextContent && plainTextContent.trim() !== '') {
+        const promptWithContent = `${prompt}\n\n---DOCUMENT_CONTENT_START---\n${plainTextContent}`;
+        result = await model.generateContent([promptWithContent]);
+      } else {
+        result = await model.generateContent([
+          {
+            inlineData: {
+              mimeType: mimeType,
+              data: fileBase64
+            }
+          },
+          prompt
+        ]);
+      }
 
       const response = result.response;
       let jsonText = response.text();

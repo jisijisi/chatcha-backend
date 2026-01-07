@@ -114,6 +114,7 @@
         <path fill="#FFC700" d="M0,128 C480,128 480,64 960,64 C1440,64 1440,128 1440,128 L1440,0 L0,0 Z"></path>
       </svg>
   </div>
+  
   <div id="sidebar-overlay" aria-hidden="true"></div>
   <div id="history-dropdown" class="history-dropdown" aria-hidden="true">
     <div class="history-dropdown-header"><h3>Previous Chats</h3></div>
@@ -312,10 +313,10 @@
             <span class="ai-badge">Gemini Powered</span>
           </div>
           <div class="upload-controls">
-            <input type="file" id="kb-file-upload" class="form-input" accept=".pdf,.docx,.txt,.csv,.png,.jpg" style="flex:1;">
+            <input type="file" id="kb-file-upload" class="form-input" accept=".pdf,.doc,.docx,.txt,.csv,.xlsx,.xls,.ppt,.pptx,.png,.jpg" style="flex:1;">
             <button class="settings-btn" id="btn-kb-convert" type="button">Convert to JSON</button>
           </div>
-          <div class="upload-hint" style="margin-top:8px; font-size:0.8rem; color:var(--text-muted);">Upload a PDF, Image, or Document. Gemini will analyze it and extract the content into structured JSON below.</div>
+          <div class="upload-hint" style="margin-top:8px; font-size:0.8rem; color:var(--text-muted);">Upload Word, Excel, PowerPoint, PDF, or image files. Gemini analyzes and converts content into structured JSON.</div>
         </div>
         <div class="form-group">
           <label class="form-label">Document Title *</label>
