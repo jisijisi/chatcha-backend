@@ -21,7 +21,7 @@ const VIEW_CONFIG = {
     })
   },
   users: {
-    title: 'Employee Management',
+    title: 'User Management',
     loader: () => import('../modules/user-management.js').then(module => {
       module.setupUserManagement();
       return module.loadUsers();

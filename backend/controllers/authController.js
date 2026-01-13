@@ -1,4 +1,4 @@
-// backend/controllers/authController.js
+
 import { pool } from '../config/database.js';
 import { UserGoogleService } from '../services/userGoogleService.js';
 import { SystemEmailService } from '../services/systemEmailService.js';
@@ -145,27 +145,31 @@ export const verifyOtp = async (req, res) => {
         
         // Check if user exists
         const [existing] = await pool.execute(
-            `SELECT id, name, is_active FROM employees WHERE email = ?`,
+            `SELECT id, name, is_active, department FROM employees WHERE email = ?`,
             [email]
         );
         
         let userId = existing.length ? existing[0].id : null;
         let userName = existing.length ? existing[0].name : null;
         let isNewUser = false;
-        
-        const companyDomain = process.env.COMPANY_EMAIL_DOMAIN || 'cdo.com.ph';
-        const isCompanyEmail = email.toLowerCase().endsWith(`@${companyDomain}`);
+        let userType = 'external'; // Default to external until verified
+
+        if (existing.length > 0) {
+            // Determine type based on DB record
+            if (existing[0].department && existing[0].department !== 'External') {
+                userType = 'employee';
+            }
+        }
         
         if (!userId) {
             // Create New User
             isNewUser = true;
             userName = email.split('@')[0]; // Default name
             
-            // Set defaults: 
-            // Company users get NULL (to force onboarding dropdowns). 
-            // External users get 'External'/'External User' so they are distinct from 'Guest' (anonymous).
-            const defaultDept = isCompanyEmail ? null : 'External'; 
-            const defaultPos = isCompanyEmail ? null : 'External User';
+            // Set defaults to NULL to trigger Onboarding Modal
+            // We do NOT assume employee status based on email anymore
+            const defaultDept = null; 
+            const defaultPos = null;
 
             const [result] = await pool.execute(
                 `INSERT INTO employees (name, email, department, position, is_active, created_at, updated_at) 
@@ -174,39 +178,24 @@ export const verifyOtp = async (req, res) => {
             );
             userId = result.insertId;
             
-            // Default Permissions based on User Type
-            if (isCompanyEmail) {
-                // Employee: All Knowledge Base Categories (excluding Live Data Tools & KB Settings)
-                const [allCategories] = await pool.execute('SELECT id FROM knowledge_categories');
-                if (allCategories.length > 0) {
-                    const values = allCategories.map(cat => [userId, cat.id, null, null, 'read', null]);
-                    const placeholders = values.map(() => '(?, ?, ?, ?, ?, ?)').join(', ');
-                    const flatValues = values.flat();
-                    await pool.execute(
-                        `INSERT INTO employee_access_permissions (employee_id, category_id, subcategory_id, source_id, access_level, granted_by)
-                         VALUES ${placeholders}`,
-                        flatValues
-                    );
-                }
-            } else {
-                // External: Only 'company-general' and 'wikipedia'
-                const [categories] = await pool.execute(
-                    `SELECT id FROM knowledge_categories 
-                     WHERE LOWER(name) LIKE 'company-general%' 
-                        OR LOWER(name) LIKE 'company general%'
-                        OR LOWER(name) LIKE 'wikipedia%' 
-                        OR LOWER(name) LIKE 'wikepedia%'`
+            // Default Permissions: EXTERNAL (Safe Default)
+            // They will be upgraded to Employee permissions if they validate their ID in the modal
+            const [categories] = await pool.execute(
+                `SELECT id FROM knowledge_categories 
+                 WHERE LOWER(name) LIKE 'company-general%' 
+                    OR LOWER(name) LIKE 'company general%'
+                    OR LOWER(name) LIKE 'wikipedia%' 
+                    OR LOWER(name) LIKE 'wikepedia%'`
+            );
+            if (categories.length > 0) {
+                const values = categories.map(cat => [userId, cat.id, null, null, 'read', null]);
+                const placeholders = values.map(() => '(?, ?, ?, ?, ?, ?)').join(', ');
+                const flatValues = values.flat();
+                await pool.execute(
+                    `INSERT INTO employee_access_permissions (employee_id, category_id, subcategory_id, source_id, access_level, granted_by)
+                     VALUES ${placeholders}`,
+                    flatValues
                 );
-                if (categories.length > 0) {
-                    const values = categories.map(cat => [userId, cat.id, null, null, 'read', null]);
-                    const placeholders = values.map(() => '(?, ?, ?, ?, ?, ?)').join(', ');
-                    const flatValues = values.flat();
-                    await pool.execute(
-                        `INSERT INTO employee_access_permissions (employee_id, category_id, subcategory_id, source_id, access_level, granted_by)
-                         VALUES ${placeholders}`,
-                        flatValues
-                    );
-                }
             }
         } else if (existing[0].is_active === 0) {
             await pool.execute(
@@ -214,9 +203,6 @@ export const verifyOtp = async (req, res) => {
                 [userId]
             );
         }
-        
-        // Return type: 'employee' for CDO, 'external' for others (Gmail/Yahoo), 'guest' only for anonymous
-        const userType = isCompanyEmail ? 'employee' : 'external';
         
         res.json({ 
             success: true, 
@@ -227,11 +213,129 @@ export const verifyOtp = async (req, res) => {
                 name: userName,
                 type: userType 
             }, 
-            is_new_user: isNewUser, 
-            is_company_email: isCompanyEmail 
+            is_new_user: isNewUser
         });
     } catch (error) {
         console.error(error);
         res.status(500).json({ success: false, message: "Verification failed" });
+    }
+};
+
+export const validateEmployee = async (req, res) => {
+    try {
+        const { emp_id } = req.body;
+        console.log(`🔍 Validating Employee ID: ${emp_id}`);
+        
+        if (!emp_id) {
+            console.warn('⚠️ Validation failed: No Employee ID provided');
+            return res.status(400).json({ valid: false, message: "Employee ID is required" });
+        }
+
+        // Query the employees_db.employees table (External Database)
+        console.log('📝 Executing DB Query: SELECT ... FROM employees_db.employees');
+        const [rows] = await pool.execute(
+            "SELECT emp_id, full_name, department, position FROM employees_db.employees WHERE emp_id = ?",
+            [emp_id]
+        );
+        console.log(`✅ DB Query result: ${rows.length} rows found`);
+
+        if (rows.length > 0) {
+            const employee = rows[0];
+            console.log('👤 Employee found:', employee.full_name);
+            return res.json({ 
+                valid: true, 
+                employee: {
+                    emp_id: employee.emp_id,
+                    full_name: employee.full_name,
+                    department: employee.department,
+                    position: employee.position
+                }
+            });
+        } else {
+            console.warn(`❌ Employee ID ${emp_id} not found in database`);
+            return res.json({ valid: false, message: "Employee ID not found" });
+        }
+    } catch (error) {
+        console.error("❌ Employee Validation Error:", error);
+        return res.status(500).json({ valid: false, message: "Validation error", error: error.message });
+    }
+};
+
+/**
+ * Register Verified Employee
+ * Promotes a user to 'Employee' status after successful ID validation
+ */
+export const registerEmployee = async (req, res) => {
+    const userEmail = req.header('X-User-Email');
+    const { emp_id } = req.body;
+
+    if (!userEmail || !emp_id) {
+        return res.status(400).json({ success: false, message: "Missing required fields" });
+    }
+
+    const conn = await pool.getConnection();
+    try {
+        await conn.beginTransaction();
+
+        // 1. Verify User Exists (Allow for creation if not found, but it should exist from login)
+        const [users] = await conn.execute("SELECT id FROM employees WHERE email = ?", [userEmail]);
+        let userId;
+
+        if (users.length === 0) {
+            console.log(`⚠️ User not found during registration: ${userEmail}. Creating now...`);
+            // Create user just in case they were deleted or session is stale
+            const [result] = await conn.execute(
+                `INSERT INTO employees (name, email, department, position, is_active, created_at, updated_at) 
+                 VALUES (?, ?, NULL, NULL, TRUE, NOW(), NOW())`,
+                [userEmail.split('@')[0], userEmail]
+            );
+            userId = result.insertId;
+        } else {
+            userId = users[0].id;
+        }
+
+        // 2. Verify Employee ID again (Security)
+        const [empRows] = await conn.execute(
+            "SELECT full_name, department, position FROM employees_db.employees WHERE emp_id = ?",
+            [emp_id]
+        );
+        
+        if (empRows.length === 0) {
+            throw new Error("Invalid Employee ID");
+        }
+        const employeeData = empRows[0];
+
+        // 3. Update User Profile
+        await conn.execute(
+            "UPDATE employees SET name = ?, department = ?, position = ?, updated_at = NOW() WHERE id = ?",
+            [employeeData.full_name, employeeData.department, employeeData.position, userId]
+        );
+
+        // 4. Update Permissions (Upgrade to Full Access)
+        // First, clear existing (likely External) permissions
+        await conn.execute("DELETE FROM employee_access_permissions WHERE employee_id = ?", [userId]);
+
+        // Then, grant all permissions
+        const [allCategories] = await conn.execute('SELECT id FROM knowledge_categories');
+        if (allCategories.length > 0) {
+            const values = allCategories.map(cat => [userId, cat.id, null, null, 'read', null]);
+            const placeholders = values.map(() => '(?, ?, ?, ?, ?, ?)').join(', ');
+            const flatValues = values.flat();
+            await conn.execute(
+                `INSERT INTO employee_access_permissions (employee_id, category_id, subcategory_id, source_id, access_level, granted_by)
+                 VALUES ${placeholders}`,
+                flatValues
+            );
+        }
+
+        await conn.commit();
+        res.json({ success: true, message: "Employee verified and registered successfully" });
+
+    } catch (error) {
+        await conn.rollback();
+        console.error("Register Employee Error:", error);
+        res.status(500).json({ success: false, message: error.message || "Registration failed" });
+    } finally {
+        conn.release();
     }
 };

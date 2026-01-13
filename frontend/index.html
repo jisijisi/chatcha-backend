@@ -39,6 +39,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
+
 </head>
 <body>
   <div id="global-loader">
@@ -93,7 +94,7 @@
         <p>I'm Cindy, your company AI assistant. How can I help you today?</p>
       </section>
       <div id="chat" role="log" aria-live="polite" aria-atomic="false"></div>
-      <form class="input-area" role="search">
+      <form class="input-area" role="search" autocomplete="off">
         <label for="question" class="sr-only">Ask Cindy</label>
         <div class="input-wrapper">
           <textarea id="question" rows="1" placeholder="Ask Cindy here" aria-label="Ask Cindy here" autocomplete="off" maxlength="500"></textarea>
@@ -123,7 +124,7 @@
   <div id="modal-overlay" class="modal-overlay" aria-hidden="true">
     <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
       <div class="modal-header"><h3 id="modal-title"></h3><button class="modal-close" aria-label="Close modal">&times;</button></div>
-      <div class="modal-body"><p id="modal-message"></p><input type="text" id="modal-input" class="modal-input" style="display: none;"></div>
+      <div class="modal-body"><p id="modal-message"></p><input type="text" id="modal-input" class="modal-input" style="display: none;" autocomplete="off"></div>
       <div class="modal-footer"><button id="modal-cancel" class="modal-btn modal-btn-cancel">Cancel</button><button id="modal-confirm" class="modal-btn modal-btn-confirm">Confirm</button></div>
     </div>
   </div>
@@ -146,10 +147,24 @@
     </div>
   </div>
   <header id="mobile-header" class="mobile-header" aria-hidden="true">
-    <button id="mobile-header-toggle" class="mobile-menu-toggle in-header" aria-label="Open menu" aria-expanded="false"><span class="hamburger"><span></span><span></span><span></span></span></button>
+    <button id="mobile-header-toggle" class="mobile-menu-toggle in-header" aria-label="Open menu" aria-expanded="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="3" y1="12" x2="21" y2="12"></line>
+        <line x1="3" y1="6" x2="21" y2="6"></line>
+        <line x1="3" y1="18" x2="21" y2="18"></line>
+      </svg>
+    </button>
     <div class="mobile-header-center">
-      <img src="assets/images/logo.png" alt="ChatCDO Logo" class="mobile-header-logo" id="mobile-header-logo">
-      <button id="mobile-header-title" class="mobile-header-title" aria-label="Chat options"><span class="title-text"></span><svg class="dropdown-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg></button>
+      <div id="mobile-branding" class="mobile-branding">
+        <img src="assets/images/logo.png" alt="ChatCDO Logo" class="mobile-header-logo">
+        <span class="brand-text">ChatCDO</span>
+      </div>
+      <button id="mobile-header-title" class="mobile-header-title" aria-label="Chat options" style="display: none;">
+        <span class="title-text"></span>
+        <svg class="dropdown-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="6 9 12 15 18 9"></polyline>
+        </svg>
+      </button>
     </div>
     <div id="mobile-header-dropdown" class="mobile-header-dropdown" role="menu">
       <button class="dropdown-option" id="mobile-rename-option" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg> Rename</button>
@@ -200,10 +215,10 @@
           <div class="settings-panel" id="settings-profile">
             <div class="settings-section">
               <div class="settings-section-title">Profile Information</div>
-              <form class="profile-form" id="profile-form">
-                <div class="form-group"><label class="form-label">Display Name</label><input type="text" class="form-input" id="profile-display-name" placeholder="Enter your display name"></div>
-                <div class="form-group"><label class="form-label">Email Address</label><input type="email" class="form-input" id="profile-email" disabled></div>
-                <div class="form-group"><label class="form-label">Phone Number</label><input type="tel" class="form-input" id="profile-phone" placeholder="Enter your phone number"></div>
+              <form class="profile-form" id="profile-form" autocomplete="off">
+                <div class="form-group"><label class="form-label">Display Name</label><input type="text" class="form-input" id="profile-display-name" placeholder="Enter your display name" autocomplete="off"></div>
+                <div class="form-group"><label class="form-label">Email Address</label><input type="email" class="form-input" id="profile-email" disabled autocomplete="off"></div>
+                <div class="form-group"><label class="form-label">Phone Number</label><input type="tel" class="form-input" id="profile-phone" placeholder="Enter your phone number" autocomplete="off"></div>
                 <div class="form-actions"><button type="button" class="settings-btn settings-btn-outline-danger" id="profile-cancel-btn">Discard</button><button type="submit" class="settings-btn settings-btn-primary">Save Changes</button></div>
               </form>
             </div>
@@ -247,53 +262,109 @@
     </div>
   </div>
 
-  <div class="modal-overlay" id="kb-full-modal-overlay">
-    <div class="modal full-screen">
-      <div class="modal-header">
-        <h3 id="kb-full-title">Knowledge Directory</h3>
-        <div class="modal-actions"><button class="modal-close" id="kb-full-close">✕</button></div>
+  <div class="modal-overlay kd-overlay" id="kb-full-modal-overlay" style="display:none;">
+    <div class="kd-modal">
+      <!-- Header -->
+      <div class="modal-header" style="background: var(--bg-card); padding: 20px 24px; border-bottom: 1px solid var(--border-color);">
+        <div style="display: flex; flex-direction: column;">
+          <h3 id="kb-full-title" style="margin:0; font-size: 1.25rem; font-weight: 600; color: var(--text-main);">KNOWLEDGE DIRECTORY</h3>
+          <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: normal; margin-top: 4px;">Manage documents &amp; subcategories</span>
+        </div>
+        <div style="display: flex; gap: 10px;">
+          <button class="settings-btn" id="kb-refresh-btn">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;"><path d="M23 4v6h-6"></path><path d="M1 20v-6h6"></path><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+            Refresh List
+          </button>
+          <button class="settings-btn settings-btn-outline-danger" id="kb-full-close">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            Close
+          </button>
+        </div>
       </div>
-      <div class="modal-body" id="kb-full-body">
+
+      <!-- Body -->
+      <div class="modal-body" style="padding: 24px; display: flex; flex-direction: column; overflow: hidden; background: var(--bg-card); flex: 1;">
+        
+        <!-- Tabs -->
         <div class="kb-tab-nav">
           <button class="kb-tab-btn active" data-kb-tab="docs">Documents</button>
           <button class="kb-tab-btn" data-kb-tab="subcats">Subcategories</button>
         </div>
-        <div id="kb-tab-docs" class="kb-tab-content active">
-          <div class="kb-topbar">
-            <div class="kb-top-actions">
-              <input type="text" id="kb-search-input" class="form-input" placeholder="Search documents...">
-              <button class="settings-btn settings-btn-primary" id="btn-add-doc">+ Add Document</button>
-              <button class="settings-btn" id="kb-refresh-btn" type="button"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg> Refresh List</button>
+
+        <!-- Toolbar -->
+        <div class="kb-toolbar">
+          <div style="display: flex; gap: 10px; flex: 1; align-items: center; flex-wrap: wrap;">
+            <div class="search-wrapper" style="position: relative; max-width: 320px; width: 100%;">
+              <input class="form-input" id="kb-search-input" placeholder="Search documents..." type="search" style="width: 100%; padding-left: 36px;">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); pointer-events: none;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
             </div>
-            <div class="kb-status-actions">
-              <div class="kb-status-indicator"><span class="status-dot"></span><span class="status-text">Checking...</span></div>
-              <div class="kb-status-meta"><span><strong>...</strong> Files</span><span><strong>...</strong> Chunks</span></div>
-              <button class="settings-btn settings-btn-danger" id="btn-regen-cache" type="button">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg> Regenerate Cache
-              </button>
-            </div>
+            <button class="settings-btn settings-btn-primary" id="btn-add-doc">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+              Add Document
+            </button>
+            <button class="settings-btn settings-btn-primary" id="btn-add-subcat" style="display:none;">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+              Add Subcategory
+            </button>
           </div>
-          <div class="kb-table-container">
+          <div style="display: flex; gap: 16px; align-items: center; flex-wrap: wrap;">
+            <div class="kb-status-meta">
+               <!-- Placeholder for stats, populated by JS -->
+               <span><strong>...</strong> Files</span>
+               <span><strong>...</strong> Chunks</span>
+            </div>
+            <button class="settings-btn" id="btn-regen-cache">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;"><path d="M23 4v6h-6"></path><path d="M1 20v-6h6"></path><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+              Regenerate Cache
+            </button>
+          </div>
+        </div>
+
+        <!-- Table for Docs (Default Active) -->
+        <div id="kb-tab-docs" class="kb-tab-content active" style="flex: 1; overflow: hidden; display: flex; flex-direction: column;">
+          <div class="kb-table-container" style="flex: 1; overflow-y: auto;">
             <table class="kb-table">
-              <thead><tr><th>Title</th><th>Category &rarr; Subcategory</th><th>Status</th><th>Actions</th></tr></thead>
-              <tbody id="kb-docs-list-body"><tr><td colspan="4" class="kb-loading">Loading...</td></tr></tbody>
+              <thead>
+              <tr>
+                <th style="width: 32%">Title</th>
+                <th style="width: 34%">Category → Subcategory</th>
+                <th style="width: 16%">Status</th>
+                <th style="width: 18%; text-align:right;">Actions</th>
+              </tr>
+              </thead>
+              <tbody id="kb-docs-list-body">
+                <tr><td colspan="4" class="kb-loading">Loading...</td></tr>
+              </tbody>
             </table>
           </div>
         </div>
-        <div id="kb-tab-subcats" class="kb-tab-content">
-          <div class="kb-toolbar">
-            <div style="flex:1;"></div>
-            <button class="settings-btn settings-btn-primary" id="btn-add-subcat">+ Add Subcategory</button>
-          </div>
-          <div class="kb-table-container">
+
+        <!-- Table for Subcats (Hidden) -->
+        <div id="kb-tab-subcats" class="kb-tab-content" style="flex: 1; overflow: hidden; display: flex; flex-direction: column; display:none;">
+          <div class="kb-table-container" style="flex: 1; overflow-y: auto;">
             <table class="kb-table">
-              <thead><tr><th>Subcategory Name</th><th>Parent Category</th><th>Actions</th></tr></thead>
-              <tbody id="kb-subcats-list-body"><tr><td colspan="3" class="kb-loading">Loading...</td></tr></tbody>
+              <thead>
+              <tr>
+                <th style="width: 25%">Subcategory Name</th>
+                <th style="width: 25%">Parent Category</th>
+                <th style="width: 35%">Description</th>
+                <th style="width: 15%; text-align:right;">Actions</th>
+              </tr>
+              </thead>
+              <tbody id="kb-subcats-list-body">
+                <tr><td colspan="4" class="kb-loading">Loading...</td></tr>
+              </tbody>
             </table>
           </div>
         </div>
+
       </div>
-      <div class="modal-footer"><button class="btn btn-secondary" id="kb-full-close-btn">Close</button></div>
+
+      <!-- Footer -->
+      <div class="modal-footer" style="padding: 12px 24px; border-top: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; background: var(--bg-secondary);">
+        <div class="kb-status-indicator"><span class="status-dot"></span><span class="status-text">Checking...</span></div>
+        <span style="color: var(--text-muted); font-size: 0.85rem;">Press ESC to close</span>
+      </div>
     </div>
   </div>
 
@@ -320,7 +391,7 @@
         </div>
         <div class="form-group">
           <label class="form-label">Document Title *</label>
-          <input type="text" id="kb-doc-title" class="form-input" placeholder="Enter document title">
+          <input type="text" id="kb-doc-title" class="form-input" placeholder="Enter document title" autocomplete="off">
         </div>
         <div class="form-row" style="display:flex; gap:16px;">
           <div class="form-group" style="flex:1;">
@@ -443,7 +514,7 @@
       <div class="modal-body">
         <div class="form-group">
           <label class="form-label">Subcategory Name</label>
-          <input type="text" id="kb-subcat-name" class="form-input">
+          <input type="text" id="kb-subcat-name" class="form-input" autocomplete="off">
         </div>
         <div class="form-group">
           <label class="form-label">Parent Category</label>

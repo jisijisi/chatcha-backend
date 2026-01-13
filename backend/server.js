@@ -25,6 +25,7 @@ import adminRoutes from "./routes/admin.routes.js";
 import integrationRoutes from "./routes/integration.routes.js";
 import ragRoutes from "./routes/rag.routes.js";
 import ttsRoutes from "./routes/tts.routes.js";
+import notificationRoutes from "./routes/notification.routes.js";
 import attachFullDuplexWS from "./ws/full_duplex_ws.js";
  
 import * as userController from "./controllers/userController.js";
@@ -109,6 +110,7 @@ app.use(adminRoutes);
 app.use(integrationRoutes);
 app.use(ragRoutes);
 app.use("/tts", ttsRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 // User Profile Routes
 app.get("/api/user/profile", userController.getUserProfile);
@@ -120,7 +122,39 @@ app.delete("/api/user/account", userController.deleteAccount);
 app.use(notFoundHandler);
 app.use(errorHandler);
 
-// 6. Start Server
+// 6. Keep-Alive Mechanism (Prevent Cold Start)
+function startKeepAlive() {
+    // Ping every 14 minutes (Render sleeps after 15m of inactivity)
+    const intervalMs = 14 * 60 * 1000; 
+    
+    // Use Render's external URL if available, otherwise localhost
+    const backendUrl = process.env.RENDER_EXTERNAL_URL || `http://localhost:${PORT}`;
+    const targetUrl = `${backendUrl}/health`;
+
+    console.log(`⏰ Keep-alive service started: Pinging ${targetUrl} every 14 minutes`);
+
+    // Initial ping after 10 seconds to verify
+    setTimeout(() => performPing(targetUrl), 10000);
+
+    // Regular interval
+    setInterval(() => performPing(targetUrl), intervalMs);
+}
+
+async function performPing(url) {
+    try {
+        const response = await fetch(url);
+        if (response.ok) {
+            // Keep logs clean, maybe only log if verbose or just a small heartbeat
+            // console.log(`💓 Keep-alive ping successful: ${response.status}`);
+        } else {
+            console.warn(`⚠️ Keep-alive ping returned status: ${response.status}`);
+        }
+    } catch (error) {
+        console.error('❌ Keep-alive ping failed:', error.message);
+    }
+}
+
+// 7. Start Server
 async function startServer() {
     try {
         const dbConnected = await testDatabaseConnection();
@@ -131,6 +165,9 @@ async function startServer() {
             console.log(`\n✅ SERVER RUNNING: http://localhost:${PORT}`);
             console.log(`📊 Mode: ${process.env.NODE_ENV || 'development'}`);
             console.log(`🔊 TTS Service: Active`);
+            
+            // Start the self-ping mechanism
+            startKeepAlive();
         });
 
         // Initialize RAG asynchronously in the background to avoid blocking startup.

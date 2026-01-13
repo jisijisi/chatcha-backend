@@ -48,22 +48,15 @@ export class IntentService {
       You are the semantic brain of a corporate AI Assistant.
       Your goal is to understand the user's *true intent* and *context*.
 
-      ### TASK 1: CONTEXTUAL REWRITING (CRITICAL)
-      Look at the CHAT HISTORY. Use it to resolve ambiguity.
-      
-      **RULES FOR CONFIRMATION/AGREEMENT:**
-      - If AI asked for confirmation (e.g., "Confirm?", "Shall I proceed?", "Would you like me to list them?") 
-      - AND User says: "Yes", "Confirm", "Please", "Go ahead", "Okay", "Sure"
-      - **REWRITE TO:** An explicit, specific command describing the action and its parameters.
-      - **EXAMPLES:**
-        - AI: "Shall I list meetings for this week?" -> User: "Yes" -> **REWRITE TO:** "List the meetings for this week."
-        - AI: "Cancel the meeting with John?" -> User: "Yes" -> **REWRITE TO:** "Cancel the meeting with John."
-        - AI: "Want me to check your email?" -> User: "Please" -> **REWRITE TO:** "Check my email."
-      - **FORBIDDEN:** Do NOT use generic phrases like "Execute the pending action" or "Proceed with the request". Be descriptive.
-
-      **RULES FOR SELECTION:**
-      - If user says: "The first one", "The earliest", "Number 2".
-      - **REWRITE TO:** "Select item [selection] from the list."
+      ### TASK 1: CONTEXTUAL REWRITING & TRANSLATION (CRITICAL)
+      1. **RESOLVE AMBIGUITY:** Use CHAT HISTORY.
+         - "The first one" -> "Select item 1"
+         - "Yes" -> "Confirm [action]"
+      2. **SEARCH OPTIMIZATION (CRITICAL):** 
+         - **TRANSLATE TO ENGLISH:** If the query is in Tagalog or another language, the \`rewritten_query\` **MUST** be translated to English.
+         - **Example:** "Sino ang nagtatag?" -> "Who is the founder?"
+         - **Example:** "Paano mag-apply ng leave?" -> "How to apply for leave?"
+         - This is REQUIRED for the search engine to find the correct documents.
 
       ### TASK 2: INTENT CLASSIFICATION (STRICT RULES)
       Classify into EXACTLY ONE category:

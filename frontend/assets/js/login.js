@@ -1,33 +1,40 @@
-// login.js - Fixed Google OAuth Implementation with Resend Timer
+// login.js - Split Screen Design with Full Functionality
 import { AuthManager } from './auth.js'; 
 import { CONFIG } from './config.js';
 
 class LoginManager {
   constructor() {
     this.elements = {
+      // Main sections
+      loginSection: document.getElementById('loginSection'),
+      otpSection: document.getElementById('otpSection'),
+      
+      // Login form elements
+      emailInput: document.getElementById('emailInput'),
+      loginForm: document.getElementById('loginForm'),
+      loginBtn: document.getElementById('loginBtn'),
+      
+      // OTP form elements
+      otpForm: document.getElementById('otpForm'),
+      otpInput: document.getElementById('otpInput'),
+      otpEmailDisplay: document.getElementById('otpEmailDisplay'),
+      verifyBtn: document.getElementById('verifyBtn'),
+      resendBtn: document.getElementById('resendBtn'),
+      backBtn: document.getElementById('backBtn'),
+      
+      // Alternative login buttons
       googleBtn: document.getElementById('googleBtn'),
       guestBtn: document.getElementById('guestBtn'),
+      
+      // Toast notification
       toast: document.getElementById('toast'),
-      googleSigninContainer: document.getElementById('google-signin-container'),
-      emailInput: document.getElementById('login-email-input'),
-      startLoginBtn: document.getElementById('login-start-btn'),
-      otpGroup: document.getElementById('login-otp-group'),
-      otpInput: document.getElementById('login-otp-code'),
-      verifyOtpBtn: document.getElementById('login-verify-otp-btn'),
-      resendOtpBtn: document.getElementById('login-resend-otp-btn'),
-      cancelOtpBtn: document.getElementById('login-cancel-otp-btn'),
-      verifyActions: document.getElementById('login-verify-actions'),
-      backButton: document.getElementById('back-to-login-btn'),
-      otpHeader: document.getElementById('otp-verification-header'),
-      otpEmailDisplay: document.getElementById('otp-email-display'),
-      divider: document.querySelector('.divider-inline'),
-      bottomButtons: document.querySelector('.bottom-buttons-wrapper'),
-      helpText: document.querySelector('.help-text')
+      
+      // Hidden Google sign-in container
+      googleSigninContainer: document.getElementById('google-signin-container')
     };
 
     // Configuration
     this.config = {
-      // Add your allowed company domains here (leave empty to allow all)
       allowedDomains: ['cdo.com.ph'], // Replace with your company domains
       clientId: '45685664065-92lsvsnth8ork4g6nr0nvhsmuk63f961.apps.googleusercontent.com',
       resendTimer: 60 // Resend OTP timer in seconds
@@ -63,30 +70,44 @@ class LoginManager {
   }
 
   setupEventListeners() {
+    // Login form submission
+    if (this.elements.loginForm) {
+      this.elements.loginForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        this.handleStartLogin();
+      });
+    }
+
+    // OTP form submission
+    if (this.elements.otpForm) {
+      this.elements.otpForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        this.handleVerifyOtp();
+      });
+    }
+
+    // Back button
+    if (this.elements.backBtn) {
+      this.elements.backBtn.addEventListener('click', () => this.resetOtpView());
+    }
+
+    // Resend OTP button
+    if (this.elements.resendBtn) {
+      this.elements.resendBtn.addEventListener('click', () => this.handleResendOtp());
+    }
+
     // Google button - trigger Google Sign-In
-    this.elements.googleBtn.addEventListener('click', () => {
-      this.handleGoogleButtonClick();
-    });
+    if (this.elements.googleBtn) {
+      this.elements.googleBtn.addEventListener('click', () => {
+        this.handleGoogleButtonClick();
+      });
+    }
 
     // Guest button
-    this.elements.guestBtn.addEventListener('click', () => {
-      this.handleGuestLogin();
-    });
-
-    if (this.elements.startLoginBtn) {
-      this.elements.startLoginBtn.addEventListener('click', () => this.handleStartLogin());
-    }
-    if (this.elements.verifyOtpBtn) {
-      this.elements.verifyOtpBtn.addEventListener('click', () => this.handleVerifyOtp());
-    }
-    if (this.elements.resendOtpBtn) {
-      this.elements.resendOtpBtn.addEventListener('click', () => this.handleResendOtp());
-    }
-    if (this.elements.cancelOtpBtn) {
-      this.elements.cancelOtpBtn.addEventListener('click', () => this.resetOtpView());
-    }
-    if (this.elements.backButton) {
-      this.elements.backButton.addEventListener('click', () => this.resetOtpView());
+    if (this.elements.guestBtn) {
+      this.elements.guestBtn.addEventListener('click', () => {
+        this.handleGuestLogin();
+      });
     }
 
     // OTP Input Enhancement
@@ -102,24 +123,6 @@ class LoginManager {
         const pastedText = (e.clipboardData || window.clipboardData).getData('text');
         const numericOnly = pastedText.replace(/[^0-9]/g, '').slice(0, 6);
         e.target.value = numericOnly;
-      });
-    }
-
-    // Allow Enter key to submit email
-    if (this.elements.emailInput) {
-      this.elements.emailInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-          this.handleStartLogin();
-        }
-      });
-    }
-
-    // Allow Enter key to submit OTP
-    if (this.elements.otpInput) {
-      this.elements.otpInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-          this.handleVerifyOtp();
-        }
       });
     }
   }
@@ -150,6 +153,9 @@ class LoginManager {
     document.body.appendChild(script);
   }
 
+  /**
+   * Handle email/OTP login start
+   */
   async handleStartLogin() {
     try {
       const email = this.elements.emailInput?.value?.trim();
@@ -167,9 +173,9 @@ class LoginManager {
       }
 
       // Disable button and show loading state
-      this.elements.startLoginBtn.disabled = true;
-      const originalText = this.elements.startLoginBtn.querySelector('span').textContent;
-      this.elements.startLoginBtn.querySelector('span').textContent = 'Sending...';
+      this.elements.loginBtn.disabled = true;
+      const originalText = this.elements.loginBtn.querySelector('span').textContent;
+      this.elements.loginBtn.querySelector('span').textContent = 'Sending...';
 
       const res = await fetch(`${CONFIG.API_BASE}/auth/request-otp`, {
         method: 'POST',
@@ -180,8 +186,8 @@ class LoginManager {
       const data = await res.json();
       
       // Re-enable button
-      this.elements.startLoginBtn.disabled = false;
-      this.elements.startLoginBtn.querySelector('span').textContent = originalText;
+      this.elements.loginBtn.disabled = false;
+      this.elements.loginBtn.querySelector('span').textContent = originalText;
       
       if (data.success) {
         this.showToast('OTP sent to your email', 'success');
@@ -191,20 +197,99 @@ class LoginManager {
       }
     } catch (e) {
       // Re-enable button on error
-      this.elements.startLoginBtn.disabled = false;
-      this.elements.startLoginBtn.querySelector('span').textContent = 'Send OTP';
+      this.elements.loginBtn.disabled = false;
+      this.elements.loginBtn.querySelector('span').textContent = 'Login';
       this.showToast('Network error. Try again.', 'error');
     }
   }
 
+  /**
+   * Handle OTP verification
+   */
+  async handleVerifyOtp() {
+    try {
+      const email = this.elements.emailInput?.value?.trim();
+      const code = this.elements.otpInput?.value?.trim();
+      
+      if (!email || !code) {
+        this.showToast('Enter email and OTP', 'error');
+        return;
+      }
+
+      if (code.length !== 6) {
+        this.showToast('OTP must be 6 digits', 'error');
+        return;
+      }
+
+      // Disable button and show loading state
+      this.elements.verifyBtn.disabled = true;
+      const originalText = this.elements.verifyBtn.querySelector('span').textContent;
+      this.elements.verifyBtn.querySelector('span').textContent = 'Verifying...';
+
+      const res = await fetch(`${CONFIG.API_BASE}/auth/verify-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, code })
+      });
+      
+      const data = await res.json();
+      
+      if (data.success) {
+        // Stop timer on successful verification
+        this.stopResendTimer();
+        
+        const user = data.user || {};
+        const username = user.name || email.split('@')[0];
+        let pendingAvatar = null;
+        
+        try {
+          const key = `chatcdo_pending_avatar_${user.email || email}`;
+          pendingAvatar = localStorage.getItem(key);
+          if (pendingAvatar) localStorage.removeItem(key);
+        } catch (e) {}
+        
+        this.saveSessionData({
+          userType: user.type || 'employee',
+          email: user.email || email,
+          username: username,
+          picture: pendingAvatar || null,
+          authMethod: 'otp',
+          userId: user.id,
+          isNewUser: !!data.is_new_user,
+          loginTime: new Date().toISOString()
+        });
+        
+        const successMsg = data.is_new_user 
+          ? 'Welcome! Setting up your profile...' 
+          : 'Login successful! Redirecting...';
+            
+        this.showToast(successMsg, 'success');
+        setTimeout(() => { window.location.href = 'index.html'; }, 800);
+      } else {
+        // Re-enable button on error
+        this.elements.verifyBtn.disabled = false;
+        this.elements.verifyBtn.querySelector('span').textContent = originalText;
+        this.showToast(data.message || 'Verification failed', 'error');
+      }
+    } catch (e) {
+      // Re-enable button on error
+      this.elements.verifyBtn.disabled = false;
+      this.elements.verifyBtn.querySelector('span').textContent = 'Verify';
+      this.showToast('Network error. Try again.', 'error');
+    }
+  }
+
+  /**
+   * Handle resend OTP
+   */
   async handleResendOtp() {
     const email = this.elements.emailInput?.value?.trim();
     if (!email) return;
     
     // Disable button during request
-    this.elements.resendOtpBtn.disabled = true;
-    const originalText = this.elements.resendOtpBtn.textContent;
-    this.elements.resendOtpBtn.textContent = 'Sending...';
+    this.elements.resendBtn.disabled = true;
+    const originalText = this.elements.resendBtn.textContent;
+    this.elements.resendBtn.textContent = 'Sending...';
     
     try {
       const res = await fetch(`${CONFIG.API_BASE}/auth/request-otp`, {
@@ -213,19 +298,20 @@ class LoginManager {
         body: JSON.stringify({ email })
       });
       const data = await res.json();
+      
       if (data.success) {
         this.showToast('OTP resent', 'success');
         // Restart timer
         this.startResendTimer();
       } else {
         this.showToast(data.message || 'Failed to resend OTP', 'error');
-        this.elements.resendOtpBtn.disabled = false;
-        this.elements.resendOtpBtn.textContent = originalText;
+        this.elements.resendBtn.disabled = false;
+        this.elements.resendBtn.textContent = originalText;
       }
     } catch {
       this.showToast('Network error. Try again.', 'error');
-      this.elements.resendOtpBtn.disabled = false;
-      this.elements.resendOtpBtn.textContent = originalText;
+      this.elements.resendBtn.disabled = false;
+      this.elements.resendBtn.textContent = originalText;
     }
   }
 
@@ -242,7 +328,7 @@ class LoginManager {
     this.resendTimeRemaining = this.config.resendTimer;
     
     // Disable button
-    this.elements.resendOtpBtn.disabled = true;
+    this.elements.resendBtn.disabled = true;
     
     // Update button text immediately
     this.updateResendButtonText();
@@ -271,8 +357,8 @@ class LoginManager {
     }
     
     this.resendTimeRemaining = 0;
-    this.elements.resendOtpBtn.disabled = false;
-    this.elements.resendOtpBtn.textContent = 'Resend OTP';
+    this.elements.resendBtn.disabled = false;
+    this.elements.resendBtn.textContent = 'Resend OTP';
   }
 
   /**
@@ -280,33 +366,24 @@ class LoginManager {
    */
   updateResendButtonText() {
     if (this.resendTimeRemaining > 0) {
-      this.elements.resendOtpBtn.textContent = `Resend OTP (${this.resendTimeRemaining}s)`;
+      this.elements.resendBtn.textContent = `Resend OTP (${this.resendTimeRemaining}s)`;
     }
   }
 
+  /**
+   * Show OTP verification section
+   */
   showOtpView() {
-    const formContainer = document.getElementById('email-otp-form');
     const email = this.elements.emailInput?.value?.trim();
     
-    // Add class to hide login form
-    if (formContainer) {
-      formContainer.classList.add('otp-active');
+    // Hide login section
+    if (this.elements.loginSection) {
+      this.elements.loginSection.style.display = 'none';
     }
     
-    // Hide OR divider, bottom buttons, and help text during OTP
-    if (this.elements.divider) this.elements.divider.classList.add('hidden');
-    if (this.elements.bottomButtons) this.elements.bottomButtons.classList.add('hidden');
-    if (this.elements.helpText) this.elements.helpText.classList.add('hidden');
-    
-    // Show back button and OTP header
-    if (this.elements.backButton) {
-      this.elements.backButton.style.display = 'inline-flex';
-      setTimeout(() => this.elements.backButton.classList.add('active'), 50);
-    }
-    
-    if (this.elements.otpHeader) {
-      this.elements.otpHeader.style.display = 'block';
-      setTimeout(() => this.elements.otpHeader.classList.add('active'), 100);
+    // Show OTP section
+    if (this.elements.otpSection) {
+      this.elements.otpSection.classList.add('active');
     }
     
     // Display email in OTP header
@@ -314,143 +391,40 @@ class LoginManager {
       this.elements.otpEmailDisplay.textContent = email;
     }
     
-    // Disable email input (but keep it visible until fade out)
+    // Focus on OTP input after animation
     setTimeout(() => {
-      if (this.elements.emailInput) this.elements.emailInput.disabled = true;
-      if (this.elements.startLoginBtn) this.elements.startLoginBtn.disabled = true;
-    }, 200);
+      if (this.elements.otpInput) {
+        this.elements.otpInput.focus();
+      }
+    }, 300);
     
-    // Show OTP group with animation
-    if (this.elements.otpGroup) {
-      this.elements.otpGroup.style.display = 'block';
-      setTimeout(() => {
-        this.elements.otpGroup.classList.add('active');
-        // Focus on OTP input after animation
-        setTimeout(() => {
-          if (this.elements.otpInput) this.elements.otpInput.focus();
-        }, 200);
-      }, 300);
-    }
-    
-    // Show verify actions with delay
-    if (this.elements.verifyActions) {
-      setTimeout(() => {
-        this.elements.verifyActions.style.display = 'flex';
-        this.elements.verifyActions.classList.add('active');
-        
-        // Start resend timer after showing actions
-        this.startResendTimer();
-      }, 500);
-    }
+    // Start resend timer
+    this.startResendTimer();
   }
 
+  /**
+   * Reset to login view
+   */
   resetOtpView() {
-    const formContainer = document.getElementById('email-otp-form');
-    
     // Stop the resend timer
     this.stopResendTimer();
     
-    // Remove active classes
-    if (this.elements.otpGroup) this.elements.otpGroup.classList.remove('active');
-    if (this.elements.verifyActions) this.elements.verifyActions.classList.remove('active');
-    if (this.elements.backButton) this.elements.backButton.classList.remove('active');
-    if (this.elements.otpHeader) this.elements.otpHeader.classList.remove('active');
+    // Hide OTP section
+    if (this.elements.otpSection) {
+      this.elements.otpSection.classList.remove('active');
+    }
     
-    // Hide OTP elements after animation
+    // Show login section after animation
     setTimeout(() => {
-      if (this.elements.otpGroup) this.elements.otpGroup.style.display = 'none';
-      if (this.elements.verifyActions) this.elements.verifyActions.style.display = 'none';
-      if (this.elements.backButton) this.elements.backButton.style.display = 'none';
-      if (this.elements.otpHeader) this.elements.otpHeader.style.display = 'none';
-      
-      // Show login elements
-      if (this.elements.divider) this.elements.divider.classList.remove('hidden');
-      if (this.elements.bottomButtons) this.elements.bottomButtons.classList.remove('hidden');
-      if (this.elements.helpText) this.elements.helpText.classList.remove('hidden');
-      
-      // Remove OTP active class from form
-      if (formContainer) {
-        formContainer.classList.remove('otp-active');
+      if (this.elements.loginSection) {
+        this.elements.loginSection.style.display = 'block';
       }
-      
-      // Re-enable fields
-      if (this.elements.emailInput) this.elements.emailInput.disabled = false;
-      if (this.elements.startLoginBtn) this.elements.startLoginBtn.disabled = false;
       
       // Clear OTP input
-      if (this.elements.otpInput) this.elements.otpInput.value = '';
+      if (this.elements.otpInput) {
+        this.elements.otpInput.value = '';
+      }
     }, 300);
-  }
-
-  async handleVerifyOtp() {
-    try {
-      const email = this.elements.emailInput?.value?.trim();
-      const code = this.elements.otpInput?.value?.trim();
-      
-      if (!email || !code) {
-        this.showToast('Enter email and OTP', 'error');
-        return;
-      }
-
-      if (code.length !== 6) {
-        this.showToast('OTP must be 6 digits', 'error');
-        return;
-      }
-
-      // Disable button and show loading state
-      this.elements.verifyOtpBtn.disabled = true;
-      const originalText = this.elements.verifyOtpBtn.querySelector('span').textContent;
-      this.elements.verifyOtpBtn.querySelector('span').textContent = 'Verifying...';
-
-      const res = await fetch(`${CONFIG.API_BASE}/auth/verify-otp`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, code })
-      });
-      
-      const data = await res.json();
-      
-      if (data.success) {
-        // Stop timer on successful verification
-        this.stopResendTimer();
-        
-      const user = data.user || {};
-      const username = user.name || email.split('@')[0];
-      let pendingAvatar = null;
-      try {
-        const key = `chatcdo_pending_avatar_${user.email || email}`;
-        pendingAvatar = localStorage.getItem(key);
-        if (pendingAvatar) localStorage.removeItem(key);
-      } catch (e) {}
-      
-      this.saveSessionData({
-        userType: user.type || 'employee',
-        email: user.email || email,
-        username: username,
-        picture: pendingAvatar || null,
-        authMethod: 'otp',
-        userId: user.id,
-        isNewUser: !!data.is_new_user,
-        loginTime: new Date().toISOString()
-      });
-        const successMsg = data.is_new_user 
-            ? 'Welcome! Setting up your profile...' 
-            : 'Login successful! Redirecting...';
-            
-        this.showToast(successMsg, 'success');
-        setTimeout(() => { window.location.href = 'index.html'; }, 800);
-      } else {
-        // Re-enable button on error
-        this.elements.verifyOtpBtn.disabled = false;
-        this.elements.verifyOtpBtn.querySelector('span').textContent = originalText;
-        this.showToast(data.message || 'Verification failed', 'error');
-      }
-    } catch (e) {
-      // Re-enable button on error
-      this.elements.verifyOtpBtn.disabled = false;
-      this.elements.verifyOtpBtn.querySelector('span').textContent = 'Verify';
-      this.showToast('Network error. Try again.', 'error');
-    }
   }
 
   /**
@@ -469,7 +443,6 @@ class LoginManager {
         callback: this.handleGoogleSignIn.bind(this),
         auto_select: false,
         cancel_on_tap_outside: true,
-        // Disable FedCM to avoid CORS issues
         use_fedcm_for_prompt: false
       });
 
@@ -477,17 +450,19 @@ class LoginManager {
       console.log('✅ Google Sign-In initialized successfully');
       
       // Render the button in the hidden container
-      window.google.accounts.id.renderButton(
-        this.elements.googleSigninContainer.querySelector('.g_id_signin'),
-        { 
-          theme: "filled_black",
-          size: "large",
-          type: "standard",
-          shape: "rectangular",
-          text: "signin_with",
-          logo_alignment: "left"
+      if (this.elements.googleSigninContainer) {
+        const buttonContainer = this.elements.googleSigninContainer.querySelector('.g_id_signin');
+        if (buttonContainer) {
+          window.google.accounts.id.renderButton(buttonContainer, { 
+            theme: "filled_black",
+            size: "large",
+            type: "standard",
+            shape: "rectangular",
+            text: "signin_with",
+            logo_alignment: "left"
+          });
         }
-      );
+      }
 
     } catch (error) {
       console.error('❌ Failed to initialize Google Sign-In:', error);
@@ -511,41 +486,39 @@ class LoginManager {
     }
 
     try {
-      console.log('🔔 Triggering Google Sign-In...');
+      console.log('🔐 Triggering Google Sign-In...');
       
-      // Show loading state
-      this.showLoading(this.elements.googleBtn, 'Opening Google Sign-In...');
+      // Disable button temporarily
+      this.elements.googleBtn.disabled = true;
+      const originalHTML = this.elements.googleBtn.innerHTML;
+      this.elements.googleBtn.innerHTML = '<span>Opening Google Sign-In...</span>';
       
-      // Use the hidden button to trigger sign-in (most reliable method)
-      const googleSignInButton = this.elements.googleSigninContainer.querySelector('[role="button"]');
+      // Use the hidden button to trigger sign-in
+      const googleSignInButton = this.elements.googleSigninContainer?.querySelector('[role="button"]');
       
       if (googleSignInButton) {
         console.log('✅ Using rendered button for sign-in');
         googleSignInButton.click();
-        
-        // Hide loading after a short delay
-        setTimeout(() => {
-          this.hideLoading(this.elements.googleBtn);
-        }, 1000);
       } else {
         console.log('⚠️ Rendered button not found, using prompt()');
-        // Fallback to prompt if button not found
         window.google.accounts.id.prompt();
-        
-        setTimeout(() => {
-          this.hideLoading(this.elements.googleBtn);
-        }, 1000);
       }
+      
+      // Re-enable button after delay
+      setTimeout(() => {
+        this.elements.googleBtn.disabled = false;
+        this.elements.googleBtn.innerHTML = originalHTML;
+      }, 1000);
 
     } catch (error) {
       console.error('❌ Error triggering Google Sign-In:', error);
-      this.hideLoading(this.elements.googleBtn);
+      this.elements.googleBtn.disabled = false;
       this.showToast('Could not open Google Sign-In. Please try again.', 'error');
     }
   }
 
   /**
-   * Google Sign-In callback (called after successful authentication)
+   * Google Sign-In callback
    */
   async handleGoogleSignIn(response) {
     try {
@@ -576,40 +549,23 @@ class LoginManager {
         return;
       }
 
-      const isCompany = this.isAllowedDomain(email);
-
       // Extract username from email
       const username = email.split('@')[0];
 
-      if (isCompany) {
-        this.saveSessionData({
-          userType: 'employee',
-          email: email,
-          username: username,
-          name: name,
-          picture: picture,
-          authMethod: 'google',
-          emailVerified: true,
-          loginTime: new Date().toISOString()
-        });
-        this.showToast('✅ Login successful! Redirecting...', 'success');
-        setTimeout(() => { window.location.href = 'index.html'; }, 1000);
-      } else {
-        if (this.elements.emailInput) this.elements.emailInput.value = email;
-        try {
-          if (picture) {
-            localStorage.setItem(`chatcdo_pending_avatar_${email}`, picture);
-          }
-        } catch (e) {}
-        this.showToast('Please verify via OTP to continue', 'info');
-        const res = await fetch(`${CONFIG.API_BASE}/auth/request-otp`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email })
-        });
-        await res.json();
-        this.showOtpView();
-      }
+      // Save session data
+      this.saveSessionData({
+        userType: 'external', // Default safe state
+        email: email,
+        username: username,
+        name: name,
+        picture: picture,
+        authMethod: 'google',
+        emailVerified: true,
+        loginTime: new Date().toISOString()
+      });
+      
+      this.showToast('✅ Login successful! Redirecting...', 'success');
+      setTimeout(() => { window.location.href = 'index.html'; }, 1000);
 
     } catch (error) {
       console.error('❌ Google Sign-In error:', error);
@@ -623,10 +579,12 @@ class LoginManager {
   handleGuestLogin() {
     console.log('👤 Guest login initiated');
     
-    // Show loading state
-    this.showLoading(this.elements.guestBtn, 'Loading...');
+    // Disable button and show loading
+    this.elements.guestBtn.disabled = true;
+    const originalHTML = this.elements.guestBtn.innerHTML;
+    this.elements.guestBtn.innerHTML = '<span>Loading...</span>';
 
-    // Clear any existing guest data BEFORE creating new session
+    // Clear any existing guest data
     this.clearExistingGuestData();
 
     // Store guest session
@@ -673,7 +631,7 @@ class LoginManager {
    */
   isAllowedDomain(email) {
     if (this.config.allowedDomains.length === 0) {
-      return true; // Allow all domains if none specified
+      return true;
     }
     
     const domain = email.split('@')[1]?.toLowerCase();
@@ -683,28 +641,6 @@ class LoginManager {
     
     console.log(`🔍 Domain check: ${domain} - ${isAllowed ? 'Allowed' : 'Blocked'}`);
     return isAllowed;
-  }
-
-  /**
-   * Show loading state on button
-   */
-  showLoading(button, text) {
-    button.disabled = true;
-    const originalContent = button.innerHTML;
-    button.setAttribute('data-original-content', originalContent);
-    button.innerHTML = `<span>${text}</span>`;
-    return originalContent;
-  }
-
-  /**
-   * Hide loading state on button
-   */
-  hideLoading(button) {
-    button.disabled = false;
-    const originalContent = button.getAttribute('data-original-content');
-    if (originalContent) {
-      button.innerHTML = originalContent;
-    }
   }
 
   /**
@@ -746,6 +682,8 @@ class LoginManager {
    */
   showToast(message, type = 'info') {
     const toast = this.elements.toast;
+    if (!toast) return;
+    
     toast.textContent = message;
     toast.className = `toast ${type}`;
     toast.classList.add('show');

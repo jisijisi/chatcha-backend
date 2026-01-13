@@ -78,6 +78,7 @@ export const adminLogin = async (req, res) => {
     res.json({
       success: true,
       session: {
+        id: admin.id,
         email: admin.email,
         name: admin.name,
         role: 'admin',
@@ -790,6 +791,7 @@ export const getUsers = async (req, res) => {
         e.email,
         e.department,
         e.position,
+        e.role,
         e.is_active,
         e.created_at,
         (SELECT COUNT(*) FROM user_chats uc WHERE uc.employee_id = e.id) as total_messages,
@@ -994,15 +996,15 @@ export const bulkCreateUsers = async (req, res) => {
 };
 
 export const updateUser = async (req, res) => {
-  const { name, email, department, position, is_active } = req.body;
+  const { name, email, department, position, role, is_active } = req.body;
   const userId = req.params.id;
   
   try {
     await pool.execute(
       `UPDATE employees 
-       SET name = ?, email = ?, department = ?, position = ?, is_active = ?
+       SET name = ?, email = ?, department = ?, position = ?, role = ?, is_active = ?
        WHERE id = ?`,
-      [name, email, department, position, is_active, userId]
+      [name, email, department, position, role, is_active, userId]
     );
     res.json({ 
       success: true,

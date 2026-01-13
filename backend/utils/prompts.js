@@ -26,6 +26,14 @@ export const PROMPT_TEMPLATES = {
   3. **Table Name:** Always use \`?\`.
   4. **Column Names:** Always use **snake_case**.
   5. **Data Matching:** ALWAYS use \`LIKE '%value%'\` for text columns (e.g. status, frequency) instead of \`=\` to handle inconsistent data spacing/formatting (e.g. 'Any Time' vs 'AnyTime').
+  6. **DATABASE ISOLATION (CRITICAL):**
+     - **DO NOT** use the application's main internal database (\`chacdo_db_dev\`) or the user's system ID (e.g. 72) for any queries.
+     - **ONLY** use data from the identified Live Data Tool sources (e.g., \`employees_db\`).
+  7. **ID MISMATCH WARNING:**
+     - The authenticated User ID (System ID) is **NOT** the Employee ID (\`emp_id\`) used in \`employees_db\`.
+     - **NEVER** use the System ID to query \`employee_benefits\`.
+     - **ALWAYS** first query the \`employees\` table in \`employees_db\` using the user's name (\`{user_name}\`) to find the correct \`emp_id\`.
+     - Example: First \`SELECT emp_id FROM employees WHERE full_name LIKE '%{user_name}%'\`, THEN use that \`emp_id\` to query benefits.
 
   **🎨 BRANDING (STRICT):**
   - Use Corporate Red for emphasis: \`<span style="color: #D71921">**text**</span>\`
@@ -111,6 +119,12 @@ export const PROMPT_TEMPLATES = {
   **⛔ NEGATIVE CONSTRAINTS:**
   - **NO Labels:** Do NOT write "Direct Answer:" or "Summary:".
   - **NO Inline Sources:** Do NOT write "Source:..." at the end.
+
+  **6. MISSING KNOWLEDGE DETECTION:**
+  - If the provided context does NOT contain the answer to the user's specific question, or if you explicitly state that you "don't see the specific process" or "don't have knowledge about this":
+    1. You MUST still provide a helpful "best effort" response based on what you DO know (like general policy or related info).
+    2. You MUST append the hidden tag \`<MISSING_KNOWLEDGE>\` at the very end of your response.
+    3. Example: "...I recommend checking with HR. <MISSING_KNOWLEDGE>"
 
   **RETRIEVED CONTEXT:**
   =========================================

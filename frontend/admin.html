@@ -12,6 +12,7 @@
   
   <link rel="stylesheet" href="assets/css/base.css"> 
   <link rel="stylesheet" href="assets/css/admin.css">
+  <link rel="stylesheet" href="assets/css/admin-notifications.css">
   
   <style>
     /* LOADER STYLES */
@@ -196,6 +197,33 @@
           <h2 class="header-title" id="pageTitle">Dashboard</h2>
         </div>
         <div class="header-actions">
+          <!-- Notification Inbox -->
+          <div class="notification-wrapper" id="notificationWrapper">
+            <button class="icon-btn" id="notificationBtn">
+              <span class="material-symbols-outlined">notifications</span>
+              <span class="notification-badge hidden" id="notificationBadge">0</span>
+            </button>
+            <div class="notification-dropdown hidden" id="notificationDropdown">
+              <div class="notification-header">
+                <h3>Notifications</h3>
+                <div class="header-actions-icons">
+                    <button class="icon-btn-small" id="refreshNotificationsBtn" title="Refresh">
+                        <span class="material-symbols-outlined">refresh</span>
+                    </button>
+                    <button class="icon-btn-small" id="markAllReadBtn" title="Mark all as read">
+                        <span class="material-symbols-outlined">done_all</span>
+                    </button>
+                    <button class="icon-btn-small text-danger" id="deleteAllNotificationsBtn" title="Delete all">
+                        <span class="material-symbols-outlined">delete_sweep</span>
+                    </button>
+                </div>
+              </div>
+              <div class="notification-list" id="notificationList">
+                <div class="empty-notifications">No notifications</div>
+              </div>
+            </div>
+          </div>
+
           <div class="admin-user">
             <span class="user-avatar">👤</span>
             <span id="adminUsername">Admin</span>
@@ -236,7 +264,7 @@
               <div class="stat-icon-wrapper green">
                 <span class="material-symbols-outlined stat-icon">badge</span>
               </div>
-              <div class="stat-info"><div class="stat-value" id="totalEmployees">0</div><div class="stat-label">Total Employees</div></div>
+              <div class="stat-info"><div class="stat-value" id="totalEmployees">0</div><div class="stat-label">Total Users</div></div>
             </div>
           </div>
           <div class="chart-grid">
@@ -288,17 +316,17 @@
                 <span>Subcategories</span>
             </button>
           </div>
-          <div class="kb-tab-content active" id="documents-tab"><div class="data-table-card"><div class="card-header"><h3>Knowledge Documents</h3><div class="header-actions"><input type="text" id="doc-search" placeholder="Search documents..." class="search-input"><select id="doc-status-filter" class="filter-select"><option value="">All Status</option><option value="draft">Draft</option><option value="published">Published</option><option value="archived">Archived</option></select><button class="btn btn-primary" id="add-document-btn"><span class="material-symbols-outlined" style="font-size: 18px;">add</span> Add Document</button></div></div><div class="table-wrapper"><table class="data-table"><thead><tr><th>Title</th><th>Category → Subcategory</th><th>Status</th><th>Updated</th><th>Actions</th></tr></thead><tbody id="documents-table-body"><tr><td colspan="5" class="loading-cell">Loading documents...</td></tr></tbody></table></div></div></div>
+          <div class="kb-tab-content active" id="documents-tab"><div class="data-table-card"><div class="card-header"><h3>Knowledge Documents</h3><div class="header-actions"><input type="text" id="doc-search" placeholder="Search documents..." class="search-input" autocomplete="off"><select id="doc-status-filter" class="filter-select"><option value="">All Status</option><option value="draft">Draft</option><option value="published">Published</option><option value="archived">Archived</option></select><button class="btn btn-primary" id="add-document-btn"><span class="material-symbols-outlined" style="font-size: 18px;">add</span> Add Document</button></div></div><div class="table-wrapper"><table class="data-table"><thead><tr><th>Title</th><th>Category → Subcategory</th><th>Status</th><th>Updated</th><th>Actions</th></tr></thead><tbody id="documents-table-body"><tr><td colspan="5" class="loading-cell">Loading documents...</td></tr></tbody></table></div></div></div>
           <div class="kb-tab-content" id="categories-tab"><div class="data-table-card"><div class="card-header"><h3>Knowledge Categories</h3><button class="btn btn-primary" id="add-category-btn"><span class="material-symbols-outlined" style="font-size: 18px;">add</span> Add Category</button></div><div class="table-wrapper"><table class="data-table"><thead><tr><th>Category Name</th><th>Subcategories</th><th>Description</th><th>Actions</th></tr></thead><tbody id="categories-table-body"><tr><td colspan="4" class="loading-cell">Loading categories...</td></tr></tbody></table></div></div></div>
           <div class="kb-tab-content" id="subcategories-tab"><div class="data-table-card"><div class="card-header"><h3>Knowledge Subcategories</h3><div class="header-actions"><select id="subcat-category-filter" class="filter-select"><option value="">All Categories</option></select><button class="btn btn-primary" id="add-subcategory-btn"><span class="material-symbols-outlined" style="font-size: 18px;">add</span> Add Subcategory</button></div></div><div class="table-wrapper"><table class="data-table"><thead><tr><th>Subcategory Name</th><th>Parent Category</th><th>Description</th><th>Actions</th></tr></thead><tbody id="subcategories-table-body"><tr><td colspan="4" class="loading-cell">Loading subcategories...</td></tr></tbody></table></div></div></div>
         </section>
 
         <section class="view-section" id="users-view">
-           <div class="data-table-card"><div class="card-header"><h3>Employee List</h3><div class="header-actions"><input type="text" id="user-search" placeholder="Search name or email..." class="search-input"><button class="btn btn-excel" id="bulk-user-btn"><span class="material-symbols-outlined" style="font-size: 18px;">table_view</span> Upload Excel</button><button class="btn btn-primary" id="add-user-btn"><span class="material-symbols-outlined" style="font-size: 18px;">person_add</span> Add Employee</button></div></div><div class="table-wrapper"><table class="data-table"><thead><tr><th>Name / Email</th><th><select id="user-dept-filter" class="th-select"><option value="">Department (All)</option></select></th><th>Status</th><th>Activity</th><th>Actions</th></tr></thead><tbody id="users-table-body"><tr><td colspan="5" class="loading-cell">Loading employees...</td></tr></tbody></table></div></div>
+           <div class="data-table-card"><div class="card-header"><h3>User List</h3><div class="header-actions"><input type="text" id="user-search" placeholder="Search name or email..." class="search-input" autocomplete="off"><button class="btn btn-excel" id="bulk-user-btn"><span class="material-symbols-outlined" style="font-size: 18px;">table_view</span> Upload Excel</button><button class="btn btn-primary" id="add-user-btn"><span class="material-symbols-outlined" style="font-size: 18px;">person_add</span> Add User</button></div></div><div class="table-wrapper"><table class="data-table"><thead><tr><th>Name / Email</th><th><select id="user-dept-filter" class="th-select"><option value="">Department (All)</option></select></th><th>Role</th><th>Status</th><th>Activity</th><th>Actions</th></tr></thead><tbody id="users-table-body"><tr><td colspan="6" class="loading-cell">Loading users...</td></tr></tbody></table></div></div>
         </section>
 
         <section class="view-section" id="permissions-view">
-           <div class="data-table-card"><div class="card-header"><h3>Access Permissions</h3><div id="perm-bulk-actions" class="bulk-actions"><span class="bulk-count"><span id="perm-selected-count">0</span> Selected</span><button class="btn btn-success" onclick="openBulkPermModal()"><span class="material-symbols-outlined" style="font-size: 18px;">lock_open</span> Grant Access</button></div><div class="header-actions"><input type="text" id="perm-search" placeholder="Search employee..." class="search-input"></div></div><div class="table-wrapper"><table class="data-table"><thead><tr><th style="width: 40px;"><input type="checkbox" id="perm-select-all" onchange="toggleSelectAllPerms(this)"></th><th>Employee</th><th><select id="perm-dept-filter" class="th-select"><option value="">Department (All)</option></select></th><th>Access Level</th><th>Actions</th></tr></thead><tbody id="permissions-table-body"><tr><td colspan="5" class="loading-cell">Loading...</td></tr></tbody></table></div></div>
+           <div class="data-table-card"><div class="card-header"><h3>Access Permissions</h3><div id="perm-bulk-actions" class="bulk-actions"><span class="bulk-count"><span id="perm-selected-count">0</span> Selected</span><button class="btn btn-success" onclick="openBulkPermModal()"><span class="material-symbols-outlined" style="font-size: 18px;">lock_open</span> Grant Access</button></div><div class="header-actions"><input type="text" id="perm-search" placeholder="Search user..." class="search-input" autocomplete="off"></div></div><div class="table-wrapper"><table class="data-table"><thead><tr><th style="width: 40px;"><input type="checkbox" id="perm-select-all" onchange="toggleSelectAllPerms(this)"></th><th>User</th><th><select id="perm-dept-filter" class="th-select"><option value="">Department (All)</option></select></th><th>Access Level</th><th>Actions</th></tr></thead><tbody id="permissions-table-body"><tr><td colspan="5" class="loading-cell">Loading...</td></tr></tbody></table></div></div>
         </section>
 
         <section class="view-section" id="chats-view">
@@ -321,7 +349,7 @@
                             <select id="chat-dept-filter" class="filter-select">
                                 <option value="">Department (All)</option>
                             </select>
-                            <input type="text" id="chat-search" placeholder="Search employee or title..." class="search-input">
+                            <input type="text" id="chat-search" placeholder="Search user or title..." class="search-input" autocomplete="off">
                             <button class="btn btn-secondary" id="chat-export-btn">
                                 <span class="material-symbols-outlined" style="font-size: 16px;">download</span> 
                                 Export CSV
@@ -332,7 +360,7 @@
                         <table class="data-table">
                             <thead>
                                 <tr>
-                                    <th>Employee</th>
+                                    <th>User</th>
                                     <th>Session Title</th>
                                     <th>Messages</th>
                                     <th>Last Activity</th>
@@ -386,7 +414,7 @@
                         <div class="card-body"><canvas id="activityHeatmapChart" height="100"></canvas></div>
                     </div>
                     <div class="chart-card">
-                        <div class="card-header"><h3>Sessions by Employee (Top 10)</h3></div>
+                        <div class="card-header"><h3>Sessions by User (Top 10)</h3></div>
                         <div class="card-body"><canvas id="employeeSessionsChart" height="200"></canvas></div>
                     </div>
                 </div>
@@ -467,7 +495,7 @@
                   Active Live Data Sources
               </h3>
               <div class="header-actions">
-                  <input type="text" id="source-search" placeholder="Search sources..." class="search-input">
+                  <input type="text" id="source-search" placeholder="Search sources..." class="search-input" autocomplete="off">
                   <select id="source-type-filter" class="filter-select">
                       <option value="">All Types</option>
                       <option value="google_sheet">Google Sheet</option>
@@ -527,7 +555,7 @@
                </div>
                <div class="form-group">
                  <label class="form-label">System Name</label>
-                 <input type="text" id="set-system-name" class="form-control" value="ChatCDO">
+                 <input type="text" id="set-system-name" class="form-control" value="ChatCDO" autocomplete="off">
                </div>
                
                <div class="form-group">
@@ -646,7 +674,7 @@
   <div class="modal" id="bulk-upload-modal">
     <div class="modal-content">
       <div class="modal-header">
-        <h3>Bulk Upload Employees</h3>
+        <h3>Bulk Upload Users</h3>
         <button class="modal-close" id="bulk-upload-close" type="button">✕</button>
       </div>
       <div class="modal-body">
@@ -697,7 +725,7 @@
         </div>
         <div class="form-group">
           <label class="form-label">Document Title *</label>
-          <input type="text" id="doc-title-input" class="form-control" placeholder="Enter document title" required>
+          <input type="text" id="doc-title-input" class="form-control" placeholder="Enter document title" required autocomplete="off">
         </div>
         <div class="form-row">
           <div class="form-group">
@@ -742,7 +770,7 @@
       <div class="modal-body">
         <div class="form-group">
           <label class="form-label" id="category-modal-label">Category Name *</label>
-          <input type="text" id="category-modal-input" class="form-control" placeholder="Enter name" required>
+          <input type="text" id="category-modal-input" class="form-control" placeholder="Enter name" required autocomplete="off">
         </div>
         <div class="form-group">
           <label class="form-label">Description</label>
@@ -788,33 +816,33 @@
   <div class="modal" id="user-modal">
     <div class="modal-content">
       <div class="modal-header">
-        <h3 id="user-modal-title">Add Employee</h3>
+        <h3 id="user-modal-title">Add User</h3>
         <button class="modal-close" id="user-modal-close" type="button">✕</button>
       </div>
       <div class="modal-body">
         <div class="form-group">
           <label class="form-label">Full Name *</label>
-          <input type="text" id="user-name" class="form-control" placeholder="John Doe" required>
+          <input type="text" id="user-name" class="form-control" placeholder="John Doe" required autocomplete="off">
         </div>
         <div class="form-group">
           <label class="form-label">Email Address *</label>
-          <input type="email" id="user-email" class="form-control" placeholder="john@company.com" required>
+          <input type="email" id="user-email" class="form-control" placeholder="john@company.com" required autocomplete="off">
         </div>
         <div class="form-row">
           <div class="form-group">
             <label class="form-label">Department</label>
-            <input type="text" id="user-department" class="form-control" placeholder="e.g. HR">
+            <input type="text" id="user-department" class="form-control" placeholder="e.g. HR" autocomplete="off">
           </div>
           <div class="form-group">
             <label class="form-label">Position</label>
-            <input type="text" id="user-position" class="form-control" placeholder="e.g. Manager">
+            <input type="text" id="user-position" class="form-control" placeholder="e.g. Manager" autocomplete="off">
           </div>
         </div>
         <div class="form-group">
-            <label class="form-label">User Type *</label>
-            <select id="user-type" class="form-control">
-                <option value="Employee" selected>Employee (Full Access)</option>
-                <option value="External">External (Limited Access)</option>
+            <label class="form-label">Role *</label>
+            <select id="user-role" class="form-control">
+                <option value="user" selected>User</option>
+                <option value="admin">Admin</option>
             </select>
         </div>
         <div class="form-group" id="user-status-group" style="display: none;">
@@ -828,7 +856,7 @@
       <div class="modal-footer">
         <button class="btn btn-secondary" id="user-modal-cancel" type="button">Cancel</button>
         <button class="btn btn-primary" id="user-modal-save" type="button">
-          <span class="btn-text">Save Employee</span>
+          <span class="btn-text">Save User</span>
           <span class="btn-loading">Saving...</span>
         </button>
       </div>
@@ -846,7 +874,7 @@
       </div>
       <div class="modal-body no-padding">
         <div class="header-actions perm-toolbar" style="padding: 12px 16px; border-bottom: 1px solid var(--gray-200); background: #fff;">
-          <input type="text" id="perm-tree-search" class="search-input" placeholder="Filter categories, subcategories, or tools">
+          <input type="text" id="perm-tree-search" class="search-input" placeholder="Filter categories, subcategories, or tools" autocomplete="off">
           <div style="display:flex; gap:8px; margin-left:auto;">
             <button class="btn btn-secondary btn-xs" id="perm-toggle-all" type="button">Expand All</button>
           </div>
@@ -902,12 +930,12 @@
 
         <div class="form-group">
           <label class="form-label">Source Name (Optional)</label>
-          <input type="text" id="sheet-name" class="form-control" placeholder="e.g. Q4 Sales Report">
+          <input type="text" id="sheet-name" class="form-control" placeholder="e.g. Q4 Sales Report" autocomplete="off">
         </div>
 
         <div class="form-group">
           <label class="form-label">Google Sheet URL *</label>
-          <input type="text" id="sheet-url" class="form-control" placeholder="https://docs.google.com/spreadsheets/d/..." required>
+          <input type="text" id="sheet-url" class="form-control" placeholder="https://docs.google.com/spreadsheets/d/..." required autocomplete="off">
         </div>
 
         <div class="form-group">
@@ -961,7 +989,7 @@
         <div class="form-row" style="margin-bottom: 16px;">
             <div class="form-group" style="margin-bottom: 0;">
                 <label class="form-label">Tool Name *</label>
-                <input type="text" id="api-name" class="form-control" placeholder="e.g. OEE Web API" required>
+                <input type="text" id="api-name" class="form-control" placeholder="e.g. OEE Web API" required autocomplete="off">
             </div>
              <div class="form-group" style="margin-bottom: 0;">
                 <label class="form-label">HTTP Method</label>
@@ -976,7 +1004,7 @@
 
         <div class="form-group" style="margin-bottom: 16px;">
           <label class="form-label">Endpoint URL *</label>
-          <input type="text" id="api-url" class="form-control" placeholder="https://api.example.com/v1/customers/{id}" required>
+          <input type="text" id="api-url" class="form-control" placeholder="https://api.example.com/v1/customers/{id}" required autocomplete="off">
           <small style="color:#666; font-size:0.75rem; margin-top: 5px; display:block;">Use <code>{param_name}</code> for path variables.</small>
         </div>
 
@@ -1049,7 +1077,7 @@
         <div class="form-row" style="margin-bottom: 16px;">
             <div class="form-group" style="margin-bottom: 0;">
                 <label class="form-label">Connection Name *</label>
-                <input type="text" id="db-name" class="form-control" placeholder="e.g. Production DB" required>
+                <input type="text" id="db-name" class="form-control" placeholder="e.g. Production DB" required autocomplete="off">
             </div>
              <div class="form-group" style="margin-bottom: 0;">
                 <label class="form-label">Database Type</label>
@@ -1065,27 +1093,27 @@
         <div class="form-row" style="margin-bottom: 16px;">
             <div class="form-group" style="margin-bottom: 0; flex: 3;">
                 <label class="form-label">Host *</label>
-                <input type="text" id="db-host" class="form-control" placeholder="localhost or IP" required>
+                <input type="text" id="db-host" class="form-control" placeholder="localhost or IP" required autocomplete="off">
             </div>
              <div class="form-group" style="margin-bottom: 0; flex: 1;">
                 <label class="form-label">Port</label>
-                <input type="number" id="db-port" class="form-control" placeholder="3306" required>
+                <input type="number" id="db-port" class="form-control" placeholder="3306" required autocomplete="off">
             </div>
         </div>
 
         <div class="form-group" style="margin-bottom: 16px;">
           <label class="form-label">Database Name *</label>
-          <input type="text" id="db-database" class="form-control" placeholder="e.g. inventory_db" required>
+          <input type="text" id="db-database" class="form-control" placeholder="e.g. inventory_db" required autocomplete="off">
         </div>
 
         <div class="form-row" style="margin-bottom: 16px;">
             <div class="form-group" style="margin-bottom: 0;">
                 <label class="form-label">Username *</label>
-                <input type="text" id="db-user" class="form-control" placeholder="db_user" required>
+                <input type="text" id="db-user" class="form-control" placeholder="db_user" required autocomplete="off">
             </div>
              <div class="form-group" style="margin-bottom: 0;">
                 <label class="form-label">Password *</label>
-                <input type="password" id="db-password" class="form-control" placeholder="••••••••" required>
+                <input type="password" id="db-password" class="form-control" placeholder="••••••••" required autocomplete="off">
             </div>
         </div>
 
@@ -1142,39 +1170,39 @@
         
         <div class="form-group" style="margin-bottom: 16px;">
             <label class="form-label">Connection Name *</label>
-            <input type="text" id="sap-name" class="form-control" placeholder="e.g. SAP ERP Production" required>
+            <input type="text" id="sap-name" class="form-control" placeholder="e.g. SAP ERP Production" required autocomplete="off">
         </div>
 
         <div class="form-row" style="margin-bottom: 16px;">
             <div class="form-group" style="margin-bottom: 0; flex: 2;">
                 <label class="form-label">Application Server (ASHOST) *</label>
-                <input type="text" id="sap-ashost" class="form-control" placeholder="sap.example.com" required>
+                <input type="text" id="sap-ashost" class="form-control" placeholder="sap.example.com" required autocomplete="off">
             </div>
              <div class="form-group" style="margin-bottom: 0; flex: 1;">
                 <label class="form-label">System Number (SYSNR) *</label>
-                <input type="text" id="sap-sysnr" class="form-control" placeholder="00" required>
+                <input type="text" id="sap-sysnr" class="form-control" placeholder="00" required autocomplete="off">
             </div>
         </div>
 
         <div class="form-row" style="margin-bottom: 16px;">
              <div class="form-group" style="margin-bottom: 0; flex: 1;">
                 <label class="form-label">Client (MANDT) *</label>
-                <input type="text" id="sap-client" class="form-control" placeholder="100" required>
+                <input type="text" id="sap-client" class="form-control" placeholder="100" required autocomplete="off">
             </div>
             <div class="form-group" style="margin-bottom: 0; flex: 2;">
                 <label class="form-label">Username *</label>
-                <input type="text" id="sap-user" class="form-control" placeholder="SAP_USER" required>
+                <input type="text" id="sap-user" class="form-control" placeholder="SAP_USER" required autocomplete="off">
             </div>
         </div>
         
         <div class="form-group" style="margin-bottom: 16px;">
             <label class="form-label">Password *</label>
-            <input type="password" id="sap-passwd" class="form-control" placeholder="••••••••" required>
+            <input type="password" id="sap-passwd" class="form-control" placeholder="••••••••" required autocomplete="off">
         </div>
         
         <div class="form-group" style="margin-bottom: 16px;">
             <label class="form-label">BAPI Function Name *</label>
-            <input type="text" id="sap-function" class="form-control" placeholder="e.g. BAPI_USER_GET_DETAIL" required>
+            <input type="text" id="sap-function" class="form-control" placeholder="e.g. BAPI_USER_GET_DETAIL" required autocomplete="off">
             <small style="color:#666; font-size:0.75rem; margin-top: 5px; display:block;">The specific RFC function module to execute.</small>
         </div>
 
@@ -1439,6 +1467,27 @@
       </div>
       <div class="modal-footer" id="conversion-footer" style="display: none;">
         <button class="btn btn-primary" id="conversion-close-btn" type="button">Close & View JSON</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="notification-detail-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="notif-detail-title">Notification</h3>
+        <button class="modal-close" id="notif-detail-close" type="button">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="notif-meta" style="margin-bottom: 15px; color: #64748b; font-size: 0.875rem;">
+            <span id="notif-detail-time"></span>
+        </div>
+        <div id="notif-detail-message" style="line-height: 1.6; color: #1e293b; white-space: pre-wrap;"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="notif-detail-close-btn" type="button">Close</button>
+        <button class="btn btn-danger" id="notif-detail-delete-btn" type="button">
+            <span class="btn-text">Delete</span>
+        </button>
       </div>
     </div>
   </div>

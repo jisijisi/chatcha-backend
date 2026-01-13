@@ -80,7 +80,7 @@ function renderUsersTable() {
   });
   
   if (filtered.length === 0) { 
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 40px;">No users found.</td></tr>'; 
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px;">No users found.</td></tr>'; 
     return; 
   }
   
@@ -93,6 +93,11 @@ function renderUsersTable() {
       <td>
         <div style="font-weight: 500;">${escapeHtml(u.department || '-')}</div>
         <div style="font-size: 0.8rem; color: #999;">${escapeHtml(u.position || '')}</div>
+      </td>
+      <td>
+        <span class="badge" style="background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0;">
+          ${escapeHtml(u.role || '-')}
+        </span>
       </td>
       <td>
         <span class="badge badge-${u.is_active ? 'success' : 'danger'}">
@@ -138,15 +143,16 @@ function openUserModal(id = null) {
   
   if (id) {
     const u = allUsers.find(user => user.id === id);
-    title.textContent = 'Edit Employee';
+    title.textContent = 'Edit User';
     document.getElementById('user-name').value = u.name;
     document.getElementById('user-email').value = u.email;
     document.getElementById('user-department').value = u.department || '';
     document.getElementById('user-position').value = u.position || '';
+    document.getElementById('user-role').value = u.role || 'user';
     document.getElementById('user-status-group').style.display = 'block';
     document.getElementById('user-status').value = u.is_active ? '1' : '0';
   } else {
-    title.textContent = 'Add Employee';
+    title.textContent = 'Add User';
     document.getElementById('user-name').value = '';
     document.getElementById('user-email').value = '';
     document.getElementById('user-department').value = '';
@@ -169,8 +175,8 @@ async function saveUser() {
   const email = document.getElementById('user-email').value;
   const department = document.getElementById('user-department').value;
   const position = document.getElementById('user-position').value;
+  const role = document.getElementById('user-role').value;
   const is_active = document.getElementById('user-status').value === '1';
-  const user_type = document.getElementById('user-type') ? document.getElementById('user-type').value : 'Employee';
   const saveBtn = document.getElementById('user-modal-save');
   
   if (!name || !email) {
@@ -181,7 +187,7 @@ async function saveUser() {
   setButtonLoading(saveBtn, true);
   
   try {
-    const payload = { name, email, department, position, is_active, user_type };
+    const payload = { name, email, department, position, role, is_active };
     
     if (editingUserId) {
       await apiFetch(`/admin/users/${editingUserId}`, { 
@@ -310,7 +316,7 @@ const UserManagement = {
   editUser: openUserModal,
   toggleUserStatus: async (id, status, name) => {
     showConfirmationModal({
-      title: status ? 'Activate Employee' : 'Deactivate Employee',
+      title: status ? 'Activate User' : 'Deactivate User',
       message: `Are you sure you want to ${status ? 'activate' : 'deactivate'} <strong>${escapeHtml(name)}</strong>?`,
       confirmText: status ? 'Activate' : 'Deactivate',
       confirmType: status ? 'primary' : 'danger',

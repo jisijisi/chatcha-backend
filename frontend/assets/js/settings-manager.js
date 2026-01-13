@@ -527,15 +527,25 @@ export class SettingsManager {
   // --- KNOWLEDGE BASE MODAL CONTROL ---
   openKnowledgeBaseModal() {
     if (this.kbModal) {
-      this.kbModal.classList.add('active');
-      document.body.style.overflow = 'hidden';
-      requestAnimationFrame(() => this.loadKnowledgeBase());
+      this.kbModal.style.display = 'flex'; // Ensure display is flex (overriding inline style if any)
+      // Small timeout to allow display change to render before adding active class (for transitions if any)
+      requestAnimationFrame(() => {
+        this.kbModal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+      });
+      // Ensure tabs are in correct state
+      this.switchKbTab(this.currentKbTab);
     }
   }
 
   closeKnowledgeBaseModal() {
     if (this.kbModal) {
       this.kbModal.classList.remove('active');
+      setTimeout(() => {
+        if (!this.kbModal.classList.contains('active')) {
+            this.kbModal.style.display = 'none';
+        }
+      }, 300); // Match transition duration
       document.body.style.overflow = '';
     }
   }
@@ -735,19 +745,59 @@ export class SettingsManager {
   switchKbTab(tabName) {
     this.currentKbTab = tabName;
     
+    // Deactivate all buttons
     document.querySelectorAll('.kb-tab-btn').forEach(b => b.classList.remove('active'));
+    // Activate target button
     document.querySelector(`[data-kb-tab="${tabName}"]`)?.classList.add('active');
     
-    document.querySelectorAll('.kb-tab-content').forEach(c => c.classList.remove('active'));
-    document.getElementById(`kb-tab-${tabName}`)?.classList.add('active');
+    // Hide all content explicitly
+    document.querySelectorAll('.kb-tab-content').forEach(c => {
+        c.classList.remove('active');
+        c.style.display = 'none'; // Explicitly hide
+    });
+    
+    // Show target content explicitly
+    const targetContent = document.getElementById(`kb-tab-${tabName}`);
+    if (targetContent) {
+        targetContent.classList.add('active');
+        targetContent.style.display = 'flex'; // Explicitly show as flex to maintain layout
+    }
+
+    // Toggle Action Buttons based on tab
+    const btnAddDoc = document.getElementById('btn-add-doc');
+    const btnAddSubcat = document.getElementById('btn-add-subcat');
+    const searchInput = document.getElementById('kb-search-input');
+    
+    if (tabName === 'docs') {
+        if (btnAddDoc) btnAddDoc.style.display = 'inline-flex';
+        if (btnAddSubcat) btnAddSubcat.style.display = 'none';
+        if (searchInput) searchInput.placeholder = "Search documents...";
+    } else {
+        if (btnAddDoc) btnAddDoc.style.display = 'none';
+        if (btnAddSubcat) btnAddSubcat.style.display = 'inline-flex';
+        if (searchInput) searchInput.placeholder = "Search subcategories...";
+    }
 
     this.loadKnowledgeBase();
+  }
+
+  // Helper to generate skeleton rows
+  getSkeletonRows(cols = 4, rows = 5) {
+    return Array(rows).fill(0).map(() => `
+      <tr class="skeleton-row">
+        ${Array(cols).fill(0).map(() => `
+          <td><div class="skeleton-box" style="width: ${Math.floor(Math.random() * 40 + 60)}%;"></div></td>
+        `).join('')}
+      </tr>
+    `).join('');
   }
 
   async loadDocumentsList() {
     const tbody = document.getElementById('kb-docs-list-body');
     if (!tbody) return;
-    tbody.innerHTML = `<tr><td colspan="4" class="kb-loading">Loading documents...</td></tr>`;
+    
+    // Use skeleton loading
+    tbody.innerHTML = this.getSkeletonRows(4, 5);
 
     try {
       const data = await this.app.apiManager.getDocuments(); 
@@ -759,20 +809,27 @@ export class SettingsManager {
       }
 
       tbody.innerHTML = docs.map(doc => `
-        <tr class="kb-doc-row">
-          <td><strong>${escapeHtml(doc.title)}</strong></td>
-          <td>${escapeHtml(doc.category_name || 'General')} &rarr; ${escapeHtml(doc.subcategory_name || 'Others')}</td>
-          <td><span class="kb-badge ${doc.status}">${doc.status}</span></td>
-          <td class="kb-actions-cell">
-            <button class="kb-action-btn view" onclick="window.chatApp.settingsManager.handleViewDocument(${doc.id})" title="View Content">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-            </button>
-            <button class="kb-action-btn edit" onclick="window.chatApp.settingsManager.openDocModal(${doc.id})" title="Edit">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-            </button>
-            <button class="kb-action-btn delete" onclick="window.chatApp.settingsManager.handleDeleteDocument(${doc.id})" title="Delete">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-            </button>
+        <tr>
+          <td data-label="Title">${escapeHtml(doc.title || '')}</td>
+          <td data-label="Category → Subcategory">${escapeHtml(doc.category_name || 'General')} &rarr; ${escapeHtml(doc.subcategory_name || 'Others')}</td>
+          <td data-label="Status">
+            <span class="badge-status">
+              <span class="dot"></span>
+              ${doc.status}
+            </span>
+          </td>
+          <td data-label="Actions" style="text-align:right;">
+            <div class="kb-actions-cell">
+              <button class="kb-action-btn view" onclick="window.chatApp.settingsManager.handleViewDocument(${doc.id})" title="Preview">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+              </button>
+              <button class="kb-action-btn edit" onclick="window.chatApp.settingsManager.openDocModal(${doc.id})" title="Edit">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+              </button>
+              <button class="kb-action-btn delete" onclick="window.chatApp.settingsManager.handleDeleteDocument(${doc.id})" title="Delete">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+              </button>
+            </div>
           </td>
         </tr>
       `).join('');
@@ -785,35 +842,40 @@ export class SettingsManager {
   async loadSubcategoriesList() {
     const tbody = document.getElementById('kb-subcats-list-body');
     if (!tbody) return;
-    tbody.innerHTML = `<tr><td colspan="3" class="kb-loading">Loading subcategories...</td></tr>`;
+    
+    // Use skeleton loading
+    tbody.innerHTML = this.getSkeletonRows(4, 5);
 
     try {
       const data = await this.app.apiManager.getSubcategories();
       this.subcategories = data.subcategories || []; // Store for lookup
 
       if (this.subcategories.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding:20px;">No subcategories found.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:20px;">No subcategories found.</td></tr>`;
         return;
       }
 
       // UPDATED: Use safe helper method for Edit action
       tbody.innerHTML = this.subcategories.map(sub => `
         <tr>
-          <td><strong>${escapeHtml(sub.name)}</strong></td>
-          <td>${escapeHtml(sub.category_name)}</td>
-          <td class="kb-actions-cell">
-            <button class="kb-action-btn edit" onclick="window.chatApp.settingsManager.prepareEditSubcategory(${sub.id})" title="Edit">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-            </button>
-            <button class="kb-action-btn delete" onclick="window.chatApp.settingsManager.handleDeleteSubcategory(${sub.id})" title="Delete">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-            </button>
+          <td data-label="Subcategory Name"><strong>${escapeHtml(sub.name || '')}</strong></td>
+          <td data-label="Parent Category">${escapeHtml(sub.category_name || '')}</td>
+          <td data-label="Description">${escapeHtml(sub.description || '-')}</td>
+          <td data-label="Actions" style="text-align:right;">
+            <div class="kb-actions-cell">
+              <button class="kb-action-btn edit" onclick="window.chatApp.settingsManager.prepareEditSubcategory(${sub.id})" title="Edit">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+              </button>
+              <button class="kb-action-btn delete" onclick="window.chatApp.settingsManager.handleDeleteSubcategory(${sub.id})" title="Delete">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+              </button>
+            </div>
           </td>
         </tr>
       `).join('');
     } catch (e) {
       console.error(e);
-      tbody.innerHTML = `<tr><td colspan="3" style="color:red; text-align:center;">Error loading subcategories: ${e.message}</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="4" style="color:red; text-align:center;">Error loading subcategories: ${e.message}</td></tr>`;
     }
   }
   
@@ -826,7 +888,8 @@ export class SettingsManager {
   }
 
   filterKnowledgeBase(query) {
-    const container = document.getElementById('kb-docs-list-body');
+    const targetId = this.currentKbTab === 'docs' ? 'kb-docs-list-body' : 'kb-subcats-list-body';
+    const container = document.getElementById(targetId);
     if (!container) return;
     
     const lowerQuery = query.toLowerCase();
@@ -1004,25 +1067,37 @@ export class SettingsManager {
     this.simulateConversionProgress();
     
     try {
+      // Offload the API call
       const data = await this.app.apiManager.convertFileToJSON(file);
+      
       if (data.success && data.json) {
+        // Yield to UI thread before heavy JSON processing
+        await new Promise(resolve => setTimeout(resolve, 50));
+        
         let jsonContent = data.json;
         if (typeof jsonContent === 'object') {
+            // Processing large JSON can block
             jsonContent = JSON.stringify(jsonContent, null, 2);
         }
         
-        const contentInput = document.getElementById('kb-doc-content');
-        if (contentInput) contentInput.value = jsonContent;
-        
-        try {
-          const parsed = JSON.parse(jsonContent);
-          const titleInput = document.getElementById('kb-doc-title');
-          if (parsed.title && titleInput) titleInput.value = parsed.title;
-        } catch (e) {
-            console.warn("Could not parse JSON for title auto-fill");
-        }
-        
-        this.showConversionSuccess(file.name, jsonContent);
+        // Update DOM in next frame
+        requestAnimationFrame(() => {
+            const contentInput = document.getElementById('kb-doc-content');
+            if (contentInput) {
+                // If content is huge (>1MB), warn or truncate? For now just set it but it might lag
+                contentInput.value = jsonContent;
+            }
+            
+            try {
+              const parsed = JSON.parse(jsonContent);
+              const titleInput = document.getElementById('kb-doc-title');
+              if (parsed.title && titleInput) titleInput.value = parsed.title;
+            } catch (e) {
+                console.warn("Could not parse JSON for title auto-fill");
+            }
+            
+            this.showConversionSuccess(file.name, jsonContent);
+        });
       }
     } catch (error) {
       console.error("Conversion Error:", error);
@@ -1382,12 +1457,19 @@ export class SettingsManager {
   }
 
   updateCacheProgress(stage, progress) {
-    const progressFill = document.getElementById('cache-progress-fill-modal');
-    const progressText = document.getElementById('cache-progress-text-modal');
-    const bar = document.getElementById('cache-progressbar');
-    if (progressFill) { progressFill.style.width = progress + '%'; }
-    if (progressText) { progressText.textContent = `${progress}% Complete`; }
-    if (bar) { bar.setAttribute('aria-valuenow', String(progress)); }
+    if (this._lastProgressUpdate && Date.now() - this._lastProgressUpdate < 50) {
+        return; // Throttle updates to ~20fps
+    }
+    this._lastProgressUpdate = Date.now();
+    
+    requestAnimationFrame(() => {
+        const progressFill = document.getElementById('cache-progress-fill-modal');
+        const progressText = document.getElementById('cache-progress-text-modal');
+        const bar = document.getElementById('cache-progressbar');
+        if (progressFill) { progressFill.style.width = progress + '%'; }
+        if (progressText) { progressText.textContent = `${progress}% Complete`; }
+        if (bar) { bar.setAttribute('aria-valuenow', String(progress)); }
+    });
   }
 
   showCacheRegenerationSuccess(data) {

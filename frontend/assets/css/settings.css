@@ -1020,6 +1020,34 @@
   border: 1px solid rgba(239, 68, 68, 0.2);
 }
 
+/* Shimmer Animation for Skeleton Loading */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton-row td {
+  padding: 12px 16px;
+  vertical-align: middle;
+}
+
+.skeleton-box {
+  height: 20px;
+  background: linear-gradient(90deg, #f0f0f0 25%, #f8f8f8 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite linear;
+  border-radius: 4px;
+}
+
+/* Dark mode support */
+[data-theme="dark"] .skeleton-box {
+  background: linear-gradient(90deg, #1f2937 25%, #374151 50%, #1f2937 75%);
+}
+
+.kb-loading {
+  display: none; /* Hide old loading class if unused */
+}
+
 /* Rotate icon on refresh */
 @keyframes spin { 
   100% { transform: rotate(360deg); } 

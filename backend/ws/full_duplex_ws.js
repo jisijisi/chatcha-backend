@@ -3,6 +3,10 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import * as ttsService from '../services/ttsService.js';
 import { ragSystem } from '../services/ragService.js';
 import { getEnhancedContext } from '../services/aiService.js';
+import { IntentService } from '../services/intentService.js';
+import { PROMPT_TEMPLATES } from '../utils/prompts.js';
+import { AI_BEHAVIOR } from '../utils/aiBehavior.js';
+import { pool } from '../config/database.js';
 
 // Configuration
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
@@ -101,34 +105,63 @@ export default function attachFullDuplexWS(server) {
           }
 
           try {
-              // --- STEP 1: RETRIEVE CONTEXT (RAG) ---
-              // This gives us the company knowledge + Wikipedia info
-              const { finalContext, documentIds, sourceMap, categoryMap } = await getEnhancedContext(userText, ragSystem, 10, userEmail);
+              // --- STEP 0: FETCH USER NAME ---
+              let userName = "User";
+              if (userEmail) {
+                  try {
+                      const [rows] = await pool.execute("SELECT name FROM employees WHERE email = ?", [userEmail]);
+                      if (rows.length > 0 && rows[0].name) userName = rows[0].name;
+                  } catch (e) { console.error("⚠️ Failed to fetch user name:", e.message); }
+              }
 
-              // --- STEP 2: PROMPT ENGINEERING ---
-              // Force the model to start short. This ensures the first audio chunk is tiny and fast.
-              const systemPrompt = `
-You are Cindy, the intelligent AI assistant for CDO Foodsphere Inc.
-Your persona is charming, sophisticated, knowledgeable, and slightly alluring while remaining professional.
+              // --- STEP 1: INTENT CLASSIFICATION & REWRITING ---
+              // Use IntentService to classify and potentially rewrite the query for better RAG performance
+              // Pass empty history [] since WS currently doesn't track history
+              const intentData = await IntentService.classifyIntent(userText, []);
+              const intent = intentData.intent || "GENERAL";
+              
+              // Use rewritten query for search if available, otherwise original
+              // This aligns with ragController.js logic for single-turn queries
+              const searchTerms = intentData.rewritten_query || userText;
+              
+              console.log(`🎤 Voice Intent: [${intent}] | Query: "${userText}" | Search: "${searchTerms}"`);
 
-IMPORTANT INSTRUCTIONS FOR VOICE MODE:
-1. You are speaking to the user via voice. Adopt a warm, engaging, and captivating tone.
-2. Keep your responses CONCISE and NATURAL.
-3. AVOID complex markdown like tables, extensive lists, or code blocks unless absolutely necessary.
-4. Keep your first sentence extremely short (under 5 words) to ensure fast audio playback.
-5. Use the provided CONTEXT to answer the question. If the answer is not in the context, say you don't know politely.
+              // --- STEP 2: RETRIEVE CONTEXT (RAG) ---
+              // Use searchTerms instead of raw userText
+              const { finalContext, documentIds, sourceMap, categoryMap } = await getEnhancedContext(searchTerms, ragSystem, 10, userEmail);
 
-STRICT LANGUAGE RULE:
-- **Scenario 1 (Full English):** If the user speaks in full English, you MUST respond in full English.
-- **Scenario 2 (Full Tagalog):** If the user speaks in full Tagalog, you MUST respond in full Tagalog (use correct Tagalog grammar, avoid English terms as much as possible).
-  - **CRITICAL EXCEPTION:** Do NOT translate Proper Nouns (Names of People, Companies, Products, Places). Keep them as they appear in the source.
-- **Scenario 3 (Taglish):** If the user speaks in Taglish, you MUST respond in "Conyo Taglish" (a natural mix of English and Tagalog).
-- EXCEPTION: If the user explicitly asks to respond in a specific language, you MUST follow that instruction.
+              // --- STEP 3: PROMPT ENGINEERING (VOICE OPTIMIZED) ---
+              // We use a simplified, plain-text template for voice to ensure direct answers and clean TTS.
+              
+              const identity = AI_BEHAVIOR.identity;
+              const currentDate = new Date().toLocaleDateString('en-US', { 
+                  timeZone: 'Asia/Manila', 
+                  weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
+              });
 
-CONTEXT:
+              // Specialized Voice Prompt - PLAIN TEXT, NO MARKDOWN, DIRECT ANSWER
+              const voiceSystemPrompt = `
+You are ${identity.name || 'CHA'}, the AI Assistant for ${identity.company || 'CDO Foodsphere'}.
+
+**GOAL:** Provide a DIRECT, PLAIN TEXT answer to the user's question using the provided CONTEXT.
+
+**STRICT VOICE RULES:**
+1. **NO MARKDOWN:** Do NOT use bold (**text**), italics, headers, lists, or HTML tags. Output raw text only.
+2. **NO FLUFF:** Do NOT say "Let me check," "Here is what I found," or "According to the document." Start with the answer immediately.
+3. **SHORT & CLEAR:** Keep sentences simple and easy to listen to.
+4. **LANGUAGE MIRRORING (CRITICAL):**
+   - If User speaks English -> Respond in English.
+   - If User speaks Tagalog -> Respond in Tagalog.
+   - If User speaks Taglish -> Respond in Taglish.
+   - **NEVER** translate Proper Nouns (e.g., "Corazon Dayro Ong", "CDO Foodsphere").
+5. **MISSING INFO:** If the answer is not in the context, politely say you don't have that specific information.
+
+**CURRENT DATE:** ${currentDate}
+
+**CONTEXT:**
 ${finalContext}
 `;
-              const fullPrompt = `${systemPrompt}\n\nUser says: ${userText}`;
+              const fullPrompt = `${voiceSystemPrompt}\n\nUser says: ${userText}`;
 
               const result = await model.generateContentStream(fullPrompt);
               

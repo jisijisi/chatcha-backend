@@ -1,0 +1,483 @@
+/* Knowledge Base Styles */
+/* Integrated with main theme variables */
+
+/* Centered modal container */
+.kd-overlay {
+  position: fixed;
+  inset: 0;
+  display: none; /* Hidden by default */
+  justify-content: center;
+  align-items: center;
+  padding: 32px;
+  background: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(12px);
+  z-index: 10000; /* Ensure high z-index */
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  animation: none; /* Override modal-overlay animation */
+}
+
+.kd-overlay.active {
+  display: flex; /* Show when active */
+  opacity: 1;
+}
+
+.kd-modal {
+  width: min(1200px, 95%);
+  height: 85vh; /* Fixed height to prevent shrinking */
+  max-height: 85vh;
+  min-height: 600px; 
+  background: var(--bg-card); /* Mapped to theme */
+  border-radius: 24px;
+  box-shadow: var(--shadow); /* Mapped to theme */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  font-family: var(--font-family); /* Mapped to theme */
+  transition: none; /* Removed transition as height is now fixed */
+  color: var(--text-main); /* Ensure text color is applied */
+}
+
+/* Header */
+.kd-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--border-color); /* Mapped to theme */
+  background: var(--bg-card); /* Changed from gradient to card bg for consistency */
+}
+
+.kd-header-title {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.kd-header-title h1 {
+  margin: 0;
+  font-size: 18px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--text-main);
+}
+
+.kd-header-title span {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.kd-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.icon-btn {
+  border: none;
+  background: var(--bg-secondary); /* Mapped */
+  border-radius: 999px;
+  padding: 7px 11px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 11px;
+  transition: background var(--transition), color var(--transition),
+    box-shadow var(--transition), transform var(--transition);
+}
+
+.icon-btn:hover {
+  background: var(--bg-hover); /* Mapped */
+  color: var(--text-main);
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.08);
+  transform: translateY(-1px);
+}
+
+.icon-btn--danger {
+  background: rgba(220, 53, 69, 0.1); /* Standard danger tint */
+  color: #dc3545; /* Standard danger color */
+}
+
+.icon-btn--danger:hover {
+  background: rgba(220, 53, 69, 0.2);
+}
+
+.icon {
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  border: 1.4px solid currentColor;
+  position: relative;
+}
+
+.icon.icon-refresh::after {
+  content: "";
+  position: absolute;
+  inset: 2.5px;
+  border-radius: 50%;
+  border: 1.4px solid currentColor;
+  border-bottom-color: transparent;
+  border-left-color: transparent;
+}
+
+.icon.icon-close {
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon.icon-close::before,
+.icon.icon-close::after {
+  content: "";
+  position: absolute;
+  width: 8px;
+  height: 1.4px;
+  background: currentColor;
+  border-radius: 1px;
+}
+
+.icon.icon-close::before {
+  transform: rotate(45deg);
+}
+
+.icon.icon-close::after {
+  transform: rotate(-45deg);
+}
+
+/* Tabs + top controls */
+.kd-toolbar {
+  padding: 16px 24px 0 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  border-bottom: 1px solid var(--border-color); /* Mapped */
+}
+
+.kd-tabs {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border-radius: var(--radius-md); /* Used md instead of pill */
+  background: var(--bg-secondary); /* Mapped */
+  width: fit-content;
+}
+
+.kd-tab {
+  border-radius: var(--radius-sm);
+  padding: 6px 14px;
+  font-size: 12px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition),
+    box-shadow var(--transition), transform var(--transition);
+}
+
+.kd-tab.active {
+  background: var(--bg-card); /* Mapped */
+  color: var(--text-main);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+}
+
+.kd-toprow {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 16px;
+}
+
+.kd-search-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  max-width: 500px;
+}
+
+.kd-search {
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color); /* Mapped */
+  background: var(--input-bg); /* Mapped */
+  padding: 8px 14px;
+  font-size: 13px;
+  flex: 1;
+  outline: none;
+  color: var(--text-main);
+  transition: border-color var(--transition), box-shadow var(--transition),
+    background var(--transition);
+}
+
+.kd-search::placeholder {
+  color: var(--text-muted);
+}
+
+.kd-search:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 1px rgba(215, 25, 33, 0.15);
+  background: var(--bg-card);
+}
+
+.btn-primary {
+  border: none;
+  background: var(--primary-color);
+  color: #ffffff;
+  font-size: 13px;
+  border-radius: var(--radius-md);
+  padding: 8px 16px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  transition: transform var(--transition), box-shadow var(--transition),
+    background var(--transition);
+}
+
+.btn-primary span.icon-plus {
+  font-size: 18px;
+  line-height: 0;
+  margin-top: -1px;
+}
+
+.btn-primary:hover {
+  background: var(--primary-hover);
+  box-shadow: 0 4px 12px rgba(215, 25, 33, 0.3);
+  transform: translateY(-1px);
+}
+
+.btn-ghost {
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  padding: 8px 14px;
+  font-size: 12px;
+  background: var(--bg-card);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-muted);
+  transition: background var(--transition), box-shadow var(--transition),
+    transform var(--transition), color var(--transition);
+}
+
+.btn-ghost:hover {
+  background: var(--bg-hover);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transform: translateY(-1px);
+  color: var(--text-main);
+}
+
+.btn-ghost .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #22c55e;
+}
+
+.kd-toprow-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-muted);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+/* Table */
+.kd-table-wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 0 24px 20px 24px;
+  overflow: hidden;
+  background: var(--bg-card); /* Simplified background */
+}
+
+.kd-table-scroll {
+  flex: 1; /* Fill remaining space */
+  margin-top: 16px;
+  border-radius: 16px;
+  border: 1px solid var(--border-color); /* Mapped */
+  overflow: auto;
+  background: var(--bg-card); /* Mapped */
+}
+
+.kd-table-scroll table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  table-layout: fixed;
+}
+
+.kd-table-scroll thead {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--bg-secondary); /* Mapped */
+}
+
+.kd-table-scroll thead th {
+  padding: 10px 14px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border-color);
+  white-space: nowrap;
+}
+
+.kd-table-scroll tbody tr {
+  transition: background var(--transition), box-shadow var(--transition),
+    transform var(--transition);
+}
+
+.kd-table-scroll tbody tr:nth-child(odd) {
+  background: var(--bg-card); /* Mapped */
+}
+
+.kd-table-scroll tbody tr:nth-child(even) {
+  background: var(--bg-secondary); /* Mapped */
+}
+
+.kd-table-scroll tbody tr:hover {
+  background: var(--bg-hover); /* Mapped */
+  box-shadow: inset 0 0 0 1px rgba(215, 25, 33, 0.1);
+  transform: translateY(-0.5px);
+}
+
+.kd-table-scroll td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border-color);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-main); /* Ensure text color */
+}
+
+.kd-table-scroll td:first-child {
+  font-weight: 500;
+  color: var(--text-main);
+}
+
+.badge-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 12px;
+  border-radius: 999px;
+  font-size: 11px;
+  background: rgba(34, 197, 94, 0.08);
+  color: #15803d;
+  border: 1px solid rgba(34, 197, 94, 0.2);
+}
+
+.badge-status span.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #22c55e;
+}
+
+.action-group {
+  display: inline-flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.chip-icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background var(--transition), transform var(--transition),
+    box-shadow var(--transition), border-color var(--transition),
+    color var(--transition);
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.chip-icon:hover {
+  background: var(--text-main); /* Invert colors on hover */
+  color: var(--bg-card);
+  border-color: var(--text-main);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+}
+
+.chip-icon--danger:hover {
+  background: #dc3545;
+  border-color: #dc3545;
+  color: white;
+}
+
+/* Footer (optional subtle) */
+.kd-footer {
+  padding: 10px 24px 16px 24px;
+  border-top: 1px solid var(--border-color);
+  font-size: 11px;
+  color: var(--text-muted);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--bg-secondary);
+}
+
+.kd-footer span {
+  opacity: 0.9;
+}
+
+@media (max-width: 768px) {
+  .kd-overlay {
+    padding: 12px;
+  }
+  .kd-modal {
+    border-radius: 18px;
+  }
+  .kd-header,
+  .kd-toolbar,
+  .kd-table-wrap,
+  .kd-footer {
+    padding-inline: 16px;
+  }
+  .kd-table-scroll thead {
+    display: none;
+  }
+  .kd-table-scroll table,
+  .kd-table-scroll tbody,
+  .kd-table-scroll tr,
+  .kd-table-scroll td {
+    display: block;
+    width: 100%;
+  }
+  .kd-table-scroll tbody tr {
+    margin-bottom: 10px;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .kd-table-scroll td {
+    border-bottom: 1px solid var(--border-color);
+    padding: 8px 12px;
+  }
+  .kd-table-scroll td::before {
+    content: attr(data-label);
+    display: block;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    margin-bottom: 2px;
+  }
+}

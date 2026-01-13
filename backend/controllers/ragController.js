@@ -8,6 +8,7 @@ import { ToolService } from '../services/toolService.js';
 import { IntentService } from '../services/intentService.js';
 import { SmartPersonalAssistant } from '../services/smartPersonalAssistant.js';  // NEW IMPORT
 import { SmartDataAnalyst } from '../services/smartDataAnalyst.js'; // NEW IMPORT
+import { notifyAdmins } from './notificationController.js';
 import { PROMPT_TEMPLATES } from '../utils/prompts.js';
 import { AI_BEHAVIOR } from '../utils/aiBehavior.js';
 
@@ -486,6 +487,31 @@ Based on conversation history, this interprets to: "${searchTerms}"
         // 6. PROCESS SOURCES
         let cleanAnswer = finalAnswer;
         let citedSourceNames = [];
+
+        // --- NEW: MISSING KNOWLEDGE CHECK ---
+        if (cleanAnswer.includes('<MISSING_KNOWLEDGE>')) {
+            console.log("🚩 Missing knowledge detected in response.");
+            cleanAnswer = cleanAnswer.replace('<MISSING_KNOWLEDGE>', '').trim();
+            
+            // Only notify if user is logged in (not guest)
+            if (userEmail) {
+                const notifyMessage = `Missing Knowledge: User "${userName}" asked: "${prompt}". AI could not find specific answer.`;
+                // Fire and forget - don't await to avoid slowing down response
+                notifyAdmins(notifyMessage).catch(err => console.error('Failed to notify admins:', err));
+            }
+        }
+        // Fallback: Check if the answer explicitly mentions checking with HR or lack of info, even without the tag
+        else if (
+            cleanAnswer.toLowerCase().includes("i'm not seeing the specific process") || 
+            cleanAnswer.toLowerCase().includes("don't have knowledge about this") ||
+            cleanAnswer.toLowerCase().includes("i recommend checking with hr")
+        ) {
+             console.log("🚩 Implicit missing knowledge detected.");
+             if (userEmail) {
+                const notifyMessage = `Missing Knowledge (Implicit): User "${userName}" asked: "${prompt}". AI response indicated lack of specific info.`;
+                notifyAdmins(notifyMessage).catch(err => console.error('Failed to notify admins:', err));
+            }
+        }
 
         if (finalAnswer.includes("SOURCES_USED:")) {
             const splitArr = finalAnswer.split("SOURCES_USED:");

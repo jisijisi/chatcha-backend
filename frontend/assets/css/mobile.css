@@ -1,803 +1,246 @@
-/* Responsive and Mobile Styles */
+/* frontend/assets/css/mobile.css */
 
-/* Hide tooltips on mobile and when sidebar is expanded */
-@media (max-width: 1024px) {
-  .tooltip {
-    display: none !important;
-  }
-
-  /* NEW: Also hide the action button tooltips */
-  .message-action-btn .action-tooltip {
-    display: none !important;
-  }
+/* Mobile Header - Hidden by default, shown on mobile */
+.mobile-header {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 60px;
+  background-color: var(--bg-card);
+  border-bottom: 1px solid var(--border-color);
+  z-index: 100;
+  align-items: center;
+  padding: 0 16px;
+  justify-content: space-between;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
-#sidebar:not(.minimized) .tooltip {
-  display: none !important;
+.mobile-header-center {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  justify-content: center;
+  overflow: hidden;
+  height: 100%;
 }
 
-/* Tablet and smaller desktop */
-@media (max-width: 1024px) {
-  #sidebar {
-    width: 240px;
-  }
-  
+/* Branding Section (Logo + Text) */
+.mobile-branding {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mobile-branding .mobile-header-logo {
+  height: 28px;
+  width: auto;
+}
+
+.mobile-branding .brand-text {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-main);
+  white-space: nowrap;
+}
+
+/* Chat Title Button (Dropdown) */
+.mobile-header-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-main);
+  background: none;
+  border: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  max-width: 200px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: background-color 0.2s;
+  overflow: hidden; /* Keep overflow hidden for the container */
+}
+
+.mobile-header-title .title-text {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0; /* Critical for flex child truncation */
+  text-align: right; /* Optional: keeps text near arrow if short, or left if you prefer */
+}
+
+.mobile-header-title:active {
+  background-color: var(--bg-hover);
+}
+
+.mobile-header-title .dropdown-icon {
+  width: 16px;
+  height: 16px;
+  transition: transform 0.2s;
+  flex-shrink: 0;
+  opacity: 0.8;
+}
+
+.mobile-header-title.dropdown-active .dropdown-icon {
+  transform: rotate(180deg);
+}
+
+/* Mobile Menu Toggle Button (Modernized) */
+.mobile-menu-toggle {
+  background: none;
+  border: none;
+  padding: 8px;
+  cursor: pointer;
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  transition: background-color 0.2s;
+}
+
+.mobile-menu-toggle:active, 
+.mobile-menu-toggle:hover {
+  background-color: rgba(0,0,0,0.05);
+}
+
+[data-theme="dark"] .mobile-menu-toggle:active, 
+[data-theme="dark"] .mobile-menu-toggle:hover {
+  background-color: rgba(255,255,255,0.1);
+}
+
+.mobile-menu-toggle.in-header {
+  padding: 8px;
+  margin-right: 4px;
+  /* Remove old negative margins or padding resets if any */
+}
+
+.mobile-menu-toggle svg {
+  width: 24px;
+  height: 24px;
+  stroke-width: 2px;
+}
+
+/* Mobile Header Dropdown */
+.mobile-header-dropdown {
+  position: fixed;
+  top: 60px;
+  left: 0;
+  width: 100%;
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border-color);
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  display: none;
+  flex-direction: column;
+  z-index: 99;
+  animation: slideDown 0.2s ease-out;
+}
+
+.mobile-header-dropdown.show {
+  display: flex;
+}
+
+.mobile-header-dropdown .dropdown-option {
+  padding: 16px;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 1rem;
+  color: var(--text-main);
+  background: none;
+  border: none;
+  width: 100%;
+  text-align: left;
+}
+
+.mobile-header-dropdown .dropdown-option svg {
+  width: 20px;
+  height: 20px;
+}
+
+.mobile-header-dropdown .dropdown-option.delete {
+  color: #ef4444;
+}
+
+@keyframes slideDown {
+  from { transform: translateY(-10px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* Media Query for Mobile Devices */
+@media (max-width: 768px) {
+  /* Show Mobile Header */
   .mobile-header {
-    display: none;
-  }
-  
-  #chat-container {
-    padding-top: 0;
-    height: 100vh;
-    height: 100dvh;
-  }
-  
-  #mobile-menu-toggle:not(.in-header) {
     display: flex;
   }
-  
-  .mobile-header .mobile-menu-toggle {
-    display: none;
-  }
-  
-  /* Removed #chat-container.centered #welcome-message margin override to allow safe centering from chat.css */
-  
-  .input-area {
-    padding-bottom: max(15px, env(safe-area-inset-bottom));
-  }
-  
-  #chat {
-    padding-top: 20px;
-  }
-}
 
-/* Mobile and tablet portrait */
-@media (max-width: 768px) {
-  #app {
-    flex-direction: column;
-  }
-
+  /* Sidebar Behavior */
   #sidebar {
-    width: 280px;
     position: fixed;
     top: 0;
     left: 0;
     height: 100%;
-    height: 100dvh;
-    z-index: 1001;
-    border-right: none;
-    border-bottom: 2px solid var(--sidebar-border);
-    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.2);
+    width: 280px;
     transform: translateX(-100%);
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform 0.3s ease;
+    z-index: 1000;
+    box-shadow: none;
   }
 
   #sidebar.show {
     transform: translateX(0);
+    box-shadow: 2px 0 8px rgba(0,0,0,0.2);
   }
 
-  #sidebar.minimized {
-    width: 280px;
-    transform: translateX(-100%);
-  }
-  
-  #sidebar.minimized.show {
-    transform: translateX(0);
+  /* Overlay */
+  #sidebar-overlay {
+    z-index: 999;
   }
 
-  #sidebar.minimized .sidebar-header h1,
-  #sidebar.minimized #sidebar h2,
-  #sidebar.minimized #chat-history {
-    opacity: 1;
-    visibility: visible;
-  }
-
-  #sidebar.minimized #new-chat span {
-    display: inline;
-  }
-
-  #sidebar.minimized #chat-history {
-    height: auto;
-    padding: 0 20px 20px;
-  }
-
-  #sidebar.minimized .sidebar-header {
-    justify-content: space-between;
-    padding: 16px 20px;
-    gap: 12px;
-  }
-
-  #sidebar.minimized #new-chat {
-    padding: 12px 20px;
-    justify-content: flex-start;
-    margin: 16px 20px;
-    gap: 10px;
-  }
-
-  #sidebar.minimized .history-header {
-    opacity: 1;
-    visibility: visible;
-    padding: 16px 20px 10px;
-  }
-
-  #sidebar.minimized .history-header h2 {
-    opacity: 1;
-    visibility: visible;
-    width: auto;
-  }
-
-  .mobile-menu-toggle {
-    display: flex;
-  }
-
-  .sidebar-toggle {
-    display: none;
-  }
-
-  .history-dropdown {
-    display: none !important;
-  }
-
-  .mobile-header {
-    display: flex;
-  }
-
+  /* Chat Container Adjustments */
   #chat-container {
-    height: 100vh;
-    height: 100dvh;
-    padding-top: 60px;
-  }
-
-  #chat {
-    padding: 20px 16px;
-    gap: 8px; /* Reduced gap for mobile */
-  }
-
-  .message {
-    max-width: min(700px, 95%);
-  }
-
-  .message.user {
-    max-width: min(550px, 90%);
-    margin-right: calc((100% - min(700px, 95%)) / 2);
-  }
-
-  .message-content {
-    padding: 14px 16px;
-    font-size: 0.9rem;
-  }
-
-  /* ========================================
-  CORRECTED RULE - As per your request
-  
-  NEW FIX: Added 'z-index: 1' to ensure buttons
-  go *behind* the mobile sidebar (which has z-index: 20).
-  ========================================
-  */
-  .message .message-actions {
-    position: relative;
-    top: auto;
-    left: auto;
-    right: auto;
-    margin-top: 8px;
-    opacity: 1;
-    pointer-events: auto;
-    z-index: 1;
-    padding-bottom: 4px;
-  }
-  /* ======================================== */
-
-  .input-area {
-    padding: 12px;
-    gap: 8px;
-  }
-
-  /* Reduce blur/gradient height on mobile to emphasize action buttons */
-  #chat-container:not(.centered) .input-area::before {
-    height: 15px;
-    top: -15px;
-  }
-
-  .input-area .input-wrapper {
-    max-width: 100%;
-  }
-
-  .input-area input {
-    /* === MODIFIED: Adjusted left padding === */
-    padding: 12px 55px 12px 55px;
-  }
-
-  .input-area button {
-    width: 40px;
-    height: 40px;
-  }
-
-  .input-area button .arrow {
-    width: 18px;
-    height: 18px;
-  }
-
-  /* Fixed counter positioning for mobile */
-  .input-counter {
-    right: 8px !important;
-    font-size: 0.7rem;
-    padding: 2px 6px;
-  }
-
-  .modal {
-    width: 95%;
-    max-width: 400px;
-  }
-
-  .modal-header {
-    padding: 16px 20px;
-  }
-
-  .modal-body {
-    padding: 20px;
-  }
-
-  .modal-footer {
-    padding: 12px 20px;
-  }
-
-  .scroll-to-bottom {
-    bottom: 70px;
-    right: 16px;
-    width: 36px;
-    height: 36px;
-  }
-
-  .suggested-questions {
-    gap: 8px;
-    margin-top: 16px;
-    max-width: 95vw;
-    padding: 0 8px;
-  }
-
-  .suggested-question {
-    padding: 12px 14px;
-    font-size: 0.85rem;
-    min-height: 55px;
-  }
-}
-
-/* Specific fix for 540px width dimension */
-@media (max-width: 540px) and (min-width: 481px) {
-  /* Removed rigid overrides to allow chat.css clamps to work
-  .welcome-avatar-container { ... }
-  #welcome-message .welcome-avatar { ... }
-  .welcome-avatar-border { ... }
-  #welcome-message h2 { ... }
-  #welcome-message p { ... }
-  */
-
-  .suggested-questions {
-    max-width: 90vw;
-    gap: 8px;
-  }
-
-  .suggested-question {
-    padding: 10px 12px;
-    font-size: 0.82rem;
-    min-height: 50px;
-  }
-
-  #chat-container.centered .input-area {
-    max-width: min(450px, 90vw);
-    padding: 15px 10px 10px 10px;
-  }
-
-  /* Add safe area support for notched devices */
-  #welcome-message {
-    padding-left: max(15px, env(safe-area-inset-left));
-    padding-right: max(15px, env(safe-area-inset-right));
-  }
-}
-
-/* Small mobile devices - 375px to 480px */
-@media (max-width: 480px) and (min-width: 376px) {
-  #sidebar {
+    padding-top: 60px; /* Space for mobile header */
     width: 100%;
-    max-width: 300px;
   }
 
-  .mobile-header {
-    height: 56px;
-    padding: 0 12px;
-  }
-
-  .mobile-header-title {
-    font-size: 1rem;
-  }
-
-  .mobile-header .mobile-menu-toggle {
-    padding: 8px;
-  }
-
-  #chat-container {
-    padding-top: 56px;
-    height: calc(100vh - 56px);
-    height: calc(100dvh - 56px);
-  }
-
-  /* Removed overrides for #welcome-message h2/p to use chat.css clamps */
-
-  #chat {
-    padding: 16px 12px;
-    gap: 8px;
-  }
-
-  .message {
-    max-width: 100%;
-  }
-
-  .message.user {
-    max-width: 90%;
-    margin-right: 5%;
-  }
-
-  .message-content {
-    font-size: 0.85rem;
-    padding: 12px 14px;
-  }
-
-  .input-area {
-    padding: 10px;
-  }
-
-  .input-area input {
-    /* === MODIFIED: Adjusted left padding === */
-    padding: 10px 55px 10px 55px;
-  }
-
-  .input-counter {
-    right: 8px !important;
-    font-size: 0.65rem;
-  }
-
-  .modal-btn {
-    padding: 8px 20px;
-    font-size: 0.9rem;
-  }
-
-  .scroll-to-bottom {
-    bottom: 65px;
-    right: 12px;
-    width: 32px;
-    height: 32px;
-  }
-
-  .scroll-to-bottom svg {
-    width: 16px;
-    height: 16px;
-  }
-
-  .suggested-questions {
-    gap: 6px;
-    margin-top: 12px;
-  }
-
-  .suggested-question {
-    padding: 10px 12px;
-    font-size: 0.78rem;
-    min-height: 48px;
-  }
-
-  /* Small mobile devices - Welcome Avatar Fix - REMOVED to use chat.css clamps */
-}
-
-/* Very small mobile devices - 375px and below */
-@media (max-width: 375px) {
-  #sidebar {
-    width: 100%;
-    max-width: 280px;
-  }
-
-  .mobile-header {
-    height: 52px;
-    padding: 0 10px;
-  }
-
-  .mobile-header-title {
-    font-size: 0.95rem;
-  }
-
-  .mobile-header .mobile-menu-toggle {
-    padding: 6px;
-  }
-
-  #chat-container {
-    padding-top: 52px;
-    height: calc(100vh - 52px);
-    height: calc(100dvh - 52px);
-  }
-
-  /* Removed rigid overrides for welcome message to use chat.css clamps */
-
-  #chat {
-    padding: 14px 10px;
-    gap: 6px;
-  }
-
-  .message {
-    max-width: 100%;
-  }
-
-  .message.user {
-    max-width: 92%;
-    margin-right: 4%;
-  }
-
-  .message-content {
-    font-size: 0.8rem;
-    padding: 10px 12px;
-  }
-
-  .input-area {
-    padding: 8px;
-  }
-
-  .input-area input {
-    /* === MODIFIED: Adjusted left padding === */
-    padding: 8px 50px 8px 55px;
-    font-size: 0.9rem;
-  }
-
-  .input-area button {
-    width: 36px;
-    height: 36px;
-  }
-
-  .input-area button .arrow {
-    width: 16px;
-    height: 16px;
-  }
-
-  .input-counter {
-    right: 6px !important;
-    font-size: 0.6rem;
-    padding: 1px 4px;
-  }
-
-  .modal-btn {
-    padding: 7px 18px;
-    font-size: 0.85rem;
-  }
-
-  .scroll-to-bottom {
-    bottom: 60px;
-    right: 10px;
-    width: 30px;
-    height: 30px;
-  }
-
-  .scroll-to-bottom svg {
-    width: 14px;
-    height: 14px;
-  }
-
-  .suggested-questions {
-    gap: 4px;
-    margin-top: 10px;
-    max-width: 92vw;
-    padding: 0 6px;
-  }
-
-  .suggested-question {
-    padding: 8px 10px;
-    font-size: 0.75rem;
-    min-height: 44px;
-    line-height: 1.3;
-  }
-
-  /* Removed rigid overrides for welcome avatar to use chat.css clamps */
-
-  /* Ensure proper spacing for 375x667 */
-  #welcome-message {
-    padding: 0 max(10px, env(safe-area-inset-left, 10px), env(safe-area-inset-right, 10px));
-  }
-}
-
-/* Large tablets and small desktops in landscape */
-@media (min-width: 769px) and (max-width: 1024px) and (orientation: landscape) {
-  .mobile-header {
+  /* Hide Desktop Elements */
+  #sidebar-toggle {
     display: none;
   }
-  
-  #chat-container {
-    padding-top: 0;
-  }
-  
-  .mobile-header-title {
-    font-size: 1rem;
-    padding: 0 8px;
-  }
-  
-  #chat {
-    padding: 20px 16px;
-    gap: 8px;
+
+  /* Adjust Input Area */
+  .input-area {
+    padding: 0 10px 10px;
   }
 
-  .suggested-questions {
-    grid-template-columns: repeat(2, 1fr);
-    max-width: min(700px, 90vw);
+  .input-area textarea {
+    font-size: 16px; /* Prevent zoom on iOS */
   }
-}
 
-/* Very large screens */
-@media (min-width: 1440px) {
-  #sidebar {
-    width: 280px;
+  /* Welcome Message Adjustments */
+  #welcome-message {
+    padding-top: 20px;
   }
-  
+
+  #welcome-message h2 {
+    font-size: 1.5rem;
+  }
+
+  /* Message Adjustments */
   .message {
-    max-width: min(800px, 90%);
+    max-width: 95%;
   }
-  
+
   .message.user {
-    max-width: min(600px, 85%);
-    margin-right: calc((100% - min(800px, 90%)) / 2);
-  }
-
-  .suggested-questions {
-    grid-template-columns: repeat(3, 1fr);
-    max-width: min(900px, 90vw);
-  }
-}
-
-/* Desktop */
-@media (min-width: 1025px) {
-  .mobile-header {
-    display: none !important;
+    margin-right: 0;
   }
   
-  #chat-container {
-    padding-top: 0;
+  /* Hide the separate mobile menu toggle button if it exists outside header */
+  body > .mobile-menu-toggle {
+    display: none; 
   }
-  
-  .mobile-menu-toggle {
-    display: none;
-  }
-}
-
-/* Extra small mobile devices (very small phones) */
-@media (max-width: 360px) {
-  /* Removed rigid overrides for welcome avatar to use chat.css clamps */
-
-  /* Removed rigid overrides for welcome message to use chat.css clamps */
-
-  .suggested-questions {
-    gap: 3px;
-    margin-top: 8px;
-    max-width: 92vw;
-  }
-
-  .suggested-question {
-    padding: 7px 9px;
-    font-size: 0.7rem;
-    min-height: 40px;
-    line-height: 1.2;
-  }
-
-  #chat-container.centered .input-area {
-    padding: 12px 8px 8px 8px;
-  }
-}
-
-/* Specific height adjustment for 720px height */
-@media (max-height: 720px) and (max-width: 540px) {
-  #welcome-message {
-    padding-top: 10px;
-  }
-  
-  .welcome-avatar-container {
-    margin-bottom: 12px;
-  }
-  
-  #welcome-message h2 {
-    margin-bottom: 8px;
-  }
-  
-  .suggested-questions {
-    margin-top: 16px;
-  }
-  
-  #chat-container.centered .input-area {
-    padding: 15px 10px 10px 10px;
-  }
-}
-
-/* Specific height adjustment for 667px height (iPhone 6/7/8) */
-@media (max-height: 667px) and (max-width: 375px) {
-  #welcome-message {
-    padding-top: 8px;
-  }
-  
-  .welcome-avatar-container {
-    margin-bottom: 10px;
-  }
-  
-  #welcome-message h2 {
-    margin-bottom: 6px;
-    font-size: 1.15rem;
-  }
-  
-  #welcome-message p {
-    margin-bottom: 8px;
-  }
-  
-  .suggested-questions {
-    margin-top: 8px;
-    gap: 3px;
-  }
-  
-  .suggested-question {
-    padding: 6px 8px;
-    min-height: 42px;
-    font-size: 0.72rem;
-  }
-  
-  #chat-container.centered .input-area {
-    padding: 10px 8px 8px 8px;
-  }
-}
-
-/* Very small height screens */
-@media (max-height: 600px) {
-  #welcome-message {
-    padding-top: 5px;
-    transform: scale(0.9);
-    transform-origin: center top;
-  }
-}
-
-/* --- Mobile Header Styles --- */
-
-/* * This is the DEFAULT state (Conversation View)
- * It applies when the welcome screen is NOT visible.
-*/
-
-#mobile-header {
-  background: white;
-  border-bottom: 1px solid #e8e8e8; /* Adds a clean separator line */
-  box-shadow: none; /* Removes any existing shadow */
-  position: relative; /* Ensure dropdown can be positioned relative to header */
-  z-index: 1000;
-}
-
-.mobile-menu-toggle.in-header {
-  background: transparent;
-  box-shadow: none;
-  border: none;
-}
-
-/* 1. Hide the logo by default */
-#mobile-header-logo {
-  display: none;
-}
-
-/* 2. Style the chat title (Request 2) */
-#mobile-header-title .title-text {
-  color: #D71921;
-  font-weight: 600;
-  font-size: 1rem;
-  content: none; /* Clear any CSS-driven content */
-}
-
-/* 3. Show the dropdown icon and color it */
-#mobile-header-title .dropdown-icon {
-  display: block;
-  stroke: #D71921;
-}
-
-/* === NEW: Mobile Header Dropdown Styles === */
-.mobile-header-dropdown {
-  position: absolute;
-  top: 100%;
-  right: 12px;
-  background: var(--bg-card);
-  border-radius: var(--radius-sm);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  border: 1px solid var(--border-color);
-  min-width: 150px;
-  z-index: 1001;
-  display: none;
-  padding: 6px 0;
-}
-
-.mobile-header-dropdown.show {
-  display: block;
-  animation: fadeIn 0.2s ease;
-}
-
-.mobile-header-dropdown .dropdown-option {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 16px;
-  width: 100%;
-  border: none;
-  background: none;
-  color: var(--text-main);
-  font-size: 0.9rem;
-  text-align: left;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.mobile-header-dropdown .dropdown-option:hover {
-  background-color: var(--bg-secondary);
-}
-
-.mobile-header-dropdown .dropdown-option svg {
-  width: 18px;
-  height: 18px;
-  stroke-width: 2px;
-}
-
-.mobile-header-dropdown .dropdown-option.delete {
-  color: var(--primary-color);
-}
-/* =========================================== */
-
-/* * This is the WELCOME PAGE state (Request 1)
- * It uses :has() to check if the #chat-container.centered class exists.
-*/
-
-/* 1. Show the logo on the welcome page */
-body:has(#chat-container.centered) #mobile-header-logo {
-  display: block;
-  /* Using sizes from your sidebar.css for consistency */
-  width: 55px;
-  height: 55px;
-}
-
-/* 2. Center the logo and title text */
-body:has(#chat-container.centered) .mobile-header-center {
-  justify-content: center;
-  gap: 8px;
-}
-
-/* 3. Style the title text on the welcome page */
-body:has(#chat-container.centered) #mobile-header-title .title-text {
-  /* JavaScript now sets the text, CSS just styles it */
-  font-size: 1.3rem; /* Match sidebar h1 */
-  font-weight: 700;  /* Match sidebar h1 */
-  color: var(--primary-color); /* Match sidebar h1 */
-}
-
-/* 4. Hide the dropdown icon on the welcome page */
-body:has(#chat-container.centered) #mobile-header-title .dropdown-icon {
-  display: none;
-}
-
-/* 5. Make the title un-clickable on the welcome page */
-body:has(#chat-container.centered) #mobile-header-title {
-  pointer-events: none;
-  gap: 0; 
-}
-
-/* --- Mobile Menu Toggle (Welcome Screen) Style --- */
-
-/* This targets the floating button on the welcome screen */
-#mobile-menu-toggle {
-  background-color: #D71921; /* App's primary red */
-  border-radius: 50%;        /* Make it a circle */
-  width: 35px;               /* Set fixed width */
-  height: 35px;              /* Set fixed height */
-  padding: 0;                /* Remove default padding */
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* Adjust shadow */
-  margin-top: -5px;
-}
-
-/* Make the hamburger lines white */
-#mobile-menu-toggle .hamburger span {
-  background-color: white;
-}
-
-/* Center the hamburger inside the circle */
-#mobile-menu-toggle .hamburger {
-  width: 20px; 
-  height: 16px;
 }

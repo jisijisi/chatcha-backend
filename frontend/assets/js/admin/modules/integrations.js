@@ -1050,8 +1050,8 @@ function addHeaderRow(key = '', val = '') {
     const div = document.createElement('div');
     div.className = 'dynamic-row header-row';
     div.innerHTML = `
-        <input type="text" class="form-control header-key" placeholder="Key" value="${key}" style="flex:1;">
-        <input type="text" class="form-control header-val" placeholder="Value" value="${val}" style="flex:1;">
+        <input type="text" class="form-control header-key" placeholder="Key" value="${key}" style="flex:1;" autocomplete="off">
+        <input type="text" class="form-control header-val" placeholder="Value" value="${val}" style="flex:1;" autocomplete="off">
         <button class="btn btn-danger btn-icon remove-row" style="padding: 8px 12px;">✕</button>
     `;
     div.querySelector('.remove-row').onclick = () => div.remove();
@@ -1065,7 +1065,7 @@ function addParameterRow(param = {}) {
     const div = document.createElement('div');
     div.className = 'dynamic-row param-row';
     div.innerHTML = `
-        <input type="text" class="form-control param-name" placeholder="Name" value="${param.name || ''}" style="flex:1; min-width: 80px;">
+        <input type="text" class="form-control param-name" placeholder="Name" value="${param.name || ''}" style="flex:1; min-width: 80px;" autocomplete="off">
         <select class="form-control param-type" style="width:80px;">
             <option value="string" ${param.type === 'string' ? 'selected' : ''}>String</option>
             <option value="number" ${param.type === 'number' ? 'selected' : ''}>Number</option>
@@ -1076,7 +1076,7 @@ function addParameterRow(param = {}) {
             <option value="path" ${param.in === 'path' ? 'selected' : ''}>Path</option>
             <option value="body" ${param.in === 'body' ? 'selected' : ''}>Body</option>
         </select>
-        <input type="text" class="form-control param-desc" placeholder="Description" value="${param.description || ''}" style="flex:2; min-width: 100px;">
+        <input type="text" class="form-control param-desc" placeholder="Description" value="${param.description || ''}" style="flex:2; min-width: 100px;" autocomplete="off">
         <button class="btn btn-danger btn-icon remove-row" style="padding: 8px 12px;">✕</button>
     `;
     div.querySelector('.remove-row').onclick = () => div.remove();
@@ -1090,8 +1090,8 @@ function addSapParameterRow(param = {}) {
     const div = document.createElement('div');
     div.className = 'dynamic-row sap-param-row';
     div.innerHTML = `
-        <input type="text" class="form-control param-name" placeholder="SAP Param Name" value="${param.name || ''}" style="flex:1; min-width: 120px;">
-        <input type="text" class="form-control param-desc" placeholder="User Input Description (e.g. 'Customer ID')" value="${param.description || ''}" style="flex:2;">
+        <input type="text" class="form-control param-name" placeholder="SAP Param Name" value="${param.name || ''}" style="flex:1; min-width: 120px;" autocomplete="off">
+        <input type="text" class="form-control param-desc" placeholder="User Input Description (e.g. 'Customer ID')" value="${param.description || ''}" style="flex:2;" autocomplete="off">
         <button class="btn btn-danger btn-icon remove-row" style="padding: 8px 12px;">✕</button>
     `;
     div.querySelector('.remove-row').onclick = () => div.remove();

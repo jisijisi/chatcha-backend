@@ -953,7 +953,7 @@ export class UIManager {
   }
 
   updateMobileHeader() {
-    const { mobileHeader, mobileHeaderTitle, mobileHeaderLogo } = this.app.elements;
+    const { mobileHeader, mobileHeaderTitle, mobileBranding } = this.app.elements;
     const shouldShow = window.innerWidth <= 768;
     
     if (shouldShow) {
@@ -963,26 +963,29 @@ export class UIManager {
       }
       
       if (this.app.hasConversation && this.app.activeChatIndex !== null) {
+        // Chat Mode
         const currentChat = this.app.chats[this.app.activeChatIndex];
-        if (currentChat) {
-          const titleText = mobileHeaderTitle.querySelector('.title-text');
-          if (titleText) titleText.textContent = truncateTitle(currentChat.title, 25);
-          mobileHeaderTitle.classList.add('clickable');
-          mobileHeaderTitle.setAttribute('aria-label', 'Chat options');
-          if (mobileHeaderLogo) mobileHeaderLogo.classList.add('hidden');
-        } else {
-          const titleText = mobileHeaderTitle.querySelector('.title-text');
-          if (titleText) titleText.textContent = "Current Chat";
-          mobileHeaderTitle.classList.add('clickable');
-          if (mobileHeaderLogo) mobileHeaderLogo.classList.add('hidden');
-        }
-      } else {
         const titleText = mobileHeaderTitle.querySelector('.title-text');
-        if (titleText) titleText.textContent = "ChatCDO";
+        
+        if (currentChat) {
+             if (titleText) titleText.textContent = truncateTitle(currentChat.title, 25);
+        } else {
+             if (titleText) titleText.textContent = "Current Chat";
+        }
+        
+        mobileHeaderTitle.classList.add('clickable');
+        mobileHeaderTitle.setAttribute('aria-label', 'Chat options');
+        mobileHeaderTitle.style.display = 'flex';
+        
+        if (mobileBranding) mobileBranding.style.display = 'none';
+
+      } else {
+        // Home Mode
+        if (mobileBranding) mobileBranding.style.display = 'flex';
+        
+        mobileHeaderTitle.style.display = 'none';
         mobileHeaderTitle.classList.remove('clickable');
         mobileHeaderTitle.classList.remove('dropdown-active');
-        mobileHeaderTitle.setAttribute('aria-label', '');
-        if (mobileHeaderLogo) mobileHeaderLogo.classList.remove('hidden');
       }
     } else {
       if (mobileHeader) {

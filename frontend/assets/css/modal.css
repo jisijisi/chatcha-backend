@@ -491,7 +491,6 @@
     padding: 16px;
   }
   
-  /* Stack grid on small screens */
   .modal.full-screen .modal-body .sources-list {
     grid-template-columns: 1fr;
   }
@@ -545,7 +544,7 @@
   height: 100%;
   background: rgba(0, 0, 0, 0.6);
   z-index: 10101 !important;
-  will-change: opacity, transform;
+  /* Removed will-change to prevent excessive memory usage and layer promotion conflicts */
 }
 
 /* Modal content inside these modals */
@@ -582,4 +581,160 @@
   justify-content: center;
   background: rgba(0, 0, 0, 0.6);
   will-change: opacity, transform;
+}
+
+/* --- Optimization for Nested Modals (KB Sub-modals) --- */
+/* These modals open on top of the heavy KB full-screen modal. 
+   We must disable animations and heavy effects to prevent lag. 
+   Removed .active requirement to ensure animation is disabled immediately upon display:flex */
+
+#kb-view-modal,
+#kb-delete-confirm-modal,
+#kb-subcat-modal,
+#kb-conversion-status-modal,
+#cache-progress-modal,
+#kb-doc-modal {
+  /* Ensure overlay is just a flat color, no filters */
+  backdrop-filter: none !important;
+  transition: none !important;
+  /* Reset properties inherited from .modal class that shouldn't be on the overlay */
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  transform: none !important;
+  animation: none !important;
+  
+  /* Reset dimensions to be full screen overlay immediately */
+  width: 100% !important;
+  height: 100% !important;
+  max-width: none !important;
+  max-height: none !important;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  background: rgba(0, 0, 0, 0.6) !important;
+  z-index: 10101 !important; /* Ensure it's above KB modal immediately */
+}
+
+/* The content inside these modals needs to be the actual box */
+#kb-view-modal .modal-content,
+#kb-delete-confirm-modal .modal-content,
+#kb-subcat-modal .modal-content,
+#kb-conversion-status-modal .modal-content,
+#cache-progress-modal .modal-content,
+#kb-doc-modal .modal-content {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  /* Use a very simple opacity fade */
+  animation: simpleFadeIn 0.15s ease-out; 
+  /* Ensure text color is correct */
+  color: var(--text-main);
+  /* Reset z-index to be relative to parent */
+  position: relative;
+  z-index: 10202; /* Higher than overlay */
+}
+
+@keyframes simpleFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* =================================================================
+   WELCOME MODAL STYLES (Added to fix layout issues)
+   ================================================================= */
+
+/* Welcome Modal Avatar */
+.welcome-avatar-section {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.welcome-avatar {
+  width: 140px; /* Reduced from potential large size */
+  max-width: 50%;
+  height: auto;
+  object-fit: contain;
+  border-radius: 12px;
+}
+
+/* Employee Status Selection */
+.employee-status-label {
+  display: block;
+  text-align: center;
+  margin-bottom: 16px;
+  font-weight: 600;
+  color: var(--text-main);
+  font-size: 1.05rem;
+}
+
+.radio-card-container {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+.radio-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 110px;
+  height: 110px;
+  border: 2px solid var(--border-color);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  background: var(--bg-card);
+  color: var(--text-muted);
+}
+
+.radio-card input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.radio-card:hover {
+  border-color: var(--primary-color);
+  background: var(--bg-secondary);
+  color: var(--primary-color);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.radio-card.selected {
+  border-color: var(--primary-color);
+  background: rgba(215, 25, 33, 0.05); /* Light red tint */
+  color: var(--primary-color);
+  box-shadow: 0 4px 12px rgba(215, 25, 33, 0.15);
+}
+
+.radio-card-icon {
+  font-size: 28px;
+  margin-bottom: 8px;
+  font-weight: bold;
+  line-height: 1;
+}
+
+.radio-card-label {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+/* Ensure modal text is centered for welcome modal */
+#welcome-modal-overlay .modal-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+#welcome-modal-overlay #modal-message {
+  text-align: center;
+  margin-bottom: 24px;
+  color: var(--text-muted);
+  max-width: 90%;
 }

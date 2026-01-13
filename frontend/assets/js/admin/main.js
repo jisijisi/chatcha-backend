@@ -47,6 +47,11 @@ async function initializeModules() {
         console.log('Settings module loaded');
         module.setupSettingsManagement();
         return module;
+      }),
+      import('./modules/notifications.js').then(module => {
+        console.log('Notifications module loaded');
+        module.initNotifications();
+        return module;
       })
     ]);
 

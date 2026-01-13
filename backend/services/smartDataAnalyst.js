@@ -137,8 +137,36 @@ export class SmartDataAnalyst {
         try {
             console.log(`🧠 SmartDataAnalyst processing: "${userQuery}"`);
 
+            // 0. Fetch User Context (for "I", "me", "my" resolution)
+            let userContext = null;
+            if (userEmail) {
+                try {
+                    // Fetch comprehensive user details to support various self-reference queries
+                    // Using SELECT * to be robust against column name variations (name vs full_name)
+                    const [rows] = await pool.execute(
+                        "SELECT * FROM employees WHERE email = ? AND is_active = TRUE",
+                        [userEmail]
+                    );
+                    if (rows.length > 0) {
+                        userContext = rows[0];
+                        // Ensure we have the standard fields expected by the prompt logic
+                        userContext.full_name = userContext.full_name || userContext.name || "Unknown";
+                        userContext.emp_id = userContext.emp_id || userContext.employee_id || userContext.id;
+                        
+                        // NOTE: Do not override emp_id with system ID. 
+                        // The userContext.emp_id should ideally come from the HR database logic, 
+                        // but here we are loading from the main app database.
+                        // We will instruct the LLM to verify/lookup the correct ID in the target DB if needed.
+                        
+                        console.log(`👤 User Context Loaded: ${userContext.full_name} (${userContext.emp_id})`);
+                    }
+                } catch (e) {
+                    console.warn("⚠️ Failed to fetch user context for SmartDataAnalyst:", e.message);
+                }
+            }
+
             // 1. Analyze with LLM (Intent, Tool Selection, Ambiguity Check, SQL Generation)
-            const analysis = await this._analyzeWithLLM(userQuery, history, lastBotResponse, sessionId);
+            const analysis = await this._analyzeWithLLM(userQuery, history, lastBotResponse, sessionId, userContext);
 
             console.log("Analysis Result:", JSON.stringify(analysis, null, 2));
 
@@ -260,7 +288,10 @@ export class SmartDataAnalyst {
             const isPredictive = /probability|likelihood|forecast|prediction|rate/.test(key.toLowerCase()) || 
                                  /probability|likelihood|forecast|predict/.test(userQuery.toLowerCase());
 
-            if (!isPredictive) {
+            // SKIP Optimization for Self-Reference queries to allow natural "You have..." responses
+            const isSelfReference = /\b(i|my|me|myself|mine)\b/i.test(userQuery);
+
+            if (!isPredictive && !isSelfReference) {
                 // Check if it looks like a number/count
                 if (typeof value === 'number' || !isNaN(Number(value))) {
                     const cleanKey = key.replace(/_/g, ' ').replace(/cnt/g, 'count').replace(/pct/g, 'percentage');
@@ -327,7 +358,12 @@ export class SmartDataAnalyst {
             - Dominant Values: ${JSON.stringify(stats)}
             
             RULES:
-            1. **STRICT LANGUAGE RULE:**
+            1. **PERSONALIZATION (HIGHEST PRIORITY)**:
+               - If the user query implies a self-reference (uses "I", "me", "my", etc.), YOU MUST ADDRESS THEM DIRECTLY.
+               - Use "You" instead of passive voice or third-person.
+               - Example: "You have 15 remaining vacation leaves." instead of "The remaining vacation leaves is 15."
+               - Example: "Your employee ID is 12345." instead of "The employee ID is 12345."
+            2. **STRICT LANGUAGE RULE:**
                - **Scenario 1 (Full English):** If the user speaks in full English, you MUST respond in full English.
                - **Scenario 2 (Full Tagalog):** If the user speaks in full Tagalog, you MUST respond in full Tagalog (use correct Tagalog grammar, avoid English terms as much as possible).
                  - **CRITICAL EXCEPTION:** Do NOT translate Proper Nouns (Names of People, Companies, Products, Places). Keep them as they appear in the source.
@@ -386,11 +422,26 @@ ${r.description}
     /**
      * Uses Gemini to analyze the request against the Live Data Config
      */
-    async _analyzeWithLLM(query, history, lastBotResponse, sessionId) {
+    async _analyzeWithLLM(query, history, lastBotResponse, sessionId, userContext = null) {
         const historyText = history.map(h => `User: ${h.question}\nBot: ${h.answer}`).join('\n');
         
         const toolDescription = await this._getToolDescriptions();
         const contextInfo = sessionId ? ContextManager.getFormattedContext(sessionId) : "";
+
+        // Format User Context for the LLM
+        let userContextString = "CURRENT USER DETAILS: Unknown (Guest/No Email)";
+        if (userContext) {
+            userContextString = `
+CURRENT USER DETAILS (Use this for "I", "me", "my" queries):
+- Full Name: "${userContext.full_name}"
+- Employee ID: "${userContext.emp_id}" (Crucial for linking with benefit/leave tables)
+- Department: "${userContext.department || 'N/A'}"
+- Position: "${userContext.position || 'N/A'}"
+- Plant/Location: "${userContext.plant || userContext.location || 'N/A'}"
+- Email: "${userContext.email}"
+- Role: "${userContext.role || 'user'}"
+`;
+        }
 
         // MERGED INTENT: If the last bot response was a clarification question, prepend it to the user query
         // This forces the LLM to see "Did you mean X?" + "Yes" as a single thought unit.
@@ -405,6 +456,8 @@ ${r.description}
         CONTEXT:
         ${toolDescription}
         
+        ${userContextString}
+
         SESSION CONTEXT (Active & Archived):
         ${contextInfo}
         
@@ -414,56 +467,82 @@ ${r.description}
         ${historyText}
         
         TASK:
-        1. Identify the relevant dataset from the CONTEXT above.
-        2. Check the "CRITICAL DATA ISSUES" and "DATA QUALITY ASSESSMENT" for that dataset.
-        3. Identify necessary columns based on the "COLUMN DEFINITIONS".
-        4. **CRITICAL STEP**: Check for Ambiguity.
-           - **Universal Ambiguity Rule**: If the user's search term (e.g. a Name, ID, or Category) matches MULTIPLE entries in the "Valid Values" list or "Data Content Intelligence" section, you MUST ask for clarification.
-           - Example: If user searches for "Micaella", and the data has ["Micaella Gutierrez", "Micaella Cruz"], you MUST ask: "There are multiple matches for 'Micaella': Micaella Gutierrez and Micaella Cruz. Which one are you referring to?"
-           - If the user asks for a column with known issues (e.g., 'frequency' has "Every 15 mins" vs "Every 15mins"), and the user hasn't specified how to handle it, you MUST ask for clarification.
-           - Example: If user asks "run every 15 minutes", you see the issue in metadata. You must ask: "It seems like the frequency column has inconsistent values... Would you like specific or all?"
-           - If the user *already* clarified (in history) or the query is explicit ("give me all", "exact match"), then proceed.
-           - **CLARIFICATION HANDLING**: Check the HISTORY. If the previous Bot message was a clarification question (e.g. "Did you mean X or Y?"), and the current User message answers it (e.g. "I meant X" or "X"), DO NOT ask again. Proceed immediately with the user's choice.
-           - **AMBIGUITY RELEVANCE CHECK**: Only trigger an ambiguity check if the known issue DIRECTLY affects the user's current search term.
-             - Example: If the issue is "Frequency has 15 mins vs 15mins", but the user asks for "Any Time", DO NOT ask for clarification. Proceed with the query for "Any Time".
-             - Example: If the user searches for "Micaella" and there are duplicates, DO ask.
-           - **UNIVERSAL QUERY HANDLING**: If the user explicitly asks for "all", "both", "regardless of surname", or "everything", you MUST execute a query that includes ALL matching variations.
-             - Example: "Give me all projects for Micaella regardless of surname" -> SELECT * FROM ? WHERE user LIKE '%Micaella%'
-           - **SMART CONTEXT AWARENESS**:
-             - If the user provides a follow-up like "How about [new condition]" or "What if [condition]", treat it as a modification of the previous query but apply the new intent.
-             - Example: User: "Show projects for Micaella" -> Bot: "Which one?" -> User: "How about all of them regardless of surname" -> ACTION: Execute universal query.
-           - **TRUST USER INPUT**: If the user provides a specific name, value, or ID in response to a clarification question, USE THAT EXACT VALUE in your query, even if it is not listed in the "Valid Values" or sample data.
-             - Example: Bot: "Did you mean X or Y?" -> User: "Z" -> ACTION: Execute query WHERE col = 'Z'.
-        5. **CONTEXTUAL FILTERING (VERY IMPORTANT)**:
-           - Look at the HISTORY to understand what the user is asking for.
-           - If the user says "give me all of them" after a question about "Deployed RPA Projects running every 15 mins", you MUST maintain the original filters (Status='Deployed' AND Frequency LIKE '15%min').
-           - Do NOT just "SELECT * FROM ?" unless the user explicitly asks for EVERYTHING in the database.
-           - If the user wants "all variations" of 15 minutes, it implies they still want the other filters (e.g., "Deployed") from the original question.
-        6. **DATE HANDLING**:
-           - Use the "SQL QUERY TIPS" from the dataset context to handle dates correctly.
-           - If querying "Equipment Maintenance" or similar datasets with missing start dates, check 'notification_date' or 'created_on' as well using OR condition.
-           - Convert natural language dates (e.g., "September 1, 2025") to format used in DB (e.g., '9/1/2025' or LIKE '9/1/2025%').
+        You must strictly follow this 5-Stage Reasoning Pipeline before generating the JSON output.
 
-        7. **PREDICTIVE ANALYTICS & FORECASTING**:
-           - **Rule**: True prediction isn't possible for static datasets (like JSONPlaceholder), but you MUST test reasoning skills: assumptions, trend inference, and probability estimation.
-           - **Completion Probability**:
-             - "Likelihood of completion" -> Calculate the percentage of completed items.
-             - SQL: \`SELECT (SUM(CASE WHEN completed = TRUE THEN 1 ELSE 0 END) * 100.0 / COUNT(*)) as probability FROM ?\`
-             - If specific user: \`SELECT (SUM(CASE WHEN completed = TRUE THEN 1 ELSE 0 END) * 100.0 / COUNT(*)) as probability FROM ? WHERE user_id = ...\`
-           - **User Behavior Forecasting**:
-             - "Which user is most likely to complete next?" -> Find user with highest completion rate.
-             - SQL: \`SELECT user_id, (SUM(CASE WHEN completed = TRUE THEN 1 ELSE 0 END) * 100.0 / COUNT(*)) as completion_rate FROM ? GROUP BY user_id ORDER BY completion_rate DESC LIMIT 1\`
-           - **Risk/Confidence**:
-             - "Highest risk of leaving incomplete" -> Find user with lowest completion rate (or highest incomplete count).
-             - SQL: \`SELECT user_id, (SUM(CASE WHEN completed = FALSE THEN 1 ELSE 0 END)) as incomplete_count FROM ? GROUP BY user_id ORDER BY incomplete_count DESC LIMIT 1\`
-           - **GUARDRAILS (CRITICAL)**:
-             - **Time-Based Predictions**: If the user asks "When will X be completed?" or "Forecast completion date", check if the dataset has timestamps (e.g., 'created_at', 'due_date').
-             - If NO timestamps exist (like in JSONPlaceholder Todos), you MUST **REFUSE** the prediction.
-             - Set status="NEEDS_CLARIFICATION" and response="This dataset has no timestamps, so time-based predictions are not possible."
+        STAGE 0: PRIVACY & PERMISSIONS CHECK (HIGHEST PRIORITY)
+        - **CHECK ROLE**: Look at "Role" in CURRENT USER DETAILS ("${userContext?.role || 'user'}").
+        - **IF ROLE IS "user"**:
+           - **ALLOWED**: Queries about themselves (matching Name: "${userContext?.full_name}" or "I/me/my").
+           - **ALLOWED**: General aggregate stats (e.g., "Total number of employees", "Average salary of IT dept", "Count of active projects").
+           - **FORBIDDEN**: Specific details of ANY OTHER individual (e.g., "Show me Julius's leaves", "salary of ID 1", "email of Linlin").
+           - **ACTION**: If FORBIDDEN, **STOP IMMEDIATELY**. Set "status": "NEEDS_CLARIFICATION" and "response": "I cannot share personal details of other employees. I can only show your own data or general company statistics."
+        - **IF ROLE IS "admin"**:
+           - You have FULL ACCESS. Proceed to Stage 1.
+        
+        STAGE 1: INTENT COMMITMENT
+        - Classify the user's primary intent into ONE of:
+          [descriptive_query, comparison_query, ranking_query, trend_query, predictive_query, diagnostic_query, metadata_question, personal_action]
+        - If intent is obvious, COMMIT.
+        - Only mark as unclear if entity, metric, AND time are all missing.
+
+        STAGE 2: CONVERSATIONAL STATE RESOLUTION
+        - Detect if the message is a follow-up.
+        - Resolve pronouns and references ("him", "her", "it", "that", "this", "his ID") by looking at the IMMEDIATE PREVIOUS TURN in HISTORY.
+        - Inherit missing information from conversation history (e.g., if previous question was about "Micaella", and now user asks "give me the ID", assume "Micaella's ID").
+        - **NEVER** ask for clarification if the previous turn already defined the subject.
+        - Treat short replies ("yes", "him", "that one") as confirmations, not new questions.
+
+        STAGE 3: SEMANTIC EXTRACTION & DEFAULTS
+        - Extract: metrics, entities, time_range, filters.
+        - Apply reasonable defaults to avoid unnecessary questions:
+          - Time → "latest available" or "all time" (depending on context)
+          - Quantity → "top 10" (if list is requested)
+          - Metric → "most commonly used business metric" (e.g., count, status)
+        - Record assumptions explicitly in the 'reasoning' field.
+
+        STAGE 4: ACTION DECISION
+        - Decide to:
+          a) EXECUTE_QUERY (Answer directly)
+          b) NEEDS_CLARIFICATION (Ask clarification)
+        - **CLARIFICATION RULE (CRITICAL)**:
+          - Ask a question ONLY if:
+            1. Entity is MISSING
+            AND 2. Metric is MISSING
+            AND 3. Time_range is MISSING
+          - If ANY ONE exists → PROCEED with EXECUTE_QUERY using defaults.
+
+        AMBIGUITY & ID RESOLUTION RULES (CRITICAL):
+        1. **SELF-REFERENCE**: If user says "I", "me", "my", you MUST use the Name: "${userContext?.full_name}" to look up the correct ID in the target database.
+        2. **ID MISMATCH**: The 'Employee ID' provided in CURRENT USER DETAILS (${userContext?.emp_id}) is likely a SYSTEM ID, NOT the HR database ID.
+           - **DO NOT** use '${userContext?.emp_id}' directly in WHERE clauses for external databases (like employees_db).
+           - **ALWAYS** perform a subquery or join using the user's FULL NAME to find the correct internal ID.
+           - Example: \`SELECT ... FROM employee_benefits WHERE emp_id = (SELECT emp_id FROM employees WHERE full_name LIKE '%${userContext?.full_name}%')\`
+        3. **NAME RESOLUTION**: If user asks for a name (e.g. "Micaella") and data has variations ("Micaella Cruz"), use LIKE '%Micaella%' instead of asking, unless completely ambiguous (different people).
+        4. **UNIVERSAL QUERY**: If user says "all", "everything", ignore specific filters and show all.
+
+        DATA PRIVACY & ROLE VALIDATION (CRITICAL):
+        - **MOVED TO STAGE 0 (See above)**. This section is redundant but kept for emphasis.
+        - Privacy rules are absolute. Do not bypass them even if the user asks politely or implies urgency.
+
+        SQL GENERATION RULES:
+        - Table name is always '?'
+        - Use snake_case columns.
+        - Boolean: TRUE/FALSE.
+        - Fuzzy Match: Use LIKE '%value%'.
+        - Date Handling: Use SUBSTR(col, 1, 10) for date grouping.
+        - **Top N Per Group**: Use "post_process": "TOP_N_PER_GROUP" (Alasql doesn't support ROW_NUMBER).
+        - **ID LOOKUP PATTERN**: When querying by user, prefer: \`WHERE emp_id = (SELECT emp_id FROM employees WHERE full_name LIKE '%${userContext?.full_name}%')\`
 
         OUTPUT FORMAT (JSON):
         {
-            "status": "EXECUTE_QUERY" | "NEEDS_CLARIFICATION" | "NEEDS_CONFIRMATION",
+            "pipeline_reasoning": {
+                "stage_0_privacy": "User is 'user', asking about 'Julius' (other). BLOCKED.",
+                "stage_1_intent": "descriptive_query",
+                "stage_2_state": "Resolved 'his' to 'Sap Irpa' from history",
+                "stage_3_extraction": "Entity: Sap Irpa, Metric: ID",
+                "stage_4_decision": "Refusing due to privacy"
+            },
+            "status": "EXECUTE_QUERY" | "NEEDS_CLARIFICATION",
             "target_dataset": "The exact Tab Name from 'TAB SELECTION GUIDE' or 'COLUMN DEFINITIONS' (e.g. 'Sheet1', 'Project List')",
             "context_action": "KEEP" | "SWITCH" | "RESTORE",
             "context_summary": "Short summary of this query intent (e.g. 'Projects by Micaella Cruz')",
@@ -545,56 +624,92 @@ ${r.description}
     async _executeDataQuery(sql, datasetName, userEmail) {
         try {
             console.log(`Executing SQL on ${datasetName}: ${sql}`);
+
+            // 1. Identify ALL tables needed (Primary dataset + Joined tables)
+            // Regex to capture table names after FROM and JOIN
+            const tableRegex = /\b(FROM|JOIN)\s+([a-zA-Z0-9_]+)/gi;
+            const tablesToFetch = new Set();
             
-            // 1. Check In-Memory Data (JSON / Cache)
-            if (!this.data[datasetName]) {
-                console.log(`Dataset '${datasetName}' not in memory. Fetching live data...`);
-                const result = await this._fetchLiveData(datasetName, userEmail);
-                
-                // Handle both object return (new) and array return (old/fallback)
-                if (result && result.data && Array.isArray(result.data)) {
-                    this.data[datasetName] = result.data;
-                    this.sourceNames[datasetName] = result.sourceName || datasetName;
-                    this.sourceCategories[datasetName] = result.categoryName;
-                } else if (Array.isArray(result) && result.length > 0) {
-                    this.data[datasetName] = result;
-                    this.sourceNames[datasetName] = datasetName; // Fallback
-                } else {
-                     throw new Error(`Dataset '${datasetName}' could not be fetched from any live source.`);
+            // Always add the primary target dataset
+            tablesToFetch.add(datasetName);
+
+            let match;
+            while ((match = tableRegex.exec(sql)) !== null) {
+                // match[2] is the table name
+                // Ignore '?' if used as placeholder
+                if (match[2] !== '?') {
+                    tablesToFetch.add(match[2]);
                 }
             }
 
-            // 2. Execute Query on In-Memory Data
-            // Alasql uses '?' as a placeholder for the data array
+            console.log(`Tables identified for fetching: ${Array.from(tablesToFetch).join(', ')}`);
+
+            // 2. Fetch all required tables
+            for (const tableName of tablesToFetch) {
+                if (!this.data[tableName]) {
+                    console.log(`Table '${tableName}' not in memory. Fetching live data...`);
+                    try {
+                        const result = await this._fetchLiveData(tableName, userEmail);
+                        
+                        if (result && result.data && Array.isArray(result.data)) {
+                            this.data[tableName] = result.data;
+                            this.sourceNames[tableName] = result.sourceName || tableName;
+                            this.sourceCategories[tableName] = result.categoryName;
+                            console.log(`✅ Loaded '${tableName}' (${result.data.length} rows)`);
+                        } else if (Array.isArray(result) && result.length > 0) {
+                             this.data[tableName] = result;
+                             this.sourceNames[tableName] = tableName;
+                             console.log(`✅ Loaded '${tableName}' (${result.length} rows)`);
+                        } else {
+                            console.warn(`⚠️ Could not fetch data for table '${tableName}'. Query might fail if this table is required.`);
+                        }
+                    } catch (err) {
+                        console.warn(`❌ Error fetching table '${tableName}':`, err.message);
+                    }
+                }
+            }
+
+            // 3. Prepare Alasql Database
+            // Alasql operates better with a proper DB context for JOINs
+            // We'll create a temporary alasql database and populate it
+            const dbId = `db_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+            alasql(`CREATE DATABASE ${dbId}`);
+            alasql(`USE ${dbId}`);
+
             try {
-                // IMPORTANT: Alasql treats '?' as a bind parameter. 
-                // However, the LLM generates "FROM user_chats" or "FROM ?"
-                // If the LLM generates a real table name (like "FROM user_chats"), Alasql will look for a global table which doesn't exist.
-                // We must force the query to use the in-memory array by replacing the table name with '?' and binding the data.
-                
-                // 1. Identify the table name used in the SQL
-                // Regex to find "FROM table_name" or "JOIN table_name"
-                // We want to replace "FROM user_chats" with "FROM ?"
-                
-                let executableSql = sql;
-                
-                // If the SQL uses the dataset name explicitly (e.g. "FROM user_chats"), replace it with "?"
-                // Alasql needs "?" to bind the JS array
-                const tableNameRegex = new RegExp(`\\bFROM\\s+${datasetName}\\b`, 'i');
-                if (tableNameRegex.test(sql)) {
-                    executableSql = sql.replace(tableNameRegex, 'FROM ?');
-                } else if (!sql.includes('?')) {
-                     // If no ? and no matching table name, it might be using an alias or something else.
-                     // But usually LLM follows instruction to use '?' or the table name.
-                     // If it used a different name, we might be in trouble, but let's try to inject ? if FROM is present
-                     executableSql = sql.replace(/\bFROM\s+\w+\b/i, 'FROM ?');
+                // Populate tables in the temp DB
+                for (const tableName of tablesToFetch) {
+                    if (this.data[tableName]) {
+                        // Sanitize table name for Alasql (wrap in brackets if it contains spaces or special chars)
+                        const safeTableName = tableName.match(/^[a-zA-Z0-9_]+$/) ? tableName : `[${tableName}]`;
+                        
+                        alasql(`CREATE TABLE ${safeTableName}`);
+                        // Correct way to inject data into Alasql table in a specific DB
+                        // Note: For brackets, we access the table via the raw string key in the tables object
+                        alasql.databases[dbId].tables[tableName].data = this.data[tableName];
+                    }
                 }
 
-                console.log(`Rewritten SQL for Alasql: ${executableSql}`);
-                const res = alasql(executableSql, [this.data[datasetName]]);
+                // 4. Execute Query
+                // We don't need to replace table names with '?' anymore because we have a real DB context
+                // But we still need to handle the case where the LLM used '?' for the primary dataset
+                let executableSql = sql;
+                if (executableSql.includes('?')) {
+                     // Replace '?' with the datasetName
+                     const safeDatasetName = datasetName.match(/^[a-zA-Z0-9_]+$/) ? datasetName : `[${datasetName}]`;
+                     executableSql = executableSql.replace(/\?/g, safeDatasetName);
+                }
+
+                console.log(`Executing Alasql in ${dbId}: ${executableSql}`);
+                const res = alasql(executableSql);
+                
+                // Cleanup
+                alasql(`DROP DATABASE ${dbId}`);
+                
                 return res;
 
             } catch (alasqlError) {
+                alasql(`DROP DATABASE ${dbId}`); // Ensure cleanup
                 console.error("Alasql Execution Error:", alasqlError);
                 throw alasqlError;
             }
@@ -642,12 +757,39 @@ ${r.description}
                             targetTab = null;
                         }
 
-                        // IMPROVED: Check description for Sheet Tab references
-                        const description = (source.description || '').toLowerCase();
-                        if (description.includes(`sheet: ${datasetName}`) || description.includes(`tab: ${datasetName}`)) {
-                             console.log(`Request matches description in '${source.name}'. Fetching tab '${datasetName}'.`);
-                             // If the description explicitly mentions this tab name, trust it.
-                             targetTab = datasetName;
+                        // INTELLIGENT TAB RESOLUTION
+                        // 1. Extract potential tab names from description using common patterns
+                        // Patterns: [Tab 1]: Name, Tab: Name, "Name" tab, etc.
+                        const rawDescription = source.description || '';
+                        const tabMatches = rawDescription.matchAll(/\[Tab \d+\]:\s*([^\n\r]+)|Tab:\s*([^\n\r]+)/g);
+                        const validTabs = [];
+                        for (const match of tabMatches) {
+                            const tabName = (match[1] || match[2]).trim();
+                            validTabs.push(tabName);
+                        }
+
+                        // 2. Fuzzy match requested datasetName against valid tabs
+                        let bestMatch = null;
+                        if (validTabs.length > 0) {
+                            const req = datasetName.toLowerCase().trim();
+                            bestMatch = validTabs.find(tab => tab.toLowerCase().trim() === req);
+                            
+                            // If no exact case-insensitive match, try partial
+                            if (!bestMatch) {
+                                bestMatch = validTabs.find(tab => tab.toLowerCase().includes(req) || req.includes(tab.toLowerCase()));
+                            }
+                        }
+
+                        if (bestMatch) {
+                            console.log(`🎯 Resolved tab '${datasetName}' to '${bestMatch}' based on description.`);
+                            targetTab = bestMatch;
+                        } else {
+                            // Fallback: Check if description mentions the name explicitly even if not in [Tab] format
+                            const lowerDesc = rawDescription.toLowerCase();
+                            const lowerReq = datasetName.toLowerCase();
+                            if (lowerDesc.includes(`sheet: ${lowerReq}`) || lowerDesc.includes(`tab: ${lowerReq}`)) {
+                                 targetTab = datasetName; // Trust the LLM's extraction if explicitly mentioned
+                            }
                         }
 
                         const [permRows] = await pool.execute(

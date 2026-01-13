@@ -76,6 +76,7 @@ class ChatApp {
         mobileHeader: document.getElementById("mobile-header"),
         mobileHeaderToggle: document.getElementById("mobile-header-toggle"),
         mobileHeaderTitle: document.getElementById("mobile-header-title"),
+        mobileBranding: document.getElementById("mobile-branding"),
         mobileHeaderLogo: document.getElementById("mobile-header-logo"),
         mobileHeaderDropdown: document.getElementById("mobile-header-dropdown"),
         mobileRenameOption: document.getElementById("mobile-rename-option"),
@@ -304,23 +305,75 @@ class ChatApp {
     }
   }
 
-  updateUserInfo() {
-    const userType = this.authManager.getUserType();
+  async updateUserInfo() {
     const email = this.authManager.getUserEmail();
-    const username = this.authManager.getUsername(); 
+    const username = this.authManager.getUsername();
     
-    if (this.elements.userDisplayName && this.elements.userTypeLabel) {
-      if (userType === 'employee' && email) {
-        this.elements.userDisplayName.textContent = this.userName || username || email;
-        this.elements.userTypeLabel.textContent = 'Employee';
-      } else if (userType === 'external' && email) {
-        this.elements.userDisplayName.textContent = this.userName || username || email;
-        this.elements.userTypeLabel.textContent = 'External User';
-      } else {
-        this.elements.userDisplayName.textContent = this.userName || 'Guest';
-        this.elements.userTypeLabel.textContent = 'Guest User';
-      }
+    // Default to session/local values first for immediate feedback
+    const sessionType = this.authManager.getUserType();
+    let displayType = 'Guest User';
+    if (sessionType === 'external') displayType = 'External User';
+    else if (sessionType === 'employee') displayType = 'Employee';
+
+    if (this.elements.userDisplayName) {
+        this.elements.userDisplayName.textContent = this.userName || username || email || 'Guest';
     }
+    if (this.elements.userTypeLabel) {
+        this.elements.userTypeLabel.textContent = displayType;
+    }
+
+    // Now FETCH the truth from the database
+    if (email) {
+        try {
+            console.log('🔄 Fetching user profile for:', email);
+            const profile = await this.apiManager.getUserProfile(email);
+            console.log('📥 Profile received:', profile);
+            
+            if (profile && profile.user) {
+                // Update display name from DB if available
+                if (profile.user.name && this.elements.userDisplayName) {
+                    this.elements.userDisplayName.textContent = profile.user.name;
+                    this.userName = profile.user.name; // Sync local state
+                }
+
+                // Update Position/Type from DB
+                if (this.elements.userTypeLabel) {
+                    const dbPosition = profile.user.position;
+                    const dbDept = profile.user.department;
+                    console.log(`👤 DB Info - Position: ${dbPosition}, Dept: ${dbDept}`);
+
+                    // FORCE UPDATE: Clear it first to ensure the DOM updates
+                    this.elements.userTypeLabel.textContent = '';
+                    
+                    // Robust check: Is Employee if Dept is valid OR Position is valid (and not External/Guest)
+                    const isEmployee = (dbDept && dbDept !== 'External') || 
+                                     (dbPosition && dbPosition !== 'External User' && dbPosition !== 'Guest');
+
+                    let finalType = 'External User';
+                    if (isEmployee) {
+                        finalType = 'Employee';
+                        console.log('✅ UI Updated to: Employee (Standardized)');
+                    } else {
+                        console.log('✅ UI Updated to: External User');
+                    }
+                    this.elements.userTypeLabel.textContent = finalType;
+
+                    // Update Session to match DB truth (Prevents "External" flash on next reload)
+                    const currentSession = this.authManager.getSession();
+                    const newType = isEmployee ? 'employee' : 'external';
+                    
+                    if (currentSession && currentSession.userType !== newType) {
+                        console.log(`💾 Syncing Session UserType: ${currentSession.userType} -> ${newType}`);
+                        const updatedSession = { ...currentSession, userType: newType };
+                        localStorage.setItem('chatcdo_session', JSON.stringify(updatedSession));
+                    }
+                }
+            }
+        } catch (e) {
+            console.warn('Failed to fetch user profile for sidebar:', e);
+        }
+    }
+
     const avatar = document.querySelector('.user-avatar');
     if (avatar) {
       const session = this.authManager.getSession();
@@ -350,7 +403,7 @@ class ChatApp {
     if (session.userType === 'external' && session.isNewUser === true) {
       const currentName = session.username || '';
       await this.showOnboardingModal({
-        isCompany: false,
+        isCompany: isCompany, // Pass the detected company status
         currentName,
         currentDept: '',
         currentPos: ''
@@ -384,155 +437,68 @@ class ChatApp {
 
   async showOnboardingModal({ isCompany, currentName, currentDept, currentPos }) {
     return new Promise((resolve) => {
-        const DEPARTMENTS = [
-            "Administration", "Finance & Accounting", "Human Resources", "Information Technology",
-            "Logistics & Supply Chain", "Marketing", "Production / Manufacturing", "Quality Assurance",
-            "Research & Development", "Sales", "Legal"
-        ];
-
-        const ROLES = [
-            "Staff / Associate", "Analyst", "Specialist", "Supervisor", "Team Lead",
-            "Manager", "Senior Manager", "Director", "Vice President", "Executive"
-        ];
-
-        const overlay = document.createElement('div');
-        overlay.className = 'modal-overlay active';
-        overlay.style.zIndex = '10300'; 
-        
-        const modal = document.createElement('div');
-        modal.className = 'modal';
-        modal.style.maxWidth = '450px';
-        
-        const header = document.createElement('div');
-        header.className = 'modal-header';
-        header.innerHTML = `<h3>👋 Welcome to ChatCDO!</h3>`;
-        
-        const body = document.createElement('div');
-        body.className = 'modal-body';
-        
-        let subText = "What should I call you?";
-        if (isCompany) {
-            subText = "Since you are a company employee, please complete your profile details.";
-        }
-        
-        body.innerHTML = `<p>${subText}</p>`;
-        
-        const form = document.createElement('div');
-        form.style.display = 'grid';
-        form.style.gap = '15px';
-        
-        const nameGroup = document.createElement('div');
-        nameGroup.innerHTML = `<label class="form-label" style="display:block;margin-bottom:5px;font-weight:500">Display Name *</label>`;
-        const nameInput = document.createElement('input');
-        nameInput.type = 'text';
-        nameInput.className = 'form-input modal-input';
-        nameInput.value = currentName || '';
-        nameInput.placeholder = 'e.g., Juan Dela Cruz';
-        nameGroup.appendChild(nameInput);
-        form.appendChild(nameGroup);
-        
-        let roleInput, deptInput;
-
-        if (isCompany) {
-            const deptGroup = document.createElement('div');
-            deptGroup.innerHTML = `<label class="form-label" style="display:block;margin-bottom:5px;font-weight:500">Department *</label>`;
-            deptInput = document.createElement('select'); 
-            deptInput.className = 'form-input modal-input';
-            const defaultDeptOpt = document.createElement('option');
-            defaultDeptOpt.value = "";
-            defaultDeptOpt.textContent = "Select Department...";
-            defaultDeptOpt.disabled = true;
-            defaultDeptOpt.selected = !currentDept;
-            deptInput.appendChild(defaultDeptOpt);
-            DEPARTMENTS.forEach(dept => {
-                const opt = document.createElement('option');
-                opt.value = dept;
-                opt.textContent = dept;
-                if (currentDept === dept) opt.selected = true;
-                deptInput.appendChild(opt);
-            });
-            deptGroup.appendChild(deptInput);
-            form.appendChild(deptGroup);
-
-            const roleGroup = document.createElement('div');
-            roleGroup.innerHTML = `<label class="form-label" style="display:block;margin-bottom:5px;font-weight:500">Job Position *</label>`;
-            roleInput = document.createElement('select'); 
-            roleInput.className = 'form-input modal-input';
-            const defaultRoleOpt = document.createElement('option');
-            defaultRoleOpt.value = "";
-            defaultRoleOpt.textContent = "Select Role...";
-            defaultRoleOpt.disabled = true;
-            defaultRoleOpt.selected = !currentPos;
-            roleInput.appendChild(defaultRoleOpt);
-            ROLES.forEach(role => {
-                const opt = document.createElement('option');
-                opt.value = role;
-                opt.textContent = role;
-                if (currentPos === role) opt.selected = true;
-                roleInput.appendChild(opt);
-            });
-            roleGroup.appendChild(roleInput);
-            form.appendChild(roleGroup);
-        }
-
-        body.appendChild(form);
-
-        const footer = document.createElement('div');
-        footer.className = 'modal-footer';
-        const saveBtn = document.createElement('button');
-        saveBtn.className = 'modal-btn modal-btn-confirm';
-        saveBtn.innerHTML = 'Let\'s Get Started! 🚀';
-        footer.appendChild(saveBtn);
-        
-        modal.appendChild(header);
-        modal.appendChild(body);
-        modal.appendChild(footer);
-        overlay.appendChild(modal);
-        document.body.appendChild(overlay);
-
-        saveBtn.onclick = async () => {
-            const nameVal = nameInput.value.trim();
-            const roleVal = isCompany ? roleInput.value : 'External User';
-            const deptVal = isCompany ? deptInput.value : 'External';
-
-            if (!nameVal) { alert("Please enter your name"); return; }
-            if (isCompany && (!roleVal || !deptVal)) { alert("Please select your Department and Role"); return; }
-
-            saveBtn.textContent = 'Setting up...';
-            saveBtn.disabled = true;
-
-            const email = this.authManager.getUserEmail();
-            
-            try {
-                await this.apiManager.upsertUserProfile({
-                    email, 
-                    name: nameVal,
-                    department: deptVal,
-                    position: roleVal,
-                    activate: true
-                });
-
-                this.userName = nameVal;
-                this.updateUserInfo();
-                this.uiManager.updateWelcomeMessage();
+        // Use the unified ModalManager implementation
+        this.modalManager.showWelcomeModal(
+            { isCompany, currentName }, 
+            async (nameVal) => {
+                // This callback is triggered after user confirms (either Step 1 guest or Step 2 employee)
+                // The modal.js has already validated the employee ID and set localStorage.
                 
-                const session = this.authManager.getSession();
-                if (session) {
-                  const updated = { ...session, username: nameVal, isNewUser: false };
-                  localStorage.setItem('chatcdo_session', JSON.stringify(updated));
+                // Retrieve the validated/selected data from localStorage
+                // (Set by modal.js before calling this callback)
+                const isEmployee = localStorage.getItem('is_cdo_employee') === 'yes';
+                const deptVal = isEmployee ? localStorage.getItem('user_department') : 'External';
+                const positionVal = isEmployee ? localStorage.getItem('user_position') : 'External User';
+                
+                // We need to show a loading state?
+                // modal.js handles the button loading state, but we need to do the API call here.
+                // Note: modal.js awaits the callback result if it returns a promise.
+                
+                const email = this.authManager.getUserEmail();
+                
+                try {
+                    await this.apiManager.upsertUserProfile({
+                        email, 
+                        name: nameVal,
+                        department: deptVal,
+                        position: positionVal,
+                        activate: true
+                    });
+
+                    this.userName = nameVal;
+                    
+                    const session = this.authManager.getSession();
+                    if (session) {
+                        const updated = { ...session, username: nameVal, isNewUser: false };
+                        
+                        // Explicitly update userType based on the modal selection
+                        if (isEmployee) {
+                            updated.userType = 'employee';
+                            console.log('✅ Updating session userType to: employee');
+                        } else {
+                            // If user explicitly chose "No" or didn't validate as employee
+                            updated.userType = 'external';
+                            console.log('✅ Updating session userType to: external');
+                        }
+                        
+                        localStorage.setItem('chatcdo_session', JSON.stringify(updated));
+                    }
+                    
+                    // Force update UI immediately with new data
+                    this.updateUserInfo();
+                    this.uiManager.updateWelcomeMessage();
+                    
+                    const t = TRANSLATIONS[this.currentLang] || TRANSLATIONS.en;
+                    this.showToast(`${t.toasts.welcomeMsg} ${this.userName}!`, 'success');
+                    resolve();
+                    return true; // Return true to close modal
+                } catch (err) {
+                    console.error(err);
+                    this.showToast("Failed to save profile. Please check connection.", 'error');
+                    return false; // Return false to keep modal open
                 }
-                
-                document.body.removeChild(overlay);
-                const t = TRANSLATIONS[this.currentLang] || TRANSLATIONS.en;
-                this.showToast(`${t.toasts.welcomeMsg} ${this.userName}!`, 'success');
-                resolve();
-            } catch (err) {
-                console.error(err);
-                saveBtn.textContent = 'Try Again';
-                saveBtn.disabled = false;
-                alert("Failed to save profile. Please check connection.");
             }
-        };
+        );
     });
   }
   
@@ -1406,11 +1372,24 @@ class ChatApp {
     let correctedText = text.trim();
     correctedText = correctedText.charAt(0).toUpperCase() + correctedText.slice(1);
     const lastChar = correctedText.slice(-1);
+    
+    // Check if punctuation is missing
     if (lastChar !== '.' && lastChar !== '?' && lastChar !== '!') {
-      const questionWords = ['what', 'who', 'where', 'when', 'why', 'how', 'is', 'are', 'do', 'does', 'can', 'could', 'should', 'would', 'will'];
+      const questionWords = [
+        // English
+        'what', 'who', 'where', 'when', 'why', 'how', 'is', 'are', 'do', 'does', 'can', 'could', 'should', 'would', 'will', 'may', 'might',
+        // Tagalog
+        'sino', 'ano', 'kailan', 'saan', 'paano', 'bakit', 'alin', 'magkano', 'gaano', 'ilan', 'mayroon', 'pwede', 'maaari'
+      ];
+      
       const firstWord = correctedText.split(' ')[0].toLowerCase();
-      if (questionWords.includes(firstWord)) correctedText += '?';
-      else correctedText += '.';
+      
+      // Special handling for "May" in Tagalog which can be "May" (Have/Is there) or English "May"
+      if (questionWords.includes(firstWord)) {
+        correctedText += '?';
+      } else {
+        correctedText += '.';
+      }
     }
     return correctedText;
   }

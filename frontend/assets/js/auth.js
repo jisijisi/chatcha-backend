@@ -26,6 +26,10 @@ export class AuthManager {
   // Get user type (employee or guest)
   getUserType() {
     const session = this.getSession();
+    // Default to 'external' if type is missing but email exists (safe fallback)
+    if (session && session.email && !session.userType) {
+        return 'external';
+    }
     return session ? session.userType : null;
   }
 
