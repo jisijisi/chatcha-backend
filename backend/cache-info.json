@@ -1,11 +1,11 @@
 {
-  "timestamp": "2026-01-13T07:09:17.001Z",
-  "doc_count": 11,
-  "total_size": "253292",
-  "last_updated": "2026-01-12T23:08:05.000Z",
-  "content_hash": "b1e2d619b68c4b29c5ae8561e7891307",
-  "signature": "-ph33qk",
-  "cacheGenerated": "2026-01-13T07:09:17.011Z",
-  "cacheSize": 9618994,
+  "timestamp": "2026-01-16T00:44:31.462Z",
+  "doc_count": 10,
+  "total_size": "252333",
+  "last_updated": "2025-12-09T21:09:57.000Z",
+  "content_hash": "4bad60bda911fad10b29d940d88f799f",
+  "signature": "-sqdezc",
+  "cacheGenerated": "2026-01-16T00:44:31.469Z",
+  "cacheSize": 9574226,
   "schema": "new_relational_v1"
 }
