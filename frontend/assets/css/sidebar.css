@@ -1,6 +1,7 @@
 /* frontend/assets/css/sidebar.css - Fully Themed */
 #sidebar {
-  width: 280px; 
+  width: clamp(250px, 75vw, 280px); 
+  max-width: 85vw; /* Fluid scaling for smaller screens */
   background-color: var(--sidebar-bg);
   color: var(--text-main);
   display: flex;
@@ -696,7 +697,7 @@ body:has(#chat-container.centered) #sidebar button#new-chat:active {
 /* === SIDEBAR FOOTER === */
 .sidebar-footer {
   margin-top: auto; /* Push to bottom as failsafe */
-  padding: 15px 20px 20px;
+  padding: clamp(12px, 2vh, 15px) clamp(14px, 4vw, 20px) clamp(16px, 3vh, 20px);
   border-top: 1px solid var(--sidebar-border);
   background-color: var(--bg-secondary);
   transition: padding 0.3s ease;

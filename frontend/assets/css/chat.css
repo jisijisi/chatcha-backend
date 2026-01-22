@@ -10,18 +10,20 @@
 }
 
 #chat-container.centered {
-  justify-content: center; /* Restore vertical centering */
+  justify-content: space-between; /* Distribute space evenly */
   align-items: center;
   text-align: center;
-  overflow: hidden; /* Prevent scrolling, force elements to fit */
-  background: var(--bg-body); /* UPDATED: Uses variable */
-  height: 100%; /* Ensure full height for flex distribution */
-  /* safe area to avoid overlapping the top/bottom waves */
-  --wave-safe: clamp(120px, 18vh, 36vh);
-  padding-top: calc(var(--wave-safe) + 18px);
-  padding-bottom: calc(var(--wave-safe) + 18px);
+  overflow: hidden;
+  background: var(--bg-body);
+  height: 100vh; /* Full viewport height */
+  /* Dynamic safe area based on wave height + buffer */
+  --wave-height: clamp(60px, 12vh, 160px);
+  padding-top: var(--wave-height);
+  padding-bottom: 0; /* Input area handles bottom spacing */
   padding-left: env(safe-area-inset-left);
   padding-right: env(safe-area-inset-right);
+  display: flex;
+  flex-direction: column;
 }
 
 #chat-container.centered #chat {
@@ -32,9 +34,12 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  /* Safe centering: pushes content to center if space permits, top if not */
-  margin-top: auto;
-  margin-bottom: 0;
+  /* Fluid margin and sizing */
+  margin: auto 0;
+  width: 100%;
+  flex: 1;
+  justify-content: center;
+  max-height: 60vh; /* Reserve space for input */
 }
 
 /* Welcome Message */
@@ -46,19 +51,12 @@
   opacity: 0;
   transition: opacity 0.5s ease;
   position: relative;
-  z-index: 1;
+  z-index: 10;
   max-width: 95vw;
   padding: 0 max(15px, env(safe-area-inset-left, 15px), env(safe-area-inset-right, 15px));
   box-sizing: border-box;
   width: 100%;
-  margin: 0 auto;
-  /* Reset rigid margin-top to allow true centering */
-  margin-top: 0;
-  /* Ensure content doesn't get too spread out on tall screens */
-  gap: clamp(4px, 1.5vh, 20px);
-  flex-shrink: 0; /* Prevent welcome message from shrinking */
-  /* Add top padding to balance the layout against the input area */
-  padding-top: clamp(20px, 4vh, 40px);
+  gap: clamp(4px, 1vh, 16px);
 }
 
 #welcome-message.show {
@@ -83,11 +81,16 @@
   position: absolute;
   left: 0;
   width: 100%;
-  height: clamp(120px, 18vh, 36vh);
+  height: clamp(50px, 10vh, 150px); /* Adjusted for persistent visibility */
   pointer-events: none;
   z-index: 0;
   display: block;
   transform: translateZ(0);
+}
+
+/* Ensure waves are always visible */
+@media (max-height: 600px) {
+  .page-wave { display: block !important; }
 }
 .page-wave path { shape-rendering: geometricPrecision; }
 .page-wave-top { top: 0; }
@@ -99,6 +102,18 @@
 /* Hide decorative waves when a conversation is active */
 .conversation-active .page-wave { display: none !important; }
 
+@media (max-width: 768px) {
+  /* Offset top wave to sit below the fixed mobile header */
+  .page-wave-top {
+    top: 60px;
+  }
+  
+  /* Adjust container padding to account for header + wave + spacing */
+  #chat-container.centered {
+    padding-top: calc(60px + var(--wave-safe) + 20px);
+  }
+}
+
 @media (max-width: 540px) {
   /* Removed wave height override since it's now handled by clamp globally */
 }
@@ -106,7 +121,7 @@
 /* Input Area Layout */
 .input-area {
   position: relative;
-  z-index: 1;
+  z-index: 20; /* Higher z-index to sit above waves */
   width: 100%;
 }
 
@@ -115,71 +130,85 @@
   padding: 12px max(10px, env(safe-area-inset-left, 10px), env(safe-area-inset-right, 10px)) 15px;
   box-sizing: border-box;
   width: 100%;
-  max-width: 768px;
-  /* Remove margin-top/bottom auto to let flex handle it */
+  max-width: 800px;
   margin: 0 auto;
-  flex-shrink: 0; /* Never shrink the input area */
-  /* Add padding bottom to avoid touching the bottom wave */
-  padding-bottom: clamp(20px, 4vh, 40px);
-  z-index: 2; /* sit above bottom wave */
+  flex-shrink: 0;
+  /* Ensure input doesn't touch bottom wave */
+  padding-bottom: clamp(60px, 12vh, 140px);
+  z-index: 20;
 }
 
 #chat-container .input-wrapper { max-width: 720px; margin: 0 auto; }
 
 /* Avatar Styles */
-#welcome-message .welcome-avatar {
-  width: clamp(40px, 10vh, 100px);
-  height: clamp(40px, 10vh, 100px);
-  border-radius: 50%;
-  object-fit: cover;
-  margin-bottom: 0; /* Handled by parent gap */
-  box-shadow: 0 8px 24px rgba(215, 25, 33, 0.15);
-}
+/* Removed duplicate rule */
 
 .welcome-avatar-container {
   position: relative;
-  width: clamp(70px, 14vh, 140px);
-  height: clamp(60px, 12vh, 140px);
-  margin-bottom: clamp(6px, 1.5vh, 24px);
+  width: clamp(100px, 30vw, 350px); /* Aggressively reduced min width */
+  height: clamp(80px, 18vh, 220px); /* Aggressively reduced min height */
+  margin: 0 auto; /* Ensures horizontal centering */
+  align-self: center; /* Double ensures alignment in flex column */
+  display: flex; /* Helps with child alignment */
+  justify-content: center;
+  align-items: flex-end; /* Align image to bottom */
 }
 
 .welcome-avatar-border {
+  display: none;
+}
+
+.welcome-avatar-container:hover .welcome-avatar-border {
+  display: none;
+}
+
+#welcome-message .welcome-avatar {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 0;
+  object-fit: contain;
+  object-position: bottom center;
+  box-shadow: none;
+  z-index: 1;
+  margin: 0;
+  display: block;
+  transition: opacity 0.3s ease-in-out;
+}
+
+#welcome-message .welcome-avatar-hover {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  z-index: 2;
-  pointer-events: none;
-  background-image: url('../images/cdo-border-yellow.png');
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-position: center;
-  transition: background-image 0.2s ease-in-out;
-}
-
-.welcome-avatar-container:hover .welcome-avatar-border {
-  background-image: url('../images/cdo-border-red.png');
-}
-
-#welcome-message .welcome-avatar {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: clamp(30px, 50%, 85px); /* Responsive to container */
-  height: clamp(30px, 50%, 85px);
-  border-radius: 50%;
-  object-fit: cover;
+  border-radius: 0;
+  object-fit: contain;
+  object-position: bottom center;
   box-shadow: none;
-  z-index: 1;
+  z-index: 2;
   margin: 0;
+  opacity: 0;
+  transition: opacity 0.3s ease-in-out;
+  pointer-events: none;
+  display: block;
+  transform: scale(0.82); /* Adjusted scale to match yellow avatar size */
+  transform-origin: bottom center;
+}
+
+#welcome-message .welcome-avatar-container:hover .welcome-avatar {
+  opacity: 0;
+  transform: none;
+}
+
+#welcome-message .welcome-avatar-container:hover .welcome-avatar-hover {
+  opacity: 1;
 }
 
 /* === WELCOME MESSAGE TITLE (Good evening, Jisi) === */
 #welcome-message h2 {
-  font-size: clamp(1rem, 3vh, 2rem); /* Scaled with height */
-  margin-bottom: clamp(6px, 1vh, 12px);
+  font-size: clamp(1rem, 3.5vh, 3rem); /* Reduced min font size */
+  margin-bottom: clamp(2px, 1vh, 8px);
   font-weight: 700;
   color: var(--text-brand);
   animation: slideUpWelcome 0.6s ease-out 0.2s both;
@@ -188,8 +217,8 @@
 
 #welcome-message p {
   color: var(--text-muted); /* UPDATED */
-  font-size: clamp(0.75rem, 1.6vh, 1rem);
-  max-width: min(520px, 88vw);
+  font-size: clamp(0.8rem, 1.8vh, 1.25rem); /* Reduced min font size */
+  max-width: min(600px, 88vw);
   line-height: 1.4;
   animation: slideUpWelcome 0.6s ease-out 0.3s both;
 }
@@ -296,9 +325,9 @@
 
 /* Message Content */
 .message-content {
-  padding: 16px 20px;
+  padding: clamp(12px, 1.5vh, 16px) clamp(14px, 4vw, 20px);
   border-radius: 12px;
-  font-size: 0.95rem;
+  font-size: clamp(0.85rem, 2.5vw, 0.95rem);
   line-height: 1.7;
   position: relative;
   z-index: 1;
@@ -944,20 +973,22 @@
 }
 
 /* ============================================
-   SUGGESTED QUESTIONS (Modern UI)
+   SUGGESTED QUESTIONS (Fluid & Responsive)
    ============================================ */
 .suggested-questions {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 10px;
-  margin-top: clamp(20px, 4vh, 40px);
-  max-width: 900px;
+  align-content: center;
+  gap: clamp(6px, 1.5vh, 16px);
+  margin: clamp(10px, 2vh, 30px) auto 0;
+  max-width: 1000px;
   width: 100%;
-  padding: 0 16px;
+  padding: 0 clamp(10px, 4vw, 20px);
   box-sizing: border-box;
   opacity: 1;
   transition: opacity 0.5s ease-in-out;
+  flex: 1 1 auto; /* Allow taking available space */
 }
 
 .suggested-questions.fading {
@@ -967,20 +998,20 @@
 .suggested-question {
   background: var(--bg-card);
   border: 1px solid var(--border-color);
-  border-radius: 12px;
-  padding: 12px 18px;
+  border-radius: 20px;
+  padding: clamp(8px, 1.5vh, 14px) clamp(12px, 2vw, 20px);
   cursor: pointer;
   transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
-  text-align: left;
-  font-size: 0.9rem;
+  text-align: center;
+  font-size: clamp(0.7rem, 1.8vh, 0.95rem); /* Fluid font size based on height */
   color: var(--text-muted);
   font-weight: 500;
-  line-height: 1.4;
+  line-height: 1.3;
   display: inline-flex;
   align-items: center;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-  position: relative;
-  overflow: visible;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
+  white-space: nowrap; /* Prevent wrapping inside pill */
 }
 
 /* Hover Effect */
@@ -988,92 +1019,49 @@
   background: var(--bg-card);
   border-color: var(--primary-color);
   color: var(--primary-color);
-  transform: translateY(-3px);
-  box-shadow: 0 6px 16px rgba(215, 25, 33, 0.12);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(215, 25, 33, 0.1);
 }
 
-/* Add a subtle icon via CSS */
 .suggested-question::after {
-  content: "→";
-  display: inline-block;
-  margin-left: 8px;
-  opacity: 0;
-  transform: translateX(-8px);
-  transition: all 0.2s ease;
-  font-weight: bold;
+  display: none; /* Remove arrow for cleaner look */
 }
 
-.suggested-question:hover::after {
-  opacity: 1;
-  transform: translateX(0);
+/* Stabilize suggested questions layout */
+#chat-container.centered .suggested-questions {
+  width: 100%;
+  max-width: 1000px;
+  box-sizing: border-box;
+  height: auto; /* Allow fluid height */
+  min-height: 0; /* Allow shrinking */
+  padding-bottom: 0;
+  margin-bottom: 0;
+  overflow: visible;
 }
 
-/* Mobile: Stack items or limit them */
+/* Input area styling for centered state moved to input.css */
+
 @media (max-width: 600px) {
   .suggested-questions {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 8px;
+    gap: 6px;
   }
   
   .suggested-question {
-    width: 100%;
-    justify-content: space-between;
-    padding: 14px 18px;
+    padding: 8px 12px;
+    font-size: 0.75rem;
   }
-  
-  .suggested-question::after {
-    opacity: 0.5;
-    transform: none;
-    content: "›";
-    font-size: 1.2em;
-  }
-  
-  /* Show up to 4 suggestions on small screens */
-  .suggested-questions .suggested-question:nth-child(n+5) { display: none; }
 }
 
-@media (min-width: 601px) and (max-width: 900px) {
-  /* Show up to 6 suggestions on medium screens */
-  .suggested-questions .suggested-question:nth-child(n+7) { display: none; }
-}
-
-@media (min-width: 901px) {
-  /* Show up to 8 suggestions on large screens */
-  .suggested-questions .suggested-question:nth-child(n+9) { display: none; }
-}
-
-/* Stabilize suggested questions and input area to avoid layout jumps */
-/* Reserve vertical space for the suggestions so changes won't push the input */
-#chat-container.centered {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-#chat-container.centered .suggested-questions {
-  width: 100%;
-  max-width: 900px;
-  box-sizing: border-box;
-  /* Reserve space for up to ~3 rows of suggestion pills; adjust as needed */
-  min-height: 140px; /* increased to give hover space */
-  padding-top: 10px;
-  padding-bottom: 12px;
-  overflow: visible; /* allow shadows and transforms to extend outside container */
-}
-
-/* Make the input area visually fixed near the bottom of the centered column
-   so small changes in suggestion height don't push it around. */
-#chat-container.centered .input-area {
-  position: sticky;
-  bottom: 24px;
-  z-index: 300;
-  margin-top: 12px;
-}
-
-@media (max-width: 600px) {
-  #chat-container.centered .suggested-questions { min-height: 120px; }
-  #chat-container.centered .input-area { bottom: 18px; }
+@media (max-height: 700px) {
+    /* Compact mode for short screens */
+    .suggested-questions {
+        gap: 4px;
+        margin-top: 10px;
+    }
+    .suggested-question {
+        padding: 6px 10px;
+        font-size: 0.7rem;
+    }
 }
 
 
@@ -1224,6 +1212,36 @@
   
   .data-chart {
     max-height: 300px;
+  }
+
+  /* Mobile Avatar Adjustments - applied up to typical tablet sizes */
+  #welcome-message .welcome-avatar {
+    transform: scale(1.25);
+    transform-origin: bottom center;
+  }
+
+  #welcome-message .welcome-avatar-hover {
+    transform: scale(0.72);
+  }
+
+  #welcome-message .welcome-avatar-container:hover .welcome-avatar {
+    transform: scale(1.25);
+  }
+}
+
+@media (max-width: 1200px) and (min-width: 769px) {
+  /* Tablet Avatar Adjustments - ensuring consistency on larger touch devices */
+  #welcome-message .welcome-avatar {
+    transform: scale(1.25);
+    transform-origin: bottom center;
+  }
+
+  #welcome-message .welcome-avatar-hover {
+    transform: scale(0.72);
+  }
+
+  #welcome-message .welcome-avatar-container:hover .welcome-avatar {
+    transform: scale(1.25);
   }
 }
 
@@ -1402,3 +1420,5 @@
     padding: 4px 0 4px 16px !important;
   }
 }
+
+

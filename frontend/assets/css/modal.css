@@ -1,3 +1,4 @@
+
 /* frontend/assets/css/modal.css */
 
 /* Modal and Overlay Styles - Fully Themed */
@@ -58,10 +59,10 @@
 
 /* Modal Header */
 .modal.full-screen .modal-header {
-  background: linear-gradient(135deg, #D71921 0%, #a01419 100%);
+  background: linear-gradient(135deg, var(--primary-color) 0%, #a01419 100%);
   color: white;
   padding: 20px 28px;
-  border-bottom: none;
+  border-bottom: 4px solid #FFC700; /* CDO Gold */
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
@@ -317,24 +318,58 @@
   display: none;
 }
 
-/* --- Standard Modal Styles --- */
+/* --- Standard Modal Styles (Brand Themed) --- */
 .modal-header {
+  background: linear-gradient(135deg, var(--primary-color) 0%, #a01419 100%);
+  color: white;
   padding: 20px 24px;
-  border-bottom: 1px solid var(--border-color); /* UPDATED */
+  border-bottom: 4px solid #FFC700; /* CDO Gold */
   display: flex;
   justify-content: space-between;
   align-items: center;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0; /* Rounded corners top */
 }
 
 .modal-header h3 {
   margin: 0;
   font-size: 1.25rem;
-  color: var(--text-main); /* UPDATED */
-  font-weight: 600;
+  color: white;
+  font-weight: 700;
+  letter-spacing: 0.5px;
 }
 
+/* Modal Close Button (Brand Themed) */
+.modal-close {
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: white;
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.modal-close:hover {
+  background-color: rgba(255, 255, 255, 0.3);
+  color: white;
+  transform: rotate(90deg);
+}
+
+.modal-close:active {
+  transform: scale(0.95);
+}
+
+/* Ensure modal body has proper rounding if no header */
 .modal-body {
   padding: 24px;
+  background: var(--bg-card);
 }
 
 .modal-body p {
@@ -381,6 +416,13 @@
   font-family: inherit;
 }
 
+.modal-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
 .modal-btn-cancel {
   background: var(--bg-secondary); /* UPDATED */
   color: var(--text-main); /* UPDATED */
@@ -410,32 +452,8 @@
   box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
 }
 
-/* --- Standard Modal Close Button --- */
-.modal-close {
-  background: transparent;
-  border: none;
-  font-size: 1.75rem;
-  line-height: 1;
-  color: var(--text-muted); /* UPDATED */
-  cursor: pointer;
-  padding: 0;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 6px;
-  transition: all 0.2s ease;
-}
-
-.modal-close:hover {
-  background-color: var(--bg-secondary); /* UPDATED */
-  color: var(--text-main); /* UPDATED */
-}
-
-.modal-close:active {
-  transform: scale(0.95);
-}
+/* --- Standard Modal Close Button (Styles moved to Header section for theming) --- */
+/* Kept as comment for reference, actual styles are above with .modal-header */
 
 /* Responsive Design for Modal */
 @media (max-width: 1024px) {
@@ -640,39 +658,67 @@
 }
 
 /* =================================================================
-   WELCOME MODAL STYLES (Added to fix layout issues)
+   WELCOME MODAL STYLES (CDO Themed)
    ================================================================= */
+
+/* Specific styling for the Welcome Modal Container */
+#welcome-modal-overlay .modal {
+  border-top: 8px solid #FFC700; /* CDO Gold Top Border */
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+}
+
+#welcome-modal-overlay .modal-header {
+  border-bottom: none;
+  justify-content: center;
+  padding-top: 32px;
+  padding-bottom: 8px;
+}
+
+#welcome-modal-overlay .modal-header h3 {
+  color: white;
+  font-size: 1.6rem;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
 
 /* Welcome Modal Avatar */
 .welcome-avatar-section {
   display: flex;
   justify-content: center;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
+  position: relative;
 }
 
 .welcome-avatar {
-  width: 140px; /* Reduced from potential large size */
-  max-width: 50%;
+  width: 160px;
+  max-width: 60%;
   height: auto;
   object-fit: contain;
-  border-radius: 12px;
+  filter: drop-shadow(0 8px 16px rgba(0,0,0,0.1));
+  transition: transform 0.3s ease;
+}
+
+.welcome-avatar:hover {
+  transform: scale(1.05) rotate(2deg);
 }
 
 /* Employee Status Selection */
 .employee-status-label {
   display: block;
   text-align: center;
-  margin-bottom: 16px;
+  margin-bottom: 20px;
   font-weight: 600;
   color: var(--text-main);
-  font-size: 1.05rem;
+  font-size: 1.1rem;
 }
 
 .radio-card-container {
   display: flex;
-  gap: 16px;
+  gap: 20px;
   justify-content: center;
-  margin-bottom: 24px;
+  margin-bottom: 32px;
 }
 
 .radio-card {
@@ -680,12 +726,12 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  width: 110px;
-  height: 110px;
+  width: 120px;
+  height: 120px;
   border: 2px solid var(--border-color);
-  border-radius: 12px;
+  border-radius: 16px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   background: var(--bg-card);
   color: var(--text-muted);
@@ -699,30 +745,37 @@
 }
 
 .radio-card:hover {
-  border-color: var(--primary-color);
-  background: var(--bg-secondary);
-  color: var(--primary-color);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  border-color: #F58220; /* CDO Orange */
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(245, 130, 32, 0.15);
 }
 
 .radio-card.selected {
-  border-color: var(--primary-color);
-  background: rgba(215, 25, 33, 0.05); /* Light red tint */
+  border-color: var(--primary-color); /* Red Border */
+  background: #FFF5F5; /* Very Light Red/Pink */
   color: var(--primary-color);
-  box-shadow: 0 4px 12px rgba(215, 25, 33, 0.15);
+  box-shadow: 0 8px 20px rgba(215, 25, 33, 0.2);
+}
+
+.radio-card.selected[data-value="yes"] .radio-card-icon {
+    color: #D71921; /* Red Check */
 }
 
 .radio-card-icon {
-  font-size: 28px;
-  margin-bottom: 8px;
+  font-size: 32px;
+  margin-bottom: 10px;
   font-weight: bold;
   line-height: 1;
+  transition: transform 0.2s ease;
+}
+
+.radio-card:hover .radio-card-icon {
+  transform: scale(1.1);
 }
 
 .radio-card-label {
-  font-weight: 600;
-  font-size: 14px;
+  font-weight: 700;
+  font-size: 15px;
 }
 
 /* Ensure modal text is centered for welcome modal */
@@ -730,11 +783,61 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  padding: 0 40px 40px 40px;
 }
 
 #welcome-modal-overlay #modal-message {
   text-align: center;
-  margin-bottom: 24px;
+  margin-bottom: 28px;
   color: var(--text-muted);
-  max-width: 90%;
+  font-size: 1.05rem;
+  line-height: 1.6;
+  max-width: 100%;
+}
+
+/* Custom Button Styling for Welcome Modal */
+#welcome-modal-overlay .modal-footer {
+    justify-content: center;
+    gap: 16px;
+    padding-bottom: 32px;
+    border-top: none; /* Cleaner look */
+}
+
+#welcome-modal-overlay .modal-btn-confirm {
+    background: linear-gradient(135deg, #D71921 0%, #B9151B 100%);
+    width: auto;
+    min-width: 200px;
+    padding: 16px 32px;
+    font-size: 1.1rem;
+    border-radius: 50px; /* Pill shape */
+    box-shadow: 0 8px 20px rgba(215, 25, 33, 0.3);
+    margin-top: 0;
+    flex: 1;
+    max-width: 300px;
+}
+
+#welcome-modal-overlay .modal-btn-confirm:hover {
+    background: linear-gradient(135deg, #F58220 0%, #D71921 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(215, 25, 33, 0.4);
+}
+
+#welcome-modal-overlay .modal-btn-cancel {
+    background: var(--bg-secondary);
+    color: var(--text-main);
+    width: auto;
+    min-width: 100px;
+    padding: 16px 24px;
+    font-size: 1.1rem;
+    border-radius: 50px; /* Pill shape */
+    border: 1px solid var(--border-color);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+    margin-top: 0;
+    font-weight: 600;
+}
+
+#welcome-modal-overlay .modal-btn-cancel:hover {
+    background: var(--bg-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
 }

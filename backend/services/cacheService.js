@@ -8,8 +8,20 @@ const __dirname = path.dirname(__filename);
 
 export class CacheService {
   constructor(cachePath = 'embeddings-cache.json', cacheInfoPath = 'cache-info.json') {
-    this.cachePath = path.join(__dirname, '..', cachePath);
-    this.cacheInfoPath = path.join(__dirname, '..', cacheInfoPath);
+    // Use .cache directory to prevent file watcher reloads
+    const cacheDir = path.join(__dirname, '..', '.cache');
+    
+    // Ensure .cache directory exists
+    if (!fs.existsSync(cacheDir)) {
+      try {
+        fs.mkdirSync(cacheDir, { recursive: true });
+      } catch (e) {
+        console.error('Failed to create .cache directory:', e);
+      }
+    }
+
+    this.cachePath = path.join(cacheDir, cachePath);
+    this.cacheInfoPath = path.join(cacheDir, cacheInfoPath);
   }
 
   // Save embeddings cache

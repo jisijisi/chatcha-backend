@@ -168,7 +168,7 @@ export const AI_BEHAVIOR = {
   // Conversation Memory
   conversationMemory: {
     enabled: true,
-    maxContextMessages: 10,
+    maxContextMessages: 5,
     contextInstructions: "Review conversation history and reference naturally. For follow-ups, intelligently combine previous tool queries.",
     smartSessionManagement: true
   },

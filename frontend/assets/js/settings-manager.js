@@ -435,10 +435,16 @@ export class SettingsManager {
       this.setText('#kb-full-title', t.settings.knowledge.title);
       const searchInput = document.getElementById('kb-search-input');
       if (searchInput) searchInput.placeholder = t.settings.knowledge.searchPlaceholder;
-      this.safeUpdateText('#kb-refresh-btn', t.settings.knowledge.actions.refresh);
+      
+      // Fix: Refresh button is icon-only, update title only
+      const refreshBtn = document.getElementById('kb-refresh-btn');
+      if (refreshBtn) refreshBtn.title = t.settings.knowledge.actions.refresh;
+      
       this.safeUpdateText('#btn-add-doc', t.settings.knowledge.actions.addDoc);
       this.safeUpdateText('#btn-add-subcat', t.settings.knowledge.actions.addSubcat);
-      this.safeUpdateText('#btn-regen-cache', t.settings.knowledge.actions.regenCache);
+      
+      // Fix: Target .btn-text to preserve loading spinner sibling
+      this.safeUpdateText('#btn-regen-cache .btn-text', t.settings.knowledge.actions.regenCache);
 
       const k = t.settings.knowledge.addDoc;
       this.setText('#kb-doc-modal-title', k.title);
@@ -500,8 +506,10 @@ export class SettingsManager {
       const el = document.querySelector(selector);
       if (el) {
           const icon = el.querySelector('svg');
+          const spanIcon = el.querySelector('.material-symbols-outlined');
           el.innerHTML = '';
           if (icon) el.appendChild(icon);
+          if (spanIcon) el.appendChild(spanIcon);
           el.appendChild(document.createTextNode(' ' + text));
       }
   }
@@ -1119,11 +1127,14 @@ export class SettingsManager {
     const footer = document.getElementById('kb-conversion-footer');
     const fill = document.getElementById('kb-conversion-progress-fill');
     const text = document.getElementById('kb-conversion-progress-text');
+    
     if (!modal) return;
     openModal('kb-conversion-status-modal');
+    
     const footerBtn = document.getElementById('kb-conversion-close-btn');
     if (footerBtn) footerBtn.onclick = () => this.closeConversionStatusModal();
     if (closeBtn) closeBtn.onclick = () => this.closeConversionStatusModal();
+    
     requestAnimationFrame(() => {
       if (title) title.textContent = 'Converting File';
       if (loading) loading.style.display = 'block';
@@ -1132,6 +1143,13 @@ export class SettingsManager {
       if (closeBtn) closeBtn.style.display = 'none';
       if (footer) footer.style.display = 'none';
       if (fill) fill.style.width = '0%';
+      
+      // Reset magic animation
+      const stream = document.getElementById('kb-magic-stream-bar');
+      if (stream) stream.style.width = '0%';
+      const jsonIcon = document.getElementById('kb-magic-json-icon');
+      if (jsonIcon) jsonIcon.classList.remove('active');
+      
       if (text) text.textContent = 'Uploading file...';
     });
   }
@@ -1143,7 +1161,11 @@ export class SettingsManager {
   simulateConversionProgress() {
     const progressFill = document.getElementById('kb-conversion-progress-fill');
     const progressText = document.getElementById('kb-conversion-progress-text');
-    if (!progressFill || !progressText) return;
+    const streamFill = document.getElementById('kb-magic-stream-bar');
+    const jsonIcon = document.getElementById('kb-magic-json-icon');
+    
+    if (!progressText) return;
+    
     const stages = [
       { progress: 20, text: 'Uploading file...' },
       { progress: 40, text: 'Analyzing content...' },
@@ -1153,10 +1175,18 @@ export class SettingsManager {
     ];
     let currentStage = 0;
     const interval = setInterval(() => {
-      if (!progressFill || !progressText) { clearInterval(interval); return; }
+      if (!progressText) { clearInterval(interval); return; }
       if (currentStage < stages.length) {
-        progressFill.style.width = stages[currentStage].progress + '%';
+        const p = stages[currentStage].progress;
+        if (progressFill) progressFill.style.width = p + '%';
+        if (streamFill) streamFill.style.width = p + '%';
+        
         progressText.textContent = stages[currentStage].text;
+        
+        if (p >= 80 && jsonIcon) {
+            jsonIcon.classList.add('active');
+        }
+        
         currentStage++;
       } else {
         clearInterval(interval);

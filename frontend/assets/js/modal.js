@@ -13,7 +13,7 @@ export class ModalManager {
       onConfirm = options;
       options = {};
     }
-    const { currentName = '', isCompany = false } = options;
+    const { currentName = '', isCompany = false, isGuest = false } = options;
 
     this.currentStep = 1;
 
@@ -33,6 +33,7 @@ export class ModalManager {
     // Hide default elements
     this.elements.modalInput.style.display = 'none';
     this.elements.modalCancel.style.display = 'none';
+    this.elements.modalConfirm.style.display = 'none'; // Initially hide confirm button
     this.elements.modalClose.style.display = 'none';
     this.elements.modalOverlay.style.pointerEvents = 'none';
     this.elements.modalOverlay.querySelector('.modal').style.pointerEvents = 'auto';
@@ -119,6 +120,13 @@ export class ModalManager {
     const numberInput = numberGroup.querySelector('#employee-number-input');
     const guestInput = guestNameGroup.querySelector('#guest-name-input');
 
+    // Handle Guest Mode (Hide Avatar & Status Question)
+    if (isGuest) {
+        statusGroup.style.display = 'none';
+        if (avatarSection) avatarSection.style.display = 'none';
+        noRadio.checked = true;
+    }
+
     const updateCardSelection = () => {
       yesCard.classList.toggle('selected', yesRadio.checked);
       noCard.classList.toggle('selected', noRadio.checked);
@@ -126,11 +134,28 @@ export class ModalManager {
       if (yesRadio.checked) {
         numberGroup.style.display = 'block';
         guestNameGroup.style.display = 'none';
+        this.elements.modalConfirm.textContent = "Next";
+        this.elements.modalConfirm.dataset.originalText = "Next";
+        this.elements.modalConfirm.style.display = 'inline-block';
+        
+        // Disable button if input is empty
+        this.elements.modalConfirm.disabled = !numberInput.value.trim();
+        
         setTimeout(() => numberInput.focus(), 100);
       } else if (noRadio.checked) {
         numberGroup.style.display = 'none';
         guestNameGroup.style.display = 'block';
+        this.elements.modalConfirm.textContent = "Let's Get Started! 🚀";
+        this.elements.modalConfirm.dataset.originalText = "Let's Get Started! 🚀";
+        this.elements.modalConfirm.style.display = 'inline-block';
+        
+        // Disable button if input is empty
+        this.elements.modalConfirm.disabled = !guestInput.value.trim();
+        
         setTimeout(() => guestInput.focus(), 100);
+      } else {
+        // If neither selected (shouldn't happen with default logic but good for safety)
+        this.elements.modalConfirm.style.display = 'none';
       }
     };
 
@@ -146,6 +171,19 @@ export class ModalManager {
 
     yesRadio.addEventListener('change', updateCardSelection);
     noRadio.addEventListener('change', updateCardSelection);
+
+    // Input listeners to enable/disable button
+    numberInput.addEventListener('input', () => {
+      if (yesRadio.checked) {
+        this.elements.modalConfirm.disabled = !numberInput.value.trim();
+      }
+    });
+
+    guestInput.addEventListener('input', () => {
+      if (noRadio.checked) {
+        this.elements.modalConfirm.disabled = !guestInput.value.trim();
+      }
+    });
 
     // Initial state
     updateCardSelection();
@@ -185,8 +223,39 @@ export class ModalManager {
             const data = await response.json();
             
             if (!data.valid) {
-              this.showToast(data.message || 'Invalid Employee ID', 'error', 3500);
-              return false;
+               // Show Employee Not Found Error State
+               this.currentStep = 'error_not_found';
+               
+               cleanup();
+               if (avatarSection) avatarSection.remove();
+               
+               this.elements.modalTitle.textContent = "Employee ID Not Found";
+               this.elements.modalMessage.textContent = `The employee ID ${empNo} does not exist in the database. Would you like to try again or login as an external user?`;
+               
+               // Setup "Try Again" button (Cancel btn)
+               if (this.elements.modalCancel) {
+                 const cancelBtn = this.elements.modalCancel;
+                 const newCancelBtn = cancelBtn.cloneNode(true);
+                 cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
+                 this.elements.modalCancel = newCancelBtn;
+                 
+                 this.elements.modalCancel.textContent = "Try Again";
+                 this.elements.modalCancel.style.display = 'inline-block';
+                 
+                 this.elements.modalCancel.addEventListener('click', (e) => {
+                     e.preventDefault();
+                     // Reset to Step 1
+                     this.showWelcomeModal({ currentName, isCompany }, onConfirm);
+                 });
+               }
+               
+               // Setup "Login as External" button (Confirm btn)
+               this.elements.modalConfirm.textContent = "Login as external user";
+               this.elements.modalConfirm.dataset.originalText = "Login as external user";
+               this.elements.modalConfirm.disabled = false;
+               this.elements.modalConfirm.classList.remove('loading');
+               
+               return false;
             }
 
             // Valid Employee! Switch to Step 2
@@ -218,7 +287,37 @@ export class ModalManager {
             `;
             body.appendChild(profileGroup);
             
-            this.elements.modalConfirm.textContent = "Confirm & Continue 🎉";
+            this.elements.modalConfirm.textContent = "Let's Get Started! 🚀";
+            this.elements.modalConfirm.dataset.originalText = "Let's Get Started! 🚀";
+            
+            // --- Step 2 Input Validation ---
+            const profileNameInput = document.getElementById('profile-name');
+            if (profileNameInput) {
+                // Initial check
+                this.elements.modalConfirm.disabled = !profileNameInput.value.trim();
+                
+                // Add listener
+                profileNameInput.addEventListener('input', () => {
+                    this.elements.modalConfirm.disabled = !profileNameInput.value.trim();
+                });
+            }
+
+            // Add Back Button logic for Step 2
+            if (this.elements.modalCancel) {
+              const backBtn = this.elements.modalCancel;
+              const newBackBtn = backBtn.cloneNode(true);
+              backBtn.parentNode.replaceChild(newBackBtn, backBtn);
+              this.elements.modalCancel = newBackBtn;
+              
+              this.elements.modalCancel.textContent = "Back";
+              this.elements.modalCancel.style.display = "inline-block";
+              
+              this.elements.modalCancel.addEventListener('click', (e) => {
+                  e.preventDefault();
+                  // Return to Step 1
+                  this.showWelcomeModal({ currentName, isCompany }, onConfirm);
+              });
+            }
             
             return false;
 
@@ -263,6 +362,43 @@ export class ModalManager {
           if (typeof onConfirm === 'function') return onConfirm(guestName);
           return true;
         }
+      }
+
+      if (this.currentStep === 'error_not_found') {
+        // User clicked "Login as External"
+        
+        // Restore Guest View (Step 1 with No selected)
+        cleanup();
+        
+        this.elements.modalTitle.textContent = "Welcome to ChatCDO! ✨";
+        this.elements.modalMessage.textContent = "I'm Cindy, your AI assistant for CDO Foodsphere! I'm here to help with questions about company policies, history, products, and more.";
+        
+        // Restore Avatar
+        if (header.nextSibling) {
+          modal.insertBefore(avatarSection, header.nextSibling);
+        } else {
+          modal.appendChild(avatarSection);
+        }
+        
+        // Re-append groups
+        body.appendChild(statusGroup);
+        body.appendChild(numberGroup);
+        body.appendChild(guestNameGroup);
+        
+        // Force "No" selection
+        noRadio.checked = true;
+        
+        // This will update UI to show guest input and hide employee input
+        // And update confirm button text to "Let's Get Started!"
+        updateCardSelection(); 
+        
+        // Hide Cancel button (since we are back to "Step 1" state where cancel is hidden)
+        this.elements.modalCancel.style.display = 'none';
+        
+        // Reset step
+        this.currentStep = 1;
+        
+        return false;
       }
 
       if (this.currentStep === 2) {
@@ -328,7 +464,14 @@ export class ModalManager {
     this.elements.modalMessage.textContent = message;
     this.elements.modalConfirm.textContent = confirmText;
     if (this.elements.modalConfirm) this.elements.modalConfirm.setAttribute('type', 'button');
-    if (this.elements.modalCancel) this.elements.modalCancel.setAttribute('type', 'button');
+    if (this.elements.modalCancel) {
+      this.elements.modalCancel.setAttribute('type', 'button');
+      // Clone modalCancel to reset listeners and ensure clean state
+      const newCancelBtn = this.elements.modalCancel.cloneNode(true);
+      this.elements.modalCancel.parentNode.replaceChild(newCancelBtn, this.elements.modalCancel);
+      this.elements.modalCancel = newCancelBtn;
+      this.elements.modalCancel.addEventListener("click", () => this.closeModal());
+    }
     if (this.elements.modalClose) this.elements.modalClose.setAttribute('type', 'button');
     
     if (cancelText) {
@@ -437,7 +580,8 @@ export class ModalManager {
           if (!shouldClose) {
             btn.disabled = false;
             btn.classList.remove('loading');
-            btn.textContent = originalText;
+            // If the callback updated the originalText dataset (e.g., changing state/step), use that
+            btn.textContent = btn.dataset.originalText || originalText;
           }
         } else {
           if (result === false) {
@@ -505,125 +649,35 @@ export class ModalManager {
   }
 
   addTooltip(element, text, position = 'top') {
-    if (!element || window.innerWidth <= CONFIG.MOBILE_BREAKPOINT) return;
-    let tooltip = null;
-    let onDocPointerDown, onDocScroll, onWinResize, onWinBlur, onPointerMove, onDocMouseLeave;
+    if (!element) return;
     
-    const showTooltip = () => {
-      if (!element) return;
-      
-      const isSidebarElement = element.closest('#sidebar');
-      const sidebar = document.getElementById('sidebar');
-      if (isSidebarElement && sidebar && !sidebar.classList.contains('minimized')) {
-        return;
-      }
-      const existing = document.querySelectorAll('.tooltip');
-      existing.forEach(t => t.remove());
-      tooltip = document.createElement('div');
-      tooltip.className = `tooltip ${position}`;
-      tooltip.textContent = text;
-      document.body.appendChild(tooltip);
-      requestAnimationFrame(() => {
-        if (tooltip && tooltip.classList) {
-          tooltip.classList.add('show');
-          this.positionTooltip(tooltip, element, position);
-        }
-      });
-      
-      onDocPointerDown = () => hideTooltip();
-      onDocScroll = () => hideTooltip();
-      onWinResize = () => hideTooltip();
-      onWinBlur = () => hideTooltip();
-      onPointerMove = () => {
-        if (!element || !element.matches(':hover')) hideTooltip();
-      };
-      onDocMouseLeave = () => hideTooltip();
-      document.addEventListener('pointerdown', onDocPointerDown, { passive: true });
-      document.addEventListener('wheel', onDocScroll, { passive: true, capture: true });
-      document.addEventListener('scroll', onDocScroll, { passive: true, capture: true });
-      window.addEventListener('resize', onWinResize);
-      window.addEventListener('blur', onWinBlur);
-      document.addEventListener('pointermove', onPointerMove, { passive: true });
-      document.addEventListener('mouseleave', onDocMouseLeave);
-    };
+    // Disable custom tooltips to prevent "toast notification on every movement"
+    // Instead, rely on native browser tooltips via title attribute
+    if (!element.title) {
+        element.title = text;
+    }
+    if (!element.getAttribute('aria-label')) {
+        element.setAttribute('aria-label', text);
+    }
     
-    const hideTooltip = () => {
-      if (tooltip) {
-        tooltip.remove();
-        tooltip = null;
-      }
-      if (onDocPointerDown) document.removeEventListener('pointerdown', onDocPointerDown);
-      if (onDocScroll) {
-        document.removeEventListener('wheel', onDocScroll, { capture: true });
-        document.removeEventListener('scroll', onDocScroll, { capture: true });
-      }
-      if (onWinResize) window.removeEventListener('resize', onWinResize);
-      if (onWinBlur) window.removeEventListener('blur', onWinBlur);
-      if (onPointerMove) document.removeEventListener('pointermove', onPointerMove);
-      if (onDocMouseLeave) document.removeEventListener('mouseleave', onDocMouseLeave);
-      onDocPointerDown = onDocScroll = onWinResize = onWinBlur = onPointerMove = onDocMouseLeave = null;
-    };
-    
-    if (element) {
-      element.addEventListener('mouseenter', showTooltip, { passive: true });
-      element.addEventListener('mouseleave', hideTooltip, { passive: true });
-      element.addEventListener('pointerleave', hideTooltip, { passive: true });
-      element.addEventListener('focus', showTooltip);
-      element.addEventListener('blur', hideTooltip);
-      element._tooltipHandlers = { showTooltip, hideTooltip };
+    // Remove any existing custom tooltip logic/listeners if they were previously attached
+    // (In a fresh reload this part isn't strictly necessary but good for cleanup if we were hot-swapping)
+    if (element._tooltipHandlers) {
+        element.removeEventListener('mouseenter', element._tooltipHandlers.showTooltip);
+        element.removeEventListener('mouseleave', element._tooltipHandlers.hideTooltip);
+        element.removeEventListener('pointerleave', element._tooltipHandlers.hideTooltip);
+        element.removeEventListener('focus', element._tooltipHandlers.showTooltip);
+        element.removeEventListener('blur', element._tooltipHandlers.hideTooltip);
+        delete element._tooltipHandlers;
     }
   }
 
   positionTooltip(tooltip, element, position) {
-    if (!tooltip || !element) return;
-    const elementRect = element.getBoundingClientRect();
-    const tooltipRect = tooltip.getBoundingClientRect();
-    const viewport = { width: window.innerWidth, height: window.innerHeight };
-    const isInInputArea = !!element.closest('.input-area');
-    let top, left;
-    
-    switch (position) {
-      case 'top':
-        top = elementRect.top - tooltipRect.height - 8;
-        left = elementRect.left + (elementRect.width / 2) - (tooltipRect.width / 2);
-        if (top < 10) { top = elementRect.bottom + 8; tooltip.className = 'tooltip bottom show'; }
-        break;
-      case 'bottom':
-        top = elementRect.bottom + 8;
-        left = elementRect.left + (elementRect.width / 2) - (tooltipRect.width / 2);
-        if (!isInInputArea && (top + tooltipRect.height > viewport.height - 10)) {
-          top = elementRect.top - tooltipRect.height - 8;
-          tooltip.className = 'tooltip top show';
-        } else {
-          tooltip.className = 'tooltip bottom show';
-        }
-        break;
-      case 'right':
-        top = elementRect.top + (elementRect.height / 2) - (tooltipRect.height / 2);
-        left = elementRect.right + 8;
-        if (left + tooltipRect.width > viewport.width - 10) { 
-          left = elementRect.left - tooltipRect.width - 8; 
-          tooltip.className = 'tooltip left show'; 
-        }
-        break;
-      default:
-        top = elementRect.top - tooltipRect.height - 8;
-        left = elementRect.left + (elementRect.width / 2) - (tooltipRect.width / 2);
-        if (top < 10) { top = elementRect.bottom + 8; tooltip.className = 'tooltip bottom show'; }
-    }
-    
-    left = Math.max(10, Math.min(left, viewport.width - tooltipRect.width - 10));
-    if (position === 'bottom' && isInInputArea) {
-      top = Math.max(10, top);
-    } else {
-      top = Math.max(10, Math.min(top, viewport.height - tooltipRect.height - 10));
-    }
-    
-    tooltip.style.top = `${top}px`;
-    tooltip.style.left = `${left}px`;
+    // Legacy method - disabled
   }
 
   removeSidebarTooltips() {
+    // Legacy method - disabled
     const tooltips = document.querySelectorAll('.tooltip');
     tooltips.forEach(t => t.remove());
   }

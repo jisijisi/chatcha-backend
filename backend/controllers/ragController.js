@@ -11,6 +11,8 @@ import { SmartDataAnalyst } from '../services/smartDataAnalyst.js'; // NEW IMPOR
 import { notifyAdmins } from './notificationController.js';
 import { PROMPT_TEMPLATES } from '../utils/prompts.js';
 import { AI_BEHAVIOR } from '../utils/aiBehavior.js';
+import { responseCache } from '../services/responseCacheService.js';
+import { cacheService } from '../services/cacheService.js';
 
 // Initialize for dynamic conversational phrasing
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
@@ -125,19 +127,44 @@ export const askQuestion = async (req, res) => {
     if (!prompt) return res.status(400).json({ error: "Missing prompt" });
     if (!process.env.GEMINI_API_KEY) return res.status(500).json({ error: "API key not set" });
     
+    // ⚡ 1. SMART CACHE CHECK (0ms Latency) WITH KB VERSION VALIDATION
+    // Get current KB signature to ensure we don't serve outdated answers
+    const currentCacheInfo = cacheService.getCacheInfo();
+    const currentSignature = currentCacheInfo ? currentCacheInfo.signature : null;
+
+    const cachedResponse = responseCache.get(prompt, currentSignature);
+    if (cachedResponse) {
+        return res.json({
+            ...cachedResponse,
+            meta: { 
+                ...cachedResponse.meta, 
+                cached: true,
+                response_time: "0ms (Cached)"
+            }
+        });
+    }
+
     let finalAnswer = "";
 
     try {
         const history = behavior_context?.conversation_history || [];
 
-        // --- FETCH USER NAME ---
-        let userName = "User";
-        if (userEmail) {
-            try {
-                const [rows] = await pool.execute("SELECT name FROM employees WHERE email = ?", [userEmail]);
-                if (rows.length > 0 && rows[0].name) userName = rows[0].name;
-            } catch (e) { console.error("⚠️ Failed to fetch user name:", e.message); }
-        }
+        // ⚡ 2. PARALLEL EXECUTION: User Name & Intent Classification
+        const userPromise = (async () => {
+            let userName = "User";
+            if (userEmail) {
+                try {
+                    const [rows] = await pool.execute("SELECT name FROM employees WHERE email = ?", [userEmail]);
+                    if (rows.length > 0 && rows[0].name) userName = rows[0].name;
+                } catch (e) { console.error("⚠️ Failed to fetch user name:", e.message); }
+            }
+            return userName;
+        })();
+
+        const intentPromise = IntentService.classifyIntent(prompt, history);
+
+        // Await user and intent
+        const [userName, intentData] = await Promise.all([userPromise, intentPromise]);
 
         // --- CALCULATE CURRENT DATE (MANILA TIME) ---
         const now = new Date();
@@ -149,19 +176,20 @@ export const askQuestion = async (req, res) => {
             day: 'numeric' 
         });
 
-        // 1. SEMANTIC ROUTING
-        const intentData = await IntentService.classifyIntent(prompt, history);
         const intent = intentData.intent || "GENERAL";
-        const thinkingPhrases = await getLLMThinkingPhrases(prompt, intent);
-        
-        // --- MODIFIED: Use new rewriter logic ---
-        let searchTerms = prompt;
-        if (intent === 'KNOWLEDGE_BASE' && history.length > 0) {
-            searchTerms = await IntentService.rewriteQueryForSearch(prompt, history);
-        } else {
-            searchTerms = intentData.rewritten_query || prompt; 
-        }
 
+        // ⚡ 3. PARALLEL EXECUTION: Thinking Phrases & Query Rewrite
+        const thinkingPhrasesPromise = getLLMThinkingPhrases(prompt, intent);
+        
+        const rewritePromise = (async () => {
+            if (intent === 'KNOWLEDGE_BASE' && history.length > 0) {
+                return await IntentService.rewriteQueryForSearch(prompt, history);
+            }
+            return intentData.rewritten_query || prompt; 
+        })();
+
+        const [thinkingPhrases, searchTerms] = await Promise.all([thinkingPhrasesPromise, rewritePromise]);
+        
         console.log(`🔀 Intent: [${intent}] | Query: "${prompt}" | Search Terms: "${searchTerms}"`);
 
         // =========================================================================================
@@ -316,7 +344,8 @@ export const askQuestion = async (req, res) => {
                 systemPromptTemplate = PROMPT_TEMPLATES.KNOWLEDGE_BASE;
                 activeTools = []; 
                 if (use_rag && ragSystem.isInitialized) {
-                    const ragResult = await getEnhancedContext(searchTerms, ragSystem, 15, userEmail);
+                    // ⚡ OPTIMIZED: Reduced top_k from 15 to 8 for speed
+                    const ragResult = await getEnhancedContext(searchTerms, ragSystem, 8, userEmail);
                     ragContext = ragResult.finalContext;
                     sourceMap = ragResult.sourceMap || {};
                     sourceCategories = ragResult.categoryMap || {};
@@ -334,7 +363,8 @@ export const askQuestion = async (req, res) => {
         const hasTools = activeTools.length > 0 && activeTools[0].function_declarations && activeTools[0].function_declarations.length > 0;
 
         // 3. BUILD CONVERSATION HISTORY
-        const maxContextMessages = AI_BEHAVIOR.conversationMemory?.maxContextMessages || 10;
+        // ⚡ OPTIMIZED: Handled by AI_BEHAVIOR.conversationMemory.maxContextMessages (set to 5)
+        const maxContextMessages = AI_BEHAVIOR.conversationMemory?.maxContextMessages || 5;
         const recentHistory = history.slice(-maxContextMessages);
         
         let historyText = "";
@@ -565,7 +595,7 @@ Based on conversation history, this interprets to: "${searchTerms}"
             }
         }
 
-        res.json({ 
+        const responsePayload = { 
             answer: cleanAnswer,
             intent: intent,
             analysis: {
@@ -585,7 +615,14 @@ Based on conversation history, this interprets to: "${searchTerms}"
             result_count: toolResultCount,
             success: true,
             meta: { thinking_phrases: thinkingPhrases }
-        });
+        };
+
+        // ⚡ CACHE THE RESPONSE (If it's a good response)
+        if (intent === 'GENERAL' || intent === 'KNOWLEDGE_BASE') {
+            responseCache.set(prompt, responsePayload, currentSignature);
+        }
+
+        res.json(responsePayload);
 
     } catch (error) {
         console.error("❌ Ask API Error:", error);

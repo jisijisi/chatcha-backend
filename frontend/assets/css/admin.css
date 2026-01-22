@@ -1,8 +1,24 @@
 /* Modern Minimalist Admin Panel CSS - FIXED VERSION */
 :root {
-  --primary: #D71921;
-  --primary-dark: #b01519;
-  --primary-light: #fee2e2;
+  /* Modern Palette - Rose & Slate */
+  --primary: #E11D48;      /* Rose-600 */
+  --primary-soft: #FFF1F2; /* Rose-50 */
+  --primary-hover: #BE123C;
+  --bg-body: #F8F9FB;      /* Ice White/Gray */
+  --bg-card: #FFFFFF;
+  --text-main: #0F172A;    /* Slate-900 */
+  --text-muted: #64748B;   /* Slate-500 */
+  --text-light: #94A3B8;   /* Slate-400 */
+  
+  /* Soft Shadows */
+  --shadow-card: 0px 4px 20px rgba(0, 0, 0, 0.03), 0px 1px 3px rgba(0, 0, 0, 0.02);
+  --radius-card: 16px;
+  --radius-btn: 10px;
+  --sidebar-width: 260px;
+
+  /* Legacy/Utility Colors */
+  --primary-dark: #BE123C;
+  --primary-light: #FFF1F2;
   
   --success: #10b981;
   --success-light: #d1fae5;
@@ -27,7 +43,6 @@
   --gray-800: #1f2937;
   --gray-900: #111827;
   
-  --sidebar-width: 240px;
   --header-height: 64px;
   
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
@@ -101,8 +116,8 @@ html, body {
 
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  background: var(--gray-50);
-  color: var(--gray-900);
+  background: var(--bg-body);
+  color: var(--text-main);
   overflow-x: hidden;
   overflow-y: auto;
   min-height: 100vh;
@@ -126,7 +141,8 @@ body:has(#global-loader:not(.hidden)) .admin-container {
 .admin-sidebar {
   width: var(--sidebar-width);
   background: white;
-  border-right: 1px solid var(--gray-200);
+  border-right: none;
+  box-shadow: 1px 0 0 rgba(0,0,0,0.04);
   position: fixed;
   height: 100vh;
   overflow-y: auto;
@@ -160,23 +176,23 @@ body:has(#global-loader:not(.hidden)) .admin-container {
 }
 
 .nav-item {
-  padding: 10px 12px;
+  padding: 12px 16px;
   display: flex;
   align-items: center;
   gap: 12px;
-  color: var(--gray-600);
+  color: var(--text-muted);
   text-decoration: none;
   transition: all 0.2s ease;
   cursor: pointer;
-  border-radius: var(--radius);
-  margin-bottom: 4px;
+  border-radius: var(--radius-btn);
+  margin: 4px 16px;
   font-size: 0.938rem;
   font-weight: 500;
 }
 
-.nav-item:hover {
-  background: var(--gray-100);
-  color: var(--gray-900);
+.nav-item:hover:not(.active) {
+  background: #F1F5F9;
+  color: var(--text-main);
 }
 
 .nav-item:hover .material-symbols-outlined {
@@ -184,9 +200,9 @@ body:has(#global-loader:not(.hidden)) .admin-container {
 }
 
 .nav-item.active {
-  background: var(--primary-light);
+  background: var(--primary-soft);
   color: var(--primary);
-  font-weight: 600;
+  box-shadow: none;
 }
 
 .nav-icon {
@@ -305,14 +321,14 @@ body:has(#global-loader:not(.hidden)) .admin-container {
 
 /* Timeframe Tabs */
 .timeframe-tabs {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 24px;
-  background: white;
-  padding: 8px;
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
-  flex-wrap: wrap;
+  background: rgba(255,255,255,0.6);
+  backdrop-filter: blur(8px);
+  padding: 6px;
+  border-radius: 12px;
+  display: inline-flex;
+  border: 1px solid rgba(0,0,0,0.04);
+  margin-bottom: 30px;
+  gap: 0;
 }
 
 .timeframe-controls {
@@ -324,28 +340,26 @@ body:has(#global-loader:not(.hidden)) .admin-container {
 }
 
 .timeframe-tab {
-  flex: 1;
-  min-width: 100px;
-  padding: 10px 16px;
   background: transparent;
-  border: none;
-  border-radius: var(--radius);
-  cursor: pointer;
+  color: var(--text-muted);
+  border-radius: 8px;
+  padding: 8px 24px;
+  font-size: 0.85rem;
   font-weight: 600;
-  font-size: 0.875rem;
-  color: var(--gray-600);
+  border: none;
+  cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .timeframe-tab:hover {
   background: var(--gray-100);
-  color: var(--gray-900);
+  color: var(--text-main);
 }
 
 .timeframe-tab.active {
-  background: var(--primary);
-  color: white;
-  box-shadow: var(--shadow-sm);
+  background: #FFFFFF;
+  color: var(--text-main);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
 /* Stats Grid */
@@ -357,15 +371,15 @@ body:has(#global-loader:not(.hidden)) .admin-container {
 }
 
 .stat-card {
-  background: white;
+  background: var(--bg-card);
   padding: 20px;
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
   display: flex;
   align-items: center;
   gap: 16px;
   transition: all 0.2s ease;
-  border: 1px solid var(--gray-200);
+  border: none;
   min-width: 0; /* Prevent grid blowout */
 }
 
@@ -380,9 +394,9 @@ body:has(#global-loader:not(.hidden)) .admin-container {
 }
 
 .stat-icon-wrapper {
-  width: 48px;
-  height: 48px;
-  border-radius: var(--radius-lg);
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -428,11 +442,12 @@ body:has(#global-loader:not(.hidden)) .admin-container {
 }
 
 .stat-value {
-  font-size: 2rem;
-  font-weight: 800;
+  font-size: 2.5rem;
+  font-weight: 700;
   color: var(--gray-900);
   line-height: 1;
-  letter-spacing: -0.025em;
+  letter-spacing: -0.03em;
+  margin-bottom: 2px;
 }
 
 .stat-label {
@@ -1056,28 +1071,28 @@ body:has(#global-loader:not(.hidden)) .admin-container {
 
 /* KB Tabs */
 .kb-tabs {
-  display: flex;
-  gap: 8px;
+  background: rgba(255,255,255,0.6);
+  backdrop-filter: blur(8px);
+  padding: 6px;
+  border-radius: 12px;
+  display: inline-flex;
+  border: 1px solid rgba(0,0,0,0.04);
   margin-bottom: 20px;
-  background: white;
-  padding: 8px;
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
-  border: 1px solid var(--gray-200);
+  gap: 0;
   flex-wrap: wrap;
 }
 
 .kb-tab {
   flex: 1;
   min-width: 120px;
-  padding: 10px 16px;
+  padding: 8px 24px;
   background: transparent;
   border: none;
-  border-radius: var(--radius);
+  border-radius: 8px;
   cursor: pointer;
   font-weight: 600;
-  font-size: 0.875rem;
-  color: var(--gray-600);
+  font-size: 0.85rem;
+  color: var(--text-muted);
   transition: all 0.2s ease;
   display: flex;
   align-items: center;
@@ -1088,12 +1103,13 @@ body:has(#global-loader:not(.hidden)) .admin-container {
 
 .kb-tab:hover {
   background: var(--gray-100);
-  color: var(--gray-900);
+  color: var(--text-main);
 }
 
 .kb-tab.active {
-  background: var(--primary);
-  color: white;
+  background: #FFFFFF;
+  color: var(--text-main);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
 .tab-icon {

@@ -130,7 +130,9 @@ class ChatApp {
     // If userName is still null
     if (!this.userName) {
       const defaultName = this.authManager.getDefaultDisplayName();
-      this.modalManager.showWelcomeModal((name) => {
+      const isGuest = this.authManager.getUserType() === 'guest';
+      
+      this.modalManager.showWelcomeModal({ isGuest }, (name) => {
         this.userName = name || defaultName;
         this.saveToStorage();
         this.uiManager.updateWelcomeMessage();
@@ -883,8 +885,7 @@ class ChatApp {
       this.uiManager.closeAllDropdowns();
       this.uiManager.closeMobileSidebar();
       this.uiManager.updateScrollButton();
-      const t = TRANSLATIONS[this.currentLang] || TRANSLATIONS.en;
-      this.showToast(t.toasts.startedNewChat, 'success');
+      // Toast notification removed
       this.startSuggestedQuestionsInterval(); 
     });
 
@@ -1092,6 +1093,7 @@ class ChatApp {
         recognition.lang = langMap[this.currentLang] || 'en-US';
 
         let isRecognizing = false;
+        let lastToggleTime = 0;
 
         recognition.onresult = (event) => {
           let finalTranscript = '';
@@ -1131,7 +1133,10 @@ class ChatApp {
           } else if (event.error === 'network') {
               errorMsg = 'Network error. Please check your connection.';
           } else if (event.error === 'not-allowed') {
-              errorMsg = 'Microphone permission denied.';
+              const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+              errorMsg = isIOS 
+                ? 'Microphone denied. Go to Settings > Safari > Microphone.' 
+                : 'Microphone permission denied.';
           }
           
           this.showToast(`${t.toasts.voiceError}: ${errorMsg}`, 'error');
@@ -1152,6 +1157,11 @@ class ChatApp {
 
         const toggleMic = (e) => {
           e.stopPropagation();
+
+          // Debounce check for mobile compatibility
+          const now = Date.now();
+          if (now - lastToggleTime < 500) return;
+          lastToggleTime = now;
 
           if (!window.isSecureContext && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
             this.showToast("Voice input requires a secure HTTPS connection.", "error", 4000);
@@ -1193,14 +1203,28 @@ class ChatApp {
                 this.showToast(t.toasts.listening, 'info', 2000);
             } catch (err) {
                 console.error("Failed to start recognition:", err);
+                
+                if (err.name === 'InvalidStateError') {
+                    // It is already running. Sync state to true so user can stop it next time.
+                    isRecognizing = true;
+                    micBtn.classList.add('recording');
+                    micBtn.setAttribute('aria-label', 'Stop listening');
+                    this.showToast("Microphone is active. Tap again to stop.", "info");
+                    return;
+                }
+
                 isRecognizing = false;
                 micBtn.classList.remove('recording');
                 
-                if (err.name === 'NotAllowedError') {
-                     this.showToast("Microphone access denied. Check settings.", "error");
-                } else if (err.name !== 'InvalidStateError') {
-                    // Ignore InvalidStateError (means already running)
-                    this.showToast("Could not start microphone.", "error");
+                if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+                     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+                     const msg = isIOS ? "Microphone denied. Check Settings > Safari > Microphone." : "Microphone access denied. Check settings.";
+                     this.showToast(msg, "error");
+                } else if (err.name === 'SecurityError') {
+                     this.showToast("Voice input requires HTTPS.", "error");
+                } else {
+                    // Ignore other errors
+                    this.showToast(`Could not start microphone: ${err.message || 'Unknown error'}`, "error");
                 }
             }
             // --- FIX FOR MOBILE END ---
@@ -1222,11 +1246,30 @@ class ChatApp {
             let activeStream = null;
             let audioChunks = [];
 
+            // Helper to find supported MIME type for recording
+            const getSupportedMimeType = () => {
+              const types = [
+                'audio/webm;codecs=opus',
+                'audio/webm',
+                'audio/mp4',
+                'audio/ogg;codecs=opus',
+                'audio/aac'
+              ];
+              for (const type of types) {
+                if (MediaRecorder.isTypeSupported(type)) return type;
+              }
+              return ''; // Browser default
+            };
+
             const startRecording = async () => {
               try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 activeStream = stream;
-                mediaRecorder = new MediaRecorder(stream);
+                
+                const mimeType = getSupportedMimeType();
+                const options = mimeType ? { mimeType } : undefined;
+                
+                mediaRecorder = new MediaRecorder(stream, options);
                 audioChunks = [];
 
                 mediaRecorder.ondataavailable = (ev) => {
@@ -1237,12 +1280,18 @@ class ChatApp {
                   micBtn.classList.remove('recording');
                   micBtn.setAttribute('aria-label', 'Use voice input');
 
-                  const blob = new Blob(audioChunks, { type: 'audio/webm' });
+                  // Use the actual mime type or fallback
+                  const blobType = mediaRecorder.mimeType || mimeType || 'audio/webm';
+                  const blob = new Blob(audioChunks, { type: blobType });
                   const formData = new FormData();
-                  formData.append('file', blob, 'recording.webm');
+                  // Append with correct extension if possible, though server might inspect content
+                  const ext = blobType.includes('mp4') ? 'mp4' : 
+                             blobType.includes('aac') ? 'aac' : 
+                             blobType.includes('ogg') ? 'ogg' : 'webm';
+                  formData.append('file', blob, `recording.${ext}`);
 
                   try {
-                    const resp = await fetch('/stt/transcribe', {
+                    const resp = await fetch(`${CONFIG.API_BASE}/stt/transcribe`, {
                       method: 'POST',
                       body: formData
                     });
@@ -1273,7 +1322,20 @@ class ChatApp {
                 this.showToast(t.toasts.listening || 'Recording...', 'info', 2000);
               } catch (err) {
                 console.error('getUserMedia error:', err);
-                this.showToast('Microphone access denied or unavailable.', 'error');
+                let msg = 'Microphone access denied or unavailable.';
+                
+                if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+                    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+                    msg = isIOS 
+                        ? 'Microphone denied. Please check Settings > Safari > Microphone.' 
+                        : 'Microphone permission denied. Please allow access.';
+                } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+                    msg = 'No microphone found on this device.';
+                } else if (err.name === 'NotSupportedError') {
+                    msg = 'Secure context required (HTTPS) or audio recording not supported.';
+                }
+                
+                this.showToast(msg, 'error');
               }
             };
 

@@ -1202,7 +1202,7 @@ export class ChatManager {
     maintenanceDiv.className = 'message bot error';
     maintenanceDiv.innerHTML = `
       <div class="message-header">
-        <img src="assets/images/avatar.png" alt="Cindy" class="bot-avatar">
+        <img src="assets/images/avatar-yellow.png" alt="Cindy" class="bot-avatar">
         <span class="bot-name">System Message</span>
       </div>
       <div class="message-content">
@@ -1379,7 +1379,7 @@ export class ChatManager {
     this.app.uiManager.scrollToBottom();
     this.app.uiManager.closeMobileSidebar();
     this.app.uiManager.closeAllDropdowns();
-    this.app.showToast(`${t.toasts.chatLoaded} ${chat.title}`, 'success');
+    // Toast notification removed
   }
 
   enableInlineRename(index, currentTitle, listItem, titleSpan, ellipsis) {
@@ -1573,7 +1573,7 @@ export class ChatManager {
     errorDiv.className = 'message bot error';
     errorDiv.innerHTML = `
       <div class="message-header">
-        <img src="assets/images/avatar.png" alt="Cindy" class="bot-avatar">
+        <img src="assets/images/avatar-yellow.png" alt="Cindy" class="bot-avatar">
         <span class="bot-name">Cindy</span>
       </div>
       <div class="message-content">

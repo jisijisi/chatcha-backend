@@ -93,6 +93,9 @@ function openCacheProgressModal() {
   
   const result = document.getElementById('cache-status-result');
   if (result) result.style.display = 'none';
+
+  const error = document.getElementById('cache-status-error');
+  if (error) error.style.display = 'none';
   
   const closeBtn = document.getElementById('cache-progress-close');
   if (closeBtn) closeBtn.style.display = 'none';
@@ -103,10 +106,7 @@ function openCacheProgressModal() {
   const finishBtn = document.getElementById('cache-progress-finish');
   if (finishBtn) finishBtn.style.display = 'none';
 
-  // Reset progress
-  const fill = document.getElementById('cache-progress-fill-modal');
-  if (fill) fill.style.width = '0%';
-  
+  // Reset progress text
   const text = document.getElementById('cache-progress-text-modal');
   if (text) text.textContent = '0% Complete';
   
@@ -115,6 +115,13 @@ function openCacheProgressModal() {
   
   const sub = document.getElementById('cache-status-subtext');
   if (sub) sub.textContent = 'This operation may take several minutes depending on the volume of knowledge data.';
+
+  // Reset Magic Animation
+  const stream = document.getElementById('cache-magic-stream-bar');
+  if (stream) stream.style.width = '0%';
+  
+  const targetIcon = document.getElementById('cache-magic-target-icon');
+  if (targetIcon) targetIcon.classList.remove('active');
 
   openModal('cache-progress-modal');
 }
@@ -135,12 +142,17 @@ function closeCacheProgressModal() {
 
 // Update progress during cache regeneration
 function updateCacheProgress(stage, progress) {
-  const progressFill = document.getElementById('cache-progress-fill-modal');
+  const streamFill = document.getElementById('cache-magic-stream-bar');
+  const targetIcon = document.getElementById('cache-magic-target-icon');
   const progressText = document.getElementById('cache-progress-text-modal');
   const statusMessage = document.getElementById('cache-status-message');
 
-  if (progressFill) {
-    progressFill.style.width = progress + '%';
+  if (streamFill) {
+    streamFill.style.width = progress + '%';
+  }
+  
+  if (targetIcon && progress >= 80) {
+    targetIcon.classList.add('active');
   }
 
   if (progressText) {
@@ -183,25 +195,7 @@ function showCacheRegenerationSuccess(data) {
   const finishBtn = document.getElementById('cache-progress-finish');
   if (finishBtn) finishBtn.style.display = 'inline-block';
 
-  // Update result icon and text
-  const resultIcon = document.getElementById('cache-result-icon');
-  const resultTitle = document.getElementById('cache-result-title');
-  const resultSubtext = document.getElementById('cache-result-subtext');
-
-  if (resultIcon) {
-    resultIcon.className = 'conversion-result-icon success';
-    resultIcon.innerHTML = '<span style="font-size: 3rem;">✅</span>';
-  }
-
-  if (resultTitle) {
-    resultTitle.textContent = 'Regeneration Successful!';
-    resultTitle.style.color = '#10b981';
-  }
-
-  if (resultSubtext) {
-    resultSubtext.textContent = 'The RAG system cache has been fully rebuilt and is now active.';
-  }
-
+  // Stats are updated via IDs which match the new HTML structure
   // Update stats
   if (data.files !== undefined) {
     const filesEl = document.getElementById('cache-result-files');
@@ -223,7 +217,10 @@ function showCacheRegenerationError(errorMessage) {
   if (loading) loading.style.display = 'none';
   
   const result = document.getElementById('cache-status-result');
-  if (result) result.style.display = 'block';
+  if (result) result.style.display = 'none';
+
+  const error = document.getElementById('cache-status-error');
+  if (error) error.style.display = 'block';
   
   const closeBtn = document.getElementById('cache-progress-close');
   if (closeBtn) closeBtn.style.display = 'block';
@@ -234,31 +231,11 @@ function showCacheRegenerationError(errorMessage) {
   const finishBtn = document.getElementById('cache-progress-finish');
   if (finishBtn) finishBtn.style.display = 'inline-block';
 
-  // Update result icon and text
-  const resultIcon = document.getElementById('cache-result-icon');
-  const resultTitle = document.getElementById('cache-result-title');
-  const resultSubtext = document.getElementById('cache-result-subtext');
-
-  if (resultIcon) {
-    resultIcon.className = 'conversion-result-icon error';
-    resultIcon.innerHTML = '<span style="font-size: 3rem;">❌</span>';
+  // Update error message
+  const errorMsg = document.getElementById('cache-error-message');
+  if (errorMsg) {
+    errorMsg.textContent = errorMessage || 'An error occurred during cache regeneration.';
   }
-
-  if (resultTitle) {
-    resultTitle.textContent = 'Regeneration Failed';
-    resultTitle.style.color = '#ef4444';
-  }
-
-  if (resultSubtext) {
-    resultSubtext.textContent = errorMessage || 'An error occurred during cache regeneration.';
-  }
-
-  // Hide stats on error
-  const filesEl = document.getElementById('cache-result-files');
-  if (filesEl) filesEl.textContent = '—';
-  
-  const chunksEl = document.getElementById('cache-result-chunks');
-  if (chunksEl) chunksEl.textContent = '—';
 }
 
 // Connect to Server-Sent Events stream
@@ -691,6 +668,13 @@ function openConversionStatusModal() {
   const fill = document.getElementById('conversion-progress-fill');
   if (fill) fill.style.width = '0%';
   
+  // Reset magic animation
+  const stream = document.getElementById('magic-stream-bar');
+  if (stream) stream.style.width = '0%';
+  
+  const jsonIcon = document.getElementById('magic-json-icon');
+  if (jsonIcon) jsonIcon.classList.remove('active');
+  
   const text = document.getElementById('conversion-progress-text');
   if (text) text.textContent = 'Uploading file...';
   
@@ -709,8 +693,10 @@ function closeConversionStatusModal() {
 function simulateProgress() {
   const progressFill = document.getElementById('conversion-progress-fill');
   const progressText = document.getElementById('conversion-progress-text');
+  const streamFill = document.getElementById('magic-stream-bar');
+  const jsonIcon = document.getElementById('magic-json-icon');
   
-  if (!progressFill || !progressText) return;
+  if (!progressText) return;
 
   const stages = [
     { progress: 20, text: 'Uploading file...' },
@@ -724,14 +710,22 @@ function simulateProgress() {
   
   const interval = setInterval(() => {
     // Re-check existence to prevent crashes if modal closes or elements vanish
-    if (!progressFill || !progressText) {
+    if (!progressText) {
         clearInterval(interval);
         return;
     }
 
     if (currentStage < stages.length) {
-      progressFill.style.width = stages[currentStage].progress + '%';
+      const p = stages[currentStage].progress;
+      if (progressFill) progressFill.style.width = p + '%';
+      if (streamFill) streamFill.style.width = p + '%';
+      
       progressText.textContent = stages[currentStage].text;
+      
+      if (p >= 80 && jsonIcon) {
+          jsonIcon.classList.add('active');
+      }
+      
       currentStage++;
     } else {
       clearInterval(interval);

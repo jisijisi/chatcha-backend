@@ -13,8 +13,10 @@ const __dirname = path.dirname(__filename);
 export class DatabaseCacheManager {
   constructor(pool, cachePath = 'embeddings-cache.json') {
       this.pool = pool;
-      this.cachePath = path.join(__dirname, '..', cachePath);
-      this.cacheInfoPath = path.join(__dirname, '..', 'cache-info.json');
+      // Use .cache directory to match CacheService
+      const cacheDir = path.join(__dirname, '..', '.cache');
+      this.cachePath = path.join(cacheDir, cachePath);
+      this.cacheInfoPath = path.join(cacheDir, 'cache-info.json');
   }
 
   async generateCacheSignature() {
@@ -202,7 +204,8 @@ export class MultiFolderSemanticRAG {
       this.embeddings = [];
       this.isInitialized = false;
       this.initializing = false;
-      this.embeddingsCachePath = path.join(__dirname, '..', 'embeddings-cache.json');
+      // Use .cache directory
+      this.embeddingsCachePath = path.join(__dirname, '..', '.cache', 'embeddings-cache.json');
       this.progressCallback = null; // NEW: Progress callback for real-time updates
       console.log("🔧 Initializing RAG with NEW DATABASE SCHEMA...");
   }

@@ -1,7 +1,7 @@
 /* Modern Input Area Styles - Footer Layout - FULLY THEMED */
 .input-area {
   width: 100%;
-  padding: 0 16px 24px;
+  padding: 0 clamp(8px, 3vw, 16px) clamp(8px, 2vh, 24px); /* Tighter bottom padding */
   background: transparent;
   display: flex;
   justify-content: center;
@@ -186,9 +186,9 @@
   border: none;
   color: #ffffff;
   border-radius: 10px;
-  width: 36px;
-  height: 36px;
-  min-width: 36px;
+  width: clamp(32px, 9vw, 36px);
+  height: clamp(32px, 9vw, 36px);
+  min-width: clamp(32px, 9vw, 36px);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -309,8 +309,12 @@
 #chat-container.centered .input-area {
   position: relative;
   width: 100%;
-  max-width: 768px;
-  margin-top: 32px;
+  max-width: 800px;
+  margin-top: auto; /* Push to bottom of flex container */
+  /* Ensure input sits above the bottom wave */
+  padding: 12px 16px;
+  padding-bottom: clamp(60px, 12vh, 140px);
+  z-index: 20;
 }
 
 #chat-container.centered .input-area .input-wrapper {
@@ -368,8 +372,8 @@
 
   /* --- FIX FOR MOBILE TOUCH TARGET --- */
   .input-area #mic-btn {
-    width: 44px; /* Increased from 30px */
-    height: 44px; /* Increased from 30px */
+    width: 36px; /* Optimized for small screens */
+    height: 36px; /* Optimized for small screens */
     touch-action: manipulation;
   }
 

@@ -357,7 +357,7 @@ export class UIManager {
     border.className = 'welcome-avatar-border';
     
     const avatar = document.createElement('img');
-    avatar.src = 'assets/images/avatar.png'; 
+    avatar.src = 'assets/images/avatar-yellow.png'; 
     avatar.alt = 'Cindy';
     avatar.className = 'welcome-avatar';
     
@@ -701,28 +701,71 @@ export class UIManager {
       dropdown.style.position = 'fixed';
       dropdown.style.zIndex = '1010';
       
+      // Make visible for measurement (hidden to avoid flicker)
+      dropdown.style.visibility = 'hidden';
+      dropdown.style.display = 'block';
+
+      const dropdownWidth = dropdown.offsetWidth || 150; // Fallback width
+      const dropdownHeight = dropdown.offsetHeight || 80;
+      
       if (isInHistoryDropdown) {
         const historyDropdownRect = this.app.elements.historyDropdown.getBoundingClientRect();
         dropdown.style.top = `${listItemRect.top}px`;
         dropdown.style.left = `${historyDropdownRect.right + 5}px`;
       } else if (isSidebarMinimized) {
+        // Minimized: below the icon
         dropdown.style.top = `${ellipsisRect.bottom + 5}px`;
-        dropdown.style.left = `${ellipsisRect.left - 100}px`;
+        // Center horizontally with icon, but ensure it doesn't go off screen
+        dropdown.style.left = `${ellipsisRect.left}px`; 
+      } else if (window.innerWidth <= 768) {
+         // Mobile: Try to align to the LEFT of the ellipsis (context menu style)
+         // This avoids covering the next item (date headers etc)
+         dropdown.style.top = `${ellipsisRect.top}px`;
+         dropdown.style.left = `${ellipsisRect.left - dropdownWidth - 8}px`;
+         
+         // If it goes off left edge, fallback to below-right
+         if (ellipsisRect.left - dropdownWidth - 8 < 10) {
+             dropdown.style.top = `${ellipsisRect.bottom + 5}px`;
+             dropdown.style.left = `${ellipsisRect.right - dropdownWidth}px`;
+         }
       } else {
+        // Desktop: Right of the item
         dropdown.style.top = `${listItemRect.top}px`;
         dropdown.style.left = `${listItemRect.right + 5}px`;
       }
       
-      // Adjust if off-screen (basic check)
-      const dropdownRect = dropdown.getBoundingClientRect();
-      if (dropdownRect.right > window.innerWidth) {
-          dropdown.style.left = `${window.innerWidth - dropdownRect.width - 10}px`;
+      // Adjust if off-screen (Horizontal)
+      // We need to parse the current left to check boundaries or just check rect
+      const currentRect = dropdown.getBoundingClientRect();
+      
+      if (currentRect.right > window.innerWidth) {
+          dropdown.style.left = `${window.innerWidth - dropdownWidth - 10}px`;
+      }
+      if (currentRect.left < 0) {
+          dropdown.style.left = '10px';
+      }
+
+      // Adjust if off-screen (Vertical)
+      // Check if the bottom goes below viewport
+      // We use the top we just set + height
+      const currentTop = parseFloat(dropdown.style.top) || 0;
+      
+      if (currentTop + dropdownHeight > window.innerHeight) {
+          // Flip to above
+          if (window.innerWidth <= 768 || isSidebarMinimized) {
+               // Above the ellipsis
+               dropdown.style.top = `${ellipsisRect.top - dropdownHeight - 5}px`;
+          } else {
+               // Align bottom with item bottom
+               const newTop = listItemRect.bottom - dropdownHeight;
+               dropdown.style.top = `${Math.max(10, newTop)}px`;
+          }
       }
       
       const tooltip = ellipsis.querySelector('.tooltip');
       if (tooltip) tooltip.classList.remove('show');
       
-      dropdown.style.display = 'block';
+      dropdown.style.visibility = 'visible';
       dropdown.classList.add("show");
       ellipsis.setAttribute("aria-expanded", "true");
       
