@@ -62,15 +62,19 @@ function setupNavigation() {
   document.querySelectorAll('.nav-item').forEach(item => {
     item.addEventListener('click', async (e) => {
       e.preventDefault();
-      const view = item.dataset.view;
-      await switchView(view);
       
+      // Update UI immediately for better responsiveness
       document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
       item.classList.add('active');
       
       if (window.innerWidth <= 768) {
         document.getElementById('adminSidebar').classList.remove('active');
+        const overlay = document.getElementById('sidebarOverlay');
+        if (overlay) overlay.classList.remove('active');
       }
+
+      const view = item.dataset.view;
+      await switchView(view);
     });
   });
 }
@@ -112,12 +116,22 @@ async function switchView(view) {
 // Mobile menu setup
 function setupMobileMenu() {
   const mobileToggle = document.getElementById('mobileMenuToggle');
+  const overlay = document.getElementById('sidebarOverlay');
+  const sidebar = document.getElementById('adminSidebar');
+
   if (mobileToggle) {
     mobileToggle.addEventListener('click', () => {
-      const sidebar = document.getElementById('adminSidebar');
       if (sidebar) {
         sidebar.classList.toggle('active');
+        if (overlay) overlay.classList.toggle('active');
       }
+    });
+  }
+
+  if (overlay) {
+    overlay.addEventListener('click', () => {
+      if (sidebar) sidebar.classList.remove('active');
+      overlay.classList.remove('active');
     });
   }
 }

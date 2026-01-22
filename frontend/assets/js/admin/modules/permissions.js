@@ -10,6 +10,10 @@ let selectedPermUsers = new Set();
 let isBulkMode = false;
 let isAllExpanded = false;
 let pendingExpandCollapse = null;
+let currentPage = 1;
+let itemsPerPage = 10;
+let totalRecords = 0;
+let totalPages = 1;
 
 // Public API
 const Permissions = {
@@ -49,8 +53,46 @@ function setupPermissionsManagement() {
   const treeSearch = document.getElementById('perm-tree-search');
   const toggleAllBtn = document.getElementById('perm-toggle-all');
 
-  if (searchInput) searchInput.addEventListener('input', renderPermissionsTable);
-  if (deptFilter) deptFilter.addEventListener('change', renderPermissionsTable);
+  // Server-side filtering with debounce
+  if (searchInput) {
+    let timeout;
+    searchInput.addEventListener('input', () => {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => {
+        currentPage = 1;
+        loadPermissionUsers();
+      }, 500);
+    });
+  }
+  
+  if (deptFilter) {
+    deptFilter.addEventListener('change', () => {
+      currentPage = 1;
+      loadPermissionUsers();
+    });
+  }
+  
+  // Pagination Controls
+  const prevBtn = document.getElementById('perm-prev-btn');
+  const nextBtn = document.getElementById('perm-next-btn');
+
+  if (prevBtn) {
+    prevBtn.addEventListener('click', () => {
+      if (currentPage > 1) {
+        currentPage--;
+        loadPermissionUsers();
+      }
+    });
+  }
+
+  if (nextBtn) {
+    nextBtn.addEventListener('click', () => {
+      if (currentPage < totalPages) {
+        currentPage++;
+        loadPermissionUsers();
+      }
+    });
+  }
   
   if (modalClose) modalClose.addEventListener('click', closePermModal);
   if (modalCancel) modalCancel.addEventListener('click', closePermModal);
@@ -204,79 +246,186 @@ function handleToggleAllClick() {
 
 // Load permission users
 async function loadPermissionUsers() {
+  const tbody = document.getElementById('permissions-table-body');
+  if (tbody) tbody.innerHTML = '<tr><td colspan="5" class="loading-cell">Loading users...</td></tr>';
+
   try {
-    const data = await apiFetch('/admin/users');
+    const search = document.getElementById('perm-search')?.value || '';
+    const dept = document.getElementById('perm-dept-filter')?.value || '';
+
+    const params = new URLSearchParams();
+    if (search) params.append('search', search);
+    if (dept) params.append('department', dept);
+    params.append('page', currentPage);
+    params.append('limit', itemsPerPage);
+
+    const data = await apiFetch(`/admin/users?${params.toString()}`);
     permissionUsers = data.users || [];
     
-    const departments = [...new Set(permissionUsers.map(u => u.department).filter(Boolean))];
-    const deptSelect = document.getElementById('perm-dept-filter');
+    if (data.pagination) {
+      totalRecords = data.pagination.total;
+      totalPages = data.pagination.totalPages;
+      currentPage = data.pagination.page;
+    } else {
+      totalRecords = permissionUsers.length;
+      totalPages = 1;
+    }
     
-    if (deptSelect) {
-      deptSelect.innerHTML = '<option value="">Department (All)</option>' + 
-        departments.map(d => `<option value="${d}">${d}</option>`).join('');
+    // Only populate department filter if it's empty (on first load)
+    const deptSelect = document.getElementById('perm-dept-filter');
+    if (deptSelect && deptSelect.options.length <= 1) {
+       // We might want a separate API call for departments to get ALL departments, 
+       // not just from the current page of users. 
+       // But for now, let's keep it simple or rely on what's available if possible.
+       // Actually, user-management.js calls /admin/departments. We should probably do the same 
+       // or just rely on the fact that they share the same backend.
+       // Let's try to fetch departments separately if needed, but for now let's just leave it 
+       // or maybe fetch departments once.
+       loadDepartments();
     }
 
     renderPermissionsTable();
+    renderPagination();
   } catch (error) {
     console.error('❌ Error loading users for permissions:', error);
     showToast('Failed to load users', 'error');
   }
 }
 
+async function loadDepartments() {
+    try {
+        const data = await apiFetch('/admin/departments');
+        const departments = data.departments || [];
+        const deptSelect = document.getElementById('perm-dept-filter');
+        if (deptSelect) {
+            const currentVal = deptSelect.value;
+            deptSelect.innerHTML = '<option value="">Department (All)</option>' + 
+                departments.map(d => `<option value="${d}">${d}</option>`).join('');
+            if (currentVal && departments.includes(currentVal)) deptSelect.value = currentVal;
+        }
+    } catch(e) { console.error('Failed to load departments'); }
+}
+
 // Render permissions table
 function renderPermissionsTable() {
   const tbody = document.getElementById('permissions-table-body');
-  const searchTerm = (document.getElementById('perm-search')?.value || '').toLowerCase();
-  const deptFilter = document.getElementById('perm-dept-filter')?.value || '';
+  const paginationControls = document.getElementById('perm-pagination');
   const selectAllBox = document.getElementById('perm-select-all');
 
   if (!tbody) return;
 
-  const filtered = permissionUsers.filter(user => {
-    const matchesSearch = user.name.toLowerCase().includes(searchTerm) || user.email.toLowerCase().includes(searchTerm);
-    const matchesDept = !deptFilter || user.department === deptFilter;
-    return matchesSearch && matchesDept;
-  });
+  // No client-side filtering needed anymore as we fetch filtered data from server
+  const filtered = permissionUsers; 
 
   if (selectAllBox) selectAllBox.checked = false;
 
   if (filtered.length === 0) {
     tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 40px; color: #999;">No employees found.</td></tr>';
+    if (paginationControls) paginationControls.style.display = 'none';
     return;
   }
+  
+  if (paginationControls) paginationControls.style.display = 'flex';
 
   tbody.innerHTML = filtered.map(user => {
     const isChecked = selectedPermUsers.has(user.id) ? 'checked' : '';
     return `
     <tr class="${isChecked ? 'row-selected' : ''}">
-      <td>
+      <td data-label="Select">
         <input type="checkbox" class="perm-user-check" value="${user.id}" 
           ${isChecked} onchange="window.Permissions.togglePermUserSelection(${user.id}, this)">
       </td>
-      <td>
-        <div style="font-weight: 600;">${escapeHtml(user.name)}</div>
-        <div style="font-size: 0.85rem; color: #666;">${escapeHtml(user.email)}</div>
+      <td data-label="User">
+        <div>
+          <div style="font-weight: 600;">${escapeHtml(user.name)}</div>
+          <div style="font-size: 0.85rem; color: #666;">${escapeHtml(user.email)}</div>
+        </div>
       </td>
-      <td>
-        <div style="font-weight: 500;">${escapeHtml(user.department || '-')}</div>
-        <div style="font-size: 0.8rem; color: #999;">${escapeHtml(user.position || '')}</div>
+      <td data-label="Department">
+        <div>
+          <div style="font-weight: 500;">${escapeHtml(user.department || '-')}</div>
+          <div style="font-size: 0.8rem; color: #999;">${escapeHtml(user.position || '')}</div>
+        </div>
       </td>
-      <td>
+      <td data-label="Access Level">
         <span class="badge badge-${user.is_active ? 'info' : 'secondary'}">
           ${user.is_active ? 'Configurable' : 'Inactive'}
         </span>
       </td>
-      <td>
-        <button class="btn btn-primary" style="padding: 6px 12px; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 6px;" 
-                onclick="window.Permissions.openPermModal(${user.id}, '${escapeHtml(user.name)}')">
-          <span class="material-symbols-outlined" style="font-size: 14px;">settings</span>
-          Manage
-        </button>
+      <td data-label="Actions">
+        <div class="action-buttons">
+          <button class="action-btn action-btn-edit" onclick="window.Permissions.openPermModal(${user.id}, '${escapeHtml(user.name)}')">
+            <span class="material-symbols-outlined">settings</span> Manage
+          </button>
+        </div>
       </td>
     </tr>
   `}).join('');
   
   updateBulkToolbar();
+}
+
+function renderPagination() {
+  const startRecord = (currentPage - 1) * itemsPerPage + 1;
+  const endRecord = Math.min(startRecord + permissionUsers.length - 1, totalRecords);
+  
+  const startEl = document.getElementById('perm-start-record');
+  const endEl = document.getElementById('perm-end-record');
+  const totalEl = document.getElementById('perm-total-records');
+  
+  if (startEl) startEl.textContent = totalRecords === 0 ? 0 : startRecord;
+  if (endEl) endEl.textContent = endRecord;
+  if (totalEl) totalEl.textContent = totalRecords;
+
+  const prevBtn = document.getElementById('perm-prev-btn');
+  const nextBtn = document.getElementById('perm-next-btn');
+  
+  if (prevBtn) prevBtn.disabled = currentPage <= 1;
+  if (nextBtn) nextBtn.disabled = currentPage >= totalPages;
+
+  // Render page numbers
+  const pageContainer = document.getElementById('perm-page-numbers');
+  if (!pageContainer) return;
+  
+  pageContainer.innerHTML = '';
+  
+  let pages = [];
+  const maxVisible = 5;
+  
+  if (totalPages <= maxVisible) {
+    for(let i=1; i<=totalPages; i++) pages.push(i);
+  } else {
+    if (currentPage <= 3) {
+      pages = [1, 2, 3, 4, '...', totalPages];
+    } else if (currentPage >= totalPages - 2) {
+      pages = [1, '...', totalPages-3, totalPages-2, totalPages-1, totalPages];
+    } else {
+      pages = [1, '...', currentPage-1, currentPage, currentPage+1, '...', totalPages];
+    }
+  }
+
+  pages.forEach(p => {
+    if (p === '...') {
+      const span = document.createElement('span');
+      span.textContent = '...';
+      span.style.padding = '5px';
+      span.style.color = '#666';
+      pageContainer.appendChild(span);
+    } else {
+      const btn = document.createElement('button');
+      btn.textContent = p;
+      btn.className = `btn btn-sm ${p === currentPage ? 'btn-primary' : 'btn-outline'}`;
+      btn.style.padding = '5px 10px';
+      btn.style.minWidth = '30px';
+      if (p !== currentPage) {
+        btn.onclick = () => {
+          currentPage = p;
+          loadPermissionUsers();
+        };
+      }
+      pageContainer.appendChild(btn);
+    }
+  });
 }
 
 // User selection management

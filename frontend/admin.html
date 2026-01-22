@@ -568,17 +568,92 @@
                 <span>Subcategories</span>
             </button>
           </div>
-          <div class="kb-tab-content active" id="documents-tab"><div class="data-table-card"><div class="card-header"><h3>Knowledge Documents</h3><div class="header-actions"><input type="text" id="doc-search" placeholder="Search documents..." class="search-input" autocomplete="off"><select id="doc-status-filter" class="filter-select"><option value="">All Status</option><option value="draft">Draft</option><option value="published">Published</option><option value="archived">Archived</option></select><button class="btn btn-primary" id="add-document-btn"><span class="material-symbols-outlined" style="font-size: 18px;">add</span> Add Document</button></div></div><div class="table-wrapper"><table class="data-table"><thead><tr><th>Title</th><th>Category → Subcategory</th><th>Status</th><th>Updated</th><th>Actions</th></tr></thead><tbody id="documents-table-body"><tr><td colspan="5" class="loading-cell">Loading documents...</td></tr></tbody></table></div></div></div>
-          <div class="kb-tab-content" id="categories-tab"><div class="data-table-card"><div class="card-header"><h3>Knowledge Categories</h3><button class="btn btn-primary" id="add-category-btn"><span class="material-symbols-outlined" style="font-size: 18px;">add</span> Add Category</button></div><div class="table-wrapper"><table class="data-table"><thead><tr><th>Category Name</th><th>Subcategories</th><th>Description</th><th>Actions</th></tr></thead><tbody id="categories-table-body"><tr><td colspan="4" class="loading-cell">Loading categories...</td></tr></tbody></table></div></div></div>
-          <div class="kb-tab-content" id="subcategories-tab"><div class="data-table-card"><div class="card-header"><h3>Knowledge Subcategories</h3><div class="header-actions"><select id="subcat-category-filter" class="filter-select"><option value="">All Categories</option></select><button class="btn btn-primary" id="add-subcategory-btn"><span class="material-symbols-outlined" style="font-size: 18px;">add</span> Add Subcategory</button></div></div><div class="table-wrapper"><table class="data-table"><thead><tr><th>Subcategory Name</th><th>Parent Category</th><th>Description</th><th>Actions</th></tr></thead><tbody id="subcategories-table-body"><tr><td colspan="4" class="loading-cell">Loading subcategories...</td></tr></tbody></table></div></div></div>
+          <div class="kb-tab-content active" id="documents-tab"><div class="data-table-card"><div class="card-header"><h3>Knowledge Documents</h3><div class="header-actions"><input type="text" id="doc-search" placeholder="Search documents..." class="search-input" autocomplete="off"><select id="doc-status-filter" class="filter-select"><option value="">All Status</option><option value="draft">Draft</option><option value="published">Published</option><option value="archived">Archived</option></select><button class="btn btn-primary" id="add-document-btn"><span class="material-symbols-outlined" style="font-size: 18px;">add</span> Add Document</button></div></div><div class="table-wrapper"><table class="data-table"><thead><tr><th>Title</th><th>Category → Subcategory</th><th>Status</th><th>Updated</th><th>Actions</th></tr></thead><tbody id="documents-table-body"><tr><td colspan="5" class="loading-cell">Loading documents...</td></tr></tbody></table></div>
+<div class="pagination-controls" id="doc-pagination" style="display: none;">
+  <div class="pagination-info">
+    Showing <span id="doc-start-record">0</span> - <span id="doc-end-record">0</span> of <span id="doc-total-records">0</span>
+  </div>
+  <div class="pagination-actions">
+    <button class="btn btn-sm btn-outline" id="doc-prev-btn" disabled>
+      <span class="material-symbols-outlined">chevron_left</span>
+    </button>
+    <div id="doc-page-numbers" class="pagination-numbers"></div>
+    <button class="btn btn-sm btn-outline" id="doc-next-btn" disabled>
+      <span class="material-symbols-outlined">chevron_right</span>
+    </button>
+  </div>
+</div>
+</div></div>
+          <div class="kb-tab-content" id="categories-tab"><div class="data-table-card"><div class="card-header"><h3>Knowledge Categories</h3><button class="btn btn-primary" id="add-category-btn"><span class="material-symbols-outlined" style="font-size: 18px;">add</span> Add Category</button></div><div class="table-wrapper"><table class="data-table"><thead><tr><th>Category Name</th><th>Subcategories</th><th>Description</th><th>Actions</th></tr></thead><tbody id="categories-table-body"><tr><td colspan="4" class="loading-cell">Loading categories...</td></tr></tbody></table></div>
+<div class="pagination-controls" id="cat-pagination" style="display: none;">
+  <div class="pagination-info">
+    Showing <span id="cat-start-record">0</span> - <span id="cat-end-record">0</span> of <span id="cat-total-records">0</span>
+  </div>
+  <div class="pagination-actions">
+    <button class="btn btn-sm btn-outline" id="cat-prev-btn" disabled>
+      <span class="material-symbols-outlined">chevron_left</span>
+    </button>
+    <div id="cat-page-numbers" class="pagination-numbers"></div>
+    <button class="btn btn-sm btn-outline" id="cat-next-btn" disabled>
+      <span class="material-symbols-outlined">chevron_right</span>
+    </button>
+  </div>
+</div>
+</div></div>
+          <div class="kb-tab-content" id="subcategories-tab"><div class="data-table-card"><div class="card-header"><h3>Knowledge Subcategories</h3><div class="header-actions"><select id="subcat-category-filter" class="filter-select"><option value="">All Categories</option></select><button class="btn btn-primary" id="add-subcategory-btn"><span class="material-symbols-outlined" style="font-size: 18px;">add</span> Add Subcategory</button></div></div><div class="table-wrapper"><table class="data-table"><thead><tr><th>Subcategory Name</th><th>Parent Category</th><th>Description</th><th>Actions</th></tr></thead><tbody id="subcategories-table-body"><tr><td colspan="4" class="loading-cell">Loading subcategories...</td></tr></tbody></table></div>
+<div class="pagination-controls" id="subcat-pagination" style="display: none;">
+  <div class="pagination-info">
+    Showing <span id="subcat-start-record">0</span> - <span id="subcat-end-record">0</span> of <span id="subcat-total-records">0</span>
+  </div>
+  <div class="pagination-actions">
+    <button class="btn btn-sm btn-outline" id="subcat-prev-btn" disabled>
+      <span class="material-symbols-outlined">chevron_left</span>
+    </button>
+    <div id="subcat-page-numbers" class="pagination-numbers"></div>
+    <button class="btn btn-sm btn-outline" id="subcat-next-btn" disabled>
+      <span class="material-symbols-outlined">chevron_right</span>
+    </button>
+  </div>
+</div>
+</div></div>
         </section>
 
         <section class="view-section" id="users-view">
-           <div class="data-table-card"><div class="card-header"><h3>User List</h3><div class="header-actions"><input type="text" id="user-search" placeholder="Search name or email..." class="search-input" autocomplete="off"><button class="btn btn-excel" id="bulk-user-btn"><span class="material-symbols-outlined" style="font-size: 18px;">table_view</span> Upload Excel</button><button class="btn btn-primary" id="add-user-btn"><span class="material-symbols-outlined" style="font-size: 18px;">person_add</span> Add User</button></div></div><div class="table-wrapper"><table class="data-table"><thead><tr><th>Name / Email</th><th><select id="user-dept-filter" class="th-select"><option value="">Department (All)</option></select></th><th>Role</th><th>Status</th><th>Activity</th><th>Actions</th></tr></thead><tbody id="users-table-body"><tr><td colspan="6" class="loading-cell">Loading users...</td></tr></tbody></table></div></div>
+           <div class="data-table-card"><div class="card-header"><h3>User List</h3><div class="header-actions"><input type="text" id="user-search" placeholder="Search name or email..." class="search-input" autocomplete="off"><button class="btn btn-excel" id="bulk-user-btn"><span class="material-symbols-outlined" style="font-size: 18px;">table_view</span> Upload Excel</button><button class="btn btn-primary" id="add-user-btn"><span class="material-symbols-outlined" style="font-size: 18px;">person_add</span> Add User</button></div></div><div class="table-wrapper"><table class="data-table"><thead><tr><th>Name / Email</th><th><select id="user-dept-filter" class="th-select"><option value="">Department (All)</option></select></th><th>Role</th><th>Status</th><th>Activity</th><th>Actions</th></tr></thead><tbody id="users-table-body"><tr><td colspan="6" class="loading-cell">Loading users...</td></tr></tbody></table></div>
+           <div class="pagination-controls" id="user-pagination" style="display: none;">
+  <div class="pagination-info">
+    Showing <span id="user-start-record">0</span> - <span id="user-end-record">0</span> of <span id="user-total-records">0</span>
+  </div>
+  <div class="pagination-actions">
+    <button class="btn btn-sm btn-outline" id="user-prev-btn" disabled>
+      <span class="material-symbols-outlined">chevron_left</span>
+    </button>
+    <div id="user-page-numbers" class="pagination-numbers"></div>
+    <button class="btn btn-sm btn-outline" id="user-next-btn" disabled>
+      <span class="material-symbols-outlined">chevron_right</span>
+    </button>
+  </div>
+</div>
+           </div>
         </section>
 
         <section class="view-section" id="permissions-view">
-           <div class="data-table-card"><div class="card-header"><h3>Access Permissions</h3><div id="perm-bulk-actions" class="bulk-actions"><span class="bulk-count"><span id="perm-selected-count">0</span> Selected</span><button class="btn btn-success" onclick="openBulkPermModal()"><span class="material-symbols-outlined" style="font-size: 18px;">lock_open</span> Grant Access</button></div><div class="header-actions"><input type="text" id="perm-search" placeholder="Search user..." class="search-input" autocomplete="off"></div></div><div class="table-wrapper"><table class="data-table"><thead><tr><th style="width: 40px;"><input type="checkbox" id="perm-select-all" onchange="toggleSelectAllPerms(this)"></th><th>User</th><th><select id="perm-dept-filter" class="th-select"><option value="">Department (All)</option></select></th><th>Access Level</th><th>Actions</th></tr></thead><tbody id="permissions-table-body"><tr><td colspan="5" class="loading-cell">Loading...</td></tr></tbody></table></div></div>
+           <div class="data-table-card"><div class="card-header"><h3>Access Permissions</h3><div id="perm-bulk-actions" class="bulk-actions"><span class="bulk-count"><span id="perm-selected-count">0</span> Selected</span><button class="btn btn-success" onclick="openBulkPermModal()"><span class="material-symbols-outlined" style="font-size: 18px;">lock_open</span> Grant Access</button></div><div class="header-actions"><input type="text" id="perm-search" placeholder="Search user..." class="search-input" autocomplete="off"></div></div><div class="table-wrapper"><table class="data-table"><thead><tr><th style="width: 40px;"><input type="checkbox" id="perm-select-all" onchange="toggleSelectAllPerms(this)"></th><th>User</th><th><select id="perm-dept-filter" class="th-select"><option value="">Department (All)</option></select></th><th>Access Level</th><th>Actions</th></tr></thead><tbody id="permissions-table-body"><tr><td colspan="5" class="loading-cell">Loading...</td></tr></tbody></table></div>
+           <div class="pagination-controls" id="perm-pagination" style="display: none;">
+  <div class="pagination-info">
+    Showing <span id="perm-start-record">0</span> - <span id="perm-end-record">0</span> of <span id="perm-total-records">0</span>
+  </div>
+  <div class="pagination-actions">
+    <button class="btn btn-sm btn-outline" id="perm-prev-btn" disabled>
+      <span class="material-symbols-outlined">chevron_left</span>
+    </button>
+    <div id="perm-page-numbers" class="pagination-numbers"></div>
+    <button class="btn btn-sm btn-outline" id="perm-next-btn" disabled>
+      <span class="material-symbols-outlined">chevron_right</span>
+    </button>
+  </div>
+</div>
+           </div>
         </section>
 
         <section class="view-section" id="chats-view">
@@ -624,6 +699,20 @@
                             </tbody>
                         </table>
                     </div>
+                    <div class="pagination-controls" id="chat-pagination" style="display: none;">
+  <div class="pagination-info">
+    Showing <span id="chat-start-record">0</span> - <span id="chat-end-record">0</span> of <span id="chat-total-records">0</span>
+  </div>
+  <div class="pagination-actions">
+    <button class="btn btn-sm btn-outline" id="chat-prev-btn" disabled>
+      <span class="material-symbols-outlined">chevron_left</span>
+    </button>
+    <div id="chat-page-numbers" class="pagination-numbers"></div>
+    <button class="btn btn-sm btn-outline" id="chat-next-btn" disabled>
+      <span class="material-symbols-outlined">chevron_right</span>
+    </button>
+  </div>
+</div>
                 </div>
             </div>
 

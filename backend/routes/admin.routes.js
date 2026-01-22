@@ -55,6 +55,7 @@ router.delete("/admin/subcategories/:id", knowledgeController.deleteSubcategory)
 router.get("/admin/subcategories/:id/stats", knowledgeController.getSubcategoryStats);
 
 // Users
+router.get("/admin/departments", adminController.getDepartments);
 router.get("/admin/users", adminController.getUsers);
 router.post("/admin/users", adminController.createUser);
 router.post("/admin/users/bulk", upload.single("file"), adminController.bulkCreateUsers);

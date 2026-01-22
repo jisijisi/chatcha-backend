@@ -231,3 +231,17 @@
     font-size: 0.9rem;
     font-weight: 500;
 }
+
+/* Mobile Responsive Styles */
+@media (max-width: 768px) {
+    .notification-dropdown {
+        position: fixed;
+        top: 70px; /* Below header */
+        left: 10px;
+        right: 10px;
+        width: auto;
+        max-width: none;
+        max-height: 80vh;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    }
+}

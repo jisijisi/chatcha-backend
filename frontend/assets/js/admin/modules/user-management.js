@@ -1,14 +1,24 @@
 // User Management Module
 import { apiFetch } from '../core/api.js';
-import { formatDateTime, escapeHtml } from '../core/utils.js';
+import { formatDateTime, escapeHtml, debounce } from '../core/utils.js';
 import { showToast, setButtonLoading, openModal, closeModal, showConfirmationModal } from '../core/ui.js';
 
 // State
 let allUsers = [];
 let editingUserId = null;
+let pagination = {
+  page: 1,
+  limit: 10,
+  total: 0,
+  totalPages: 1
+};
+let currentSearch = '';
+let currentDepartment = '';
+let isInitialized = false;
 
 // Initialize user management
 function setupUserManagement() {
+  if (isInitialized) return;
   console.log('Setting up User Management module...');
   
   const addUserBtn = document.getElementById('add-user-btn');
@@ -29,36 +39,111 @@ function setupUserManagement() {
   if (modalCancel) modalCancel.addEventListener('click', closeUserModal);
   if (modalSave) modalSave.addEventListener('click', saveUser);
   
-  if (searchInput) searchInput.addEventListener('input', renderUsersTable);
-  if (deptFilter) deptFilter.addEventListener('change', renderUsersTable);
+  if (searchInput) {
+      searchInput.addEventListener('input', debounce(() => loadUsers(1), 500));
+  }
+  
+  if (deptFilter) {
+      deptFilter.addEventListener('change', () => loadUsers(1));
+  }
+
+  // Pagination Controls
+  const prevBtn = document.getElementById('user-prev-btn');
+  const nextBtn = document.getElementById('user-next-btn');
+
+  if (prevBtn) {
+    prevBtn.addEventListener('click', () => {
+      if (pagination.page > 1) {
+        loadUsers(pagination.page - 1);
+      }
+    });
+  }
+
+  if (nextBtn) {
+    nextBtn.addEventListener('click', () => {
+      if (pagination.page < pagination.totalPages) {
+        loadUsers(pagination.page + 1);
+      }
+    });
+  }
 
   if (bulkBtn) bulkBtn.addEventListener('click', openBulkUploadModal);
   if (bulkClose) bulkClose.addEventListener('click', closeBulkUploadModal);
   if (bulkCancel) bulkCancel.addEventListener('click', closeBulkUploadModal);
   if (bulkSave) bulkSave.addEventListener('click', submitBulkUpload);
+
+  isInitialized = true;
+  
+  // Initial load of departments
+  loadDepartments();
+}
+
+// Load departments
+async function loadDepartments() {
+    try {
+        const data = await apiFetch('/admin/departments');
+        const departments = data.departments || [];
+        
+        const userDeptFilter = document.getElementById('user-dept-filter');
+        if (userDeptFilter) {
+            const currentVal = userDeptFilter.value;
+            userDeptFilter.innerHTML = '<option value="">Department (All)</option>' + 
+                departments.map(d => `<option value="${d}">${d}</option>`).join('');
+            if (currentVal && departments.includes(currentVal)) {
+                userDeptFilter.value = currentVal;
+            }
+        }
+        
+        // Also update chat filter
+        const chatDeptFilter = document.getElementById('chat-dept-filter');
+        if (chatDeptFilter) {
+            const currentVal = chatDeptFilter.value;
+            chatDeptFilter.innerHTML = '<option value="">Department (All)</option>' + 
+                departments.map(d => `<option value="${d}">${d}</option>`).join('');
+             if (currentVal && departments.includes(currentVal)) {
+                chatDeptFilter.value = currentVal;
+            }
+        }
+    } catch (e) {
+        console.error('Failed to load departments', e);
+    }
 }
 
 // Load users
-async function loadUsers() {
+async function loadUsers(page = 1) {
   try {
-    const data = await apiFetch('/admin/users');
+    const searchInput = document.getElementById('user-search');
+    const deptFilter = document.getElementById('user-dept-filter');
+    
+    const search = searchInput?.value || '';
+    const department = deptFilter?.value || '';
+    
+    currentSearch = search;
+    currentDepartment = department;
+
+    const queryParams = new URLSearchParams({
+      page,
+      limit: pagination.limit,
+      search,
+      department
+    });
+
+    const data = await apiFetch(`/admin/users?${queryParams}`);
     allUsers = data.users || [];
     
-    const departments = [...new Set(allUsers.map(u => u.department).filter(Boolean))];
-    
-    const userDeptFilter = document.getElementById('user-dept-filter');
-    if (userDeptFilter) {
-      userDeptFilter.innerHTML = '<option value="">Department (All)</option>' + 
-        departments.map(d => `<option value="${d}">${d}</option>`).join('');
-    }
-    
-    const chatDeptFilter = document.getElementById('chat-dept-filter');
-    if (chatDeptFilter) {
-      chatDeptFilter.innerHTML = '<option value="">Department (All)</option>' + 
-        departments.map(d => `<option value="${d}">${d}</option>`).join('');
+    if (data.pagination) {
+      pagination = data.pagination;
+    } else {
+        pagination = {
+            page: 1,
+            limit: allUsers.length || 10,
+            total: allUsers.length || 0,
+            totalPages: 1
+        };
     }
     
     renderUsersTable();
+    renderPagination();
   } catch (error) {
     console.error('❌ Error loading users:', error);
     showToast('Failed to load users', 'error');
@@ -68,46 +153,48 @@ async function loadUsers() {
 // Render users table
 function renderUsersTable() {
   const tbody = document.getElementById('users-table-body');
+  const paginationControls = document.getElementById('user-pagination');
+  
   if (!tbody) return;
   
-  const search = (document.getElementById('user-search')?.value || '').toLowerCase();
-  const dept = document.getElementById('user-dept-filter')?.value || '';
+  const users = allUsers;
   
-  const filtered = allUsers.filter(u => {
-    const matchesSearch = (u.name.toLowerCase().includes(search) || u.email.toLowerCase().includes(search));
-    const matchesDept = !dept || u.department === dept;
-    return matchesSearch && matchesDept;
-  });
-  
-  if (filtered.length === 0) { 
+  if (users.length === 0) { 
     tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px;">No users found.</td></tr>'; 
+    if (paginationControls) paginationControls.style.display = 'none';
     return; 
   }
   
-  tbody.innerHTML = filtered.map(u => `
+  if (paginationControls) paginationControls.style.display = 'flex';
+  
+  tbody.innerHTML = users.map(u => `
     <tr>
-      <td>
-        <div style="font-weight: 600;">${u.name}</div>
-        <div style="font-size: 0.85rem; color: #666;">${u.email}</div>
+      <td data-label="Name / Email">
+        <div>
+          <div style="font-weight: 600;">${u.name}</div>
+          <div style="font-size: 0.85rem; color: #666;">${u.email}</div>
+        </div>
       </td>
-      <td>
-        <div style="font-weight: 500;">${escapeHtml(u.department || '-')}</div>
-        <div style="font-size: 0.8rem; color: #999;">${escapeHtml(u.position || '')}</div>
+      <td data-label="Department">
+        <div>
+          <div style="font-weight: 500;">${escapeHtml(u.department || '-')}</div>
+          <div style="font-size: 0.8rem; color: #999;">${escapeHtml(u.position || '')}</div>
+        </div>
       </td>
-      <td>
+      <td data-label="Role">
         <span class="badge" style="background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0;">
           ${escapeHtml(u.role || '-')}
         </span>
       </td>
-      <td>
+      <td data-label="Status">
         <span class="badge badge-${u.is_active ? 'success' : 'danger'}">
           ${u.is_active ? 'Active' : 'Inactive'}
         </span>
       </td>
-      <td>
-        <div style="display: flex; flex-direction: column; gap: 4px;">
+      <td data-label="Activity">
+        <div style="display: flex; flex-direction: column; gap: 4px; align-items: flex-start;">
           <div style="font-size: 0.9rem; display: flex; align-items: center; gap: 4px;">
-            <span class="material-symbols-outlined" style="font-size: 14px;">chat_bubble_outline</span> 
+            <span class="material-symbols-outlined">chat_bubble_outline</span> 
             <strong>${u.total_messages || 0}</strong> msgs
           </div>
           <div style="font-size: 0.8rem; color: #999;">
@@ -115,20 +202,20 @@ function renderUsersTable() {
           </div>
         </div>
       </td>
-      <td>
+      <td data-label="Actions">
         <div class="action-buttons">
           <button class="action-btn action-btn-view" onclick="window.UserManagement.viewUserHistory(${u.id}, '${u.name}')">
-            <span class="material-symbols-outlined" style="font-size: 14px;">history</span> History
+            <span class="material-symbols-outlined">history</span> History
           </button>
           <button class="action-btn action-btn-edit" onclick="window.UserManagement.editUser(${u.id})">
-            <span class="material-symbols-outlined" style="font-size: 14px;">edit</span> Edit
+            <span class="material-symbols-outlined">edit</span> Edit
           </button>
           ${u.is_active ? 
             `<button class="action-btn action-btn-delete" onclick="window.UserManagement.toggleUserStatus(${u.id}, false, '${u.name}')">
-              <span class="material-symbols-outlined" style="font-size: 14px;">block</span> Deactivate
+              <span class="material-symbols-outlined">block</span> Deactivate
             </button>` : 
             `<button class="action-btn action-btn-view" onclick="window.UserManagement.toggleUserStatus(${u.id}, true, '${u.name}')">
-              <span class="material-symbols-outlined" style="font-size: 14px;">check_circle</span> Activate
+              <span class="material-symbols-outlined">check_circle</span> Activate
             </button>`
           }
         </div>
@@ -136,6 +223,70 @@ function renderUsersTable() {
     </tr>
   `).join('');
 }
+
+// Render pagination
+function renderPagination() {
+    const startRecord = (pagination.page - 1) * pagination.limit + 1;
+    const endRecord = Math.min(startRecord + allUsers.length - 1, pagination.total);
+    
+    const startEl = document.getElementById('user-start-record');
+    const endEl = document.getElementById('user-end-record');
+    const totalEl = document.getElementById('user-total-records');
+    
+    if (startEl) startEl.textContent = pagination.total === 0 ? 0 : startRecord;
+    if (endEl) endEl.textContent = endRecord;
+    if (totalEl) totalEl.textContent = pagination.total;
+  
+    const prevBtn = document.getElementById('user-prev-btn');
+    const nextBtn = document.getElementById('user-next-btn');
+    
+    if (prevBtn) prevBtn.disabled = pagination.page <= 1;
+    if (nextBtn) nextBtn.disabled = pagination.page >= pagination.totalPages;
+  
+    // Render page numbers
+    const pageContainer = document.getElementById('user-page-numbers');
+    if (!pageContainer) return;
+    
+    pageContainer.innerHTML = '';
+    
+    let pages = [];
+    const maxVisible = 5;
+    
+    if (pagination.totalPages <= maxVisible) {
+      for(let i=1; i<=pagination.totalPages; i++) pages.push(i);
+    } else {
+      if (pagination.page <= 3) {
+        pages = [1, 2, 3, 4, '...', pagination.totalPages];
+      } else if (pagination.page >= pagination.totalPages - 2) {
+        pages = [1, '...', pagination.totalPages-3, pagination.totalPages-2, pagination.totalPages-1, pagination.totalPages];
+      } else {
+        pages = [1, '...', pagination.page-1, pagination.page, pagination.page+1, '...', pagination.totalPages];
+      }
+    }
+  
+    pages.forEach(p => {
+      if (p === '...') {
+        const span = document.createElement('span');
+        span.textContent = '...';
+        span.style.padding = '5px';
+        span.style.color = '#666';
+        pageContainer.appendChild(span);
+      } else {
+        const btn = document.createElement('button');
+        btn.textContent = p;
+        btn.className = `btn btn-sm ${p === pagination.page ? 'btn-primary' : 'btn-outline'}`;
+        btn.style.padding = '5px 10px';
+        btn.style.minWidth = '30px';
+        if (p !== pagination.page) {
+          btn.onclick = () => {
+            loadUsers(p);
+          };
+        }
+        pageContainer.appendChild(btn);
+      }
+    });
+}
+
 // User modal management
 function openUserModal(id = null) {
   editingUserId = id;

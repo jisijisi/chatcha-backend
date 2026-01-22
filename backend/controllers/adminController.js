@@ -106,7 +106,11 @@ export const getDashboardStats = async (req, res) => {
       `SELECT COUNT(*) as count FROM user_chats WHERE message_timestamp >= DATE(NOW())`
     );
     const [activeUsersToday] = await pool.execute(
-      `SELECT COUNT(DISTINCT employee_id) as count FROM user_chats WHERE message_timestamp >= DATE(NOW())`
+      `SELECT COUNT(DISTINCT id) as count FROM (
+        SELECT employee_id as id FROM user_chats WHERE message_timestamp >= DATE(NOW())
+        UNION
+        SELECT id FROM employees WHERE updated_at >= DATE(NOW())
+      ) as active`
     );
     const [newSessionsToday] = await pool.execute(`
       SELECT COUNT(session_id) as count FROM (
@@ -222,8 +226,9 @@ export const getKnowledgeUsage = async (req, res) => {
         break;
       case 'monthly':
         if (Number.isInteger(yearInt) && Number.isInteger(monthInt) && monthInt >= 1 && monthInt <= 12) {
-          dateFilter = 'WHERE YEAR(uc.message_timestamp) = ? AND MONTH(uc.message_timestamp) = ?';
-          params = [yearInt, monthInt];
+          const startDate = `${yearInt}-${String(monthInt).padStart(2, '0')}-01`;
+          dateFilter = 'WHERE uc.message_timestamp >= ? AND uc.message_timestamp < DATE_ADD(?, INTERVAL 1 MONTH)';
+          params = [startDate, startDate];
         } else {
           dateFilter = 'WHERE uc.message_timestamp >= DATE_SUB(CURDATE(), INTERVAL 1 MONTH)';
         }
@@ -403,8 +408,9 @@ export const getDashboardStatsFiltered = async (req, res) => {
       dateFilter = 'WHERE message_timestamp >= DATE(NOW())';
     } else if (timeframe === 'monthly') {
       if (Number.isInteger(yearInt) && Number.isInteger(monthInt) && monthInt >= 1 && monthInt <= 12) {
-        dateFilter = 'WHERE YEAR(message_timestamp) = ? AND MONTH(message_timestamp) = ?';
-        params = [yearInt, monthInt];
+        const startDate = `${yearInt}-${String(monthInt).padStart(2, '0')}-01`;
+        dateFilter = 'WHERE message_timestamp >= ? AND message_timestamp < DATE_ADD(?, INTERVAL 1 MONTH)';
+        params = [startDate, startDate];
       } else {
         dateFilter = 'WHERE message_timestamp >= DATE_SUB(CURDATE(), INTERVAL 1 MONTH)';
       }
@@ -424,9 +430,17 @@ export const getDashboardStatsFiltered = async (req, res) => {
       params
     );
     
+    // Include both chatters AND users who logged in (updated_at)
+    const activeDateFilter = dateFilter.replace(/message_timestamp/g, 'updated_at');
+    const activeParams = [...params, ...params];
+
     const [activeUsers] = await pool.execute(
-      `SELECT COUNT(DISTINCT employee_id) as count FROM user_chats ${dateFilter}`,
-      params
+      `SELECT COUNT(DISTINCT id) as count FROM (
+        SELECT employee_id as id FROM user_chats ${dateFilter}
+        UNION
+        SELECT id FROM employees ${activeDateFilter}
+      ) as active`,
+      activeParams
     );
 
     let sessionsWhere = '';
@@ -437,8 +451,9 @@ export const getDashboardStatsFiltered = async (req, res) => {
       sessionsWhere = 'WHERE start_date >= DATE(NOW())';
     } else if (timeframe === 'monthly') {
       if (Number.isInteger(yearInt) && Number.isInteger(monthInt) && monthInt >= 1 && monthInt <= 12) {
-        sessionsWhere = 'WHERE YEAR(start_date) = ? AND MONTH(start_date) = ?';
-        sessionsParams = [yearInt, monthInt];
+        const startDate = `${yearInt}-${String(monthInt).padStart(2, '0')}-01`;
+        sessionsWhere = 'WHERE start_date >= ? AND start_date < DATE_ADD(?, INTERVAL 1 MONTH)';
+        sessionsParams = [startDate, startDate];
       } else {
         sessionsWhere = 'WHERE start_date >= DATE_SUB(CURDATE(), INTERVAL 1 MONTH)';
       }
@@ -519,8 +534,9 @@ export const getDashboardChartsFiltered = async (req, res) => {
       let dateFilter = '';
       if (timeframe === 'monthly') {
         if (Number.isInteger(yearInt) && Number.isInteger(monthInt) && monthInt >= 1 && monthInt <= 12) {
-          dateFilter = 'WHERE YEAR(message_timestamp) = ? AND MONTH(message_timestamp) = ?';
-          params = [yearInt, monthInt];
+          const startDate = `${yearInt}-${String(monthInt).padStart(2, '0')}-01`;
+          dateFilter = 'WHERE message_timestamp >= ? AND message_timestamp < DATE_ADD(?, INTERVAL 1 MONTH)';
+          params = [startDate, startDate];
         } else {
           dateFilter = 'WHERE message_timestamp >= DATE_SUB(CURDATE(), INTERVAL 1 MONTH)';
         }
@@ -532,7 +548,8 @@ export const getDashboardChartsFiltered = async (req, res) => {
           dateFilter = 'WHERE message_timestamp >= DATE_SUB(CURDATE(), INTERVAL 1 YEAR)';
         }
       } else {
-        dateFilter = 'WHERE message_timestamp >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)';
+        // Overall: No filter (All time)
+        dateFilter = '';
       }
 
       sqlQuery = `
@@ -576,14 +593,15 @@ export const getDashboardChartsFiltered = async (req, res) => {
     } else {
       if (timeframe === 'monthly') {
         if (Number.isInteger(yearInt) && Number.isInteger(monthInt) && monthInt >= 1 && monthInt <= 12) {
+          const startDate = `${yearInt}-${String(monthInt).padStart(2, '0')}-01`;
           activeQuery = `
             SELECT DATE(message_timestamp) as day, COUNT(DISTINCT employee_id) as count 
             FROM user_chats 
-            WHERE YEAR(message_timestamp) = ? AND MONTH(message_timestamp) = ?
+            WHERE message_timestamp >= ? AND message_timestamp < DATE_ADD(?, INTERVAL 1 MONTH)
             GROUP BY day 
             ORDER BY day ASC
           `;
-          activeParams = [yearInt, monthInt];
+          activeParams = [startDate, startDate];
         } else {
           activeQuery = `
             SELECT DATE(message_timestamp) as day, COUNT(DISTINCT employee_id) as count 
@@ -613,10 +631,10 @@ export const getDashboardChartsFiltered = async (req, res) => {
           `;
         }
       } else {
+        // Overall: No filter (All time)
         activeQuery = `
           SELECT DATE(message_timestamp) as day, COUNT(DISTINCT employee_id) as count 
           FROM user_chats 
-          WHERE message_timestamp >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
           GROUP BY day 
           ORDER BY day ASC
         `;
@@ -649,8 +667,9 @@ export const getDashboardDepartmentUsageFiltered = async (req, res) => {
       whereClause = 'WHERE uc.message_timestamp >= DATE(NOW())';
     } else if (timeframe === 'monthly') {
       if (Number.isInteger(yearInt) && Number.isInteger(monthInt) && monthInt >= 1 && monthInt <= 12) {
-        whereClause = 'WHERE YEAR(uc.message_timestamp) = ? AND MONTH(uc.message_timestamp) = ?';
-        params = [yearInt, monthInt];
+        const startDate = `${yearInt}-${String(monthInt).padStart(2, '0')}-01`;
+        whereClause = 'WHERE uc.message_timestamp >= ? AND uc.message_timestamp < DATE_ADD(?, INTERVAL 1 MONTH)';
+        params = [startDate, startDate];
       } else {
         whereClause = 'WHERE uc.message_timestamp >= DATE_SUB(CURDATE(), INTERVAL 1 MONTH)';
       }
@@ -662,7 +681,8 @@ export const getDashboardDepartmentUsageFiltered = async (req, res) => {
         whereClause = 'WHERE uc.message_timestamp >= DATE_SUB(CURDATE(), INTERVAL 1 YEAR)';
       }
     } else {
-      whereClause = 'WHERE uc.message_timestamp >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)';
+      // Overall: No filter (All time)
+      whereClause = '';
     }
     
     const [rows] = await pool.execute(
@@ -698,8 +718,9 @@ export const getDashboardActivityFiltered = async (req, res) => {
       dateFilter = 'WHERE uc.message_timestamp >= DATE(NOW())';
     } else if (timeframe === 'monthly') {
       if (Number.isInteger(yearInt) && Number.isInteger(monthInt) && monthInt >= 1 && monthInt <= 12) {
-        dateFilter = 'WHERE YEAR(uc.message_timestamp) = ? AND MONTH(uc.message_timestamp) = ?';
-        params = [yearInt, monthInt];
+        const startDate = `${yearInt}-${String(monthInt).padStart(2, '0')}-01`;
+        dateFilter = 'WHERE uc.message_timestamp >= ? AND uc.message_timestamp < DATE_ADD(?, INTERVAL 1 MONTH)';
+        params = [startDate, startDate];
       } else {
         dateFilter = 'WHERE uc.message_timestamp >= DATE_SUB(CURDATE(), INTERVAL 1 MONTH)';
       }
@@ -711,7 +732,8 @@ export const getDashboardActivityFiltered = async (req, res) => {
         dateFilter = 'WHERE uc.message_timestamp >= DATE_SUB(CURDATE(), INTERVAL 1 YEAR)';
       }
     } else {
-      dateFilter = 'WHERE uc.message_timestamp >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)';
+      // Overall: No filter (All time)
+      dateFilter = '';
     }
     
     const [recentActivity] = await pool.execute(`
@@ -734,13 +756,15 @@ export const getDashboardActivityFiltered = async (req, res) => {
     let mostActiveUsersFilter = '';
     let mostParams = [];
     if (timeframe === 'overall') {
-      mostActiveUsersFilter = 'WHERE uc.message_timestamp >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)';
+      // Overall: No filter (All time)
+      mostActiveUsersFilter = '';
     } else if (timeframe === 'daily') {
       mostActiveUsersFilter = 'WHERE uc.message_timestamp >= DATE(NOW())';
     } else if (timeframe === 'monthly') {
       if (Number.isInteger(yearInt) && Number.isInteger(monthInt) && monthInt >= 1 && monthInt <= 12) {
-        mostActiveUsersFilter = 'WHERE YEAR(uc.message_timestamp) = ? AND MONTH(uc.message_timestamp) = ?';
-        mostParams = [yearInt, monthInt];
+        const startDate = `${yearInt}-${String(monthInt).padStart(2, '0')}-01`;
+        mostActiveUsersFilter = 'WHERE uc.message_timestamp >= ? AND uc.message_timestamp < DATE_ADD(?, INTERVAL 1 MONTH)';
+        mostParams = [startDate, startDate];
       } else {
         mostActiveUsersFilter = 'WHERE uc.message_timestamp >= DATE_SUB(CURDATE(), INTERVAL 1 MONTH)';
       }
@@ -782,9 +806,47 @@ export const getDashboardActivityFiltered = async (req, res) => {
 // USER MANAGEMENT
 // ==========================================
 
+export const getDepartments = async (req, res) => {
+  try {
+    const [rows] = await pool.query("SELECT DISTINCT department FROM employees WHERE department IS NOT NULL AND department != '' ORDER BY department");
+    const departments = rows.map(r => r.department);
+    res.json({ departments });
+  } catch (error) {
+    console.error('❌ Get Departments Error:', error);
+    res.status(500).json({ error: 'Failed to load departments' });
+  }
+};
+
 export const getUsers = async (req, res) => {
   try {
-    const [users] = await pool.execute(`
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const offset = (page - 1) * limit;
+    const search = req.query.search || '';
+    const department = req.query.department || '';
+
+    let whereClause = 'WHERE 1=1';
+    let params = [];
+
+    if (search) {
+      whereClause += ' AND (e.name LIKE ? OR e.email LIKE ?)';
+      params.push(`%${search}%`, `%${search}%`);
+    }
+    
+    if (department) {
+      whereClause += ' AND e.department = ?';
+      params.push(department);
+    }
+
+    // Get total count for pagination
+    const [countResult] = await pool.execute(
+      `SELECT COUNT(*) as total FROM employees e ${whereClause}`,
+      params
+    );
+    const total = countResult[0].total;
+
+    // Get paginated users - using pool.query to avoid prepared statement type strictness with LIMIT
+    const [users] = await pool.query(`
       SELECT 
         e.id,
         e.name,
@@ -797,11 +859,22 @@ export const getUsers = async (req, res) => {
         (SELECT COUNT(*) FROM user_chats uc WHERE uc.employee_id = e.id) as total_messages,
         (SELECT MAX(message_timestamp) FROM user_chats uc WHERE uc.employee_id = e.id) as last_active
       FROM employees e
+      ${whereClause}
       ORDER BY total_messages DESC, e.created_at DESC
-    `);
+      LIMIT ${Number(limit)} OFFSET ${Number(offset)}
+    `, params);
     
-    console.log(`👥 Admin loaded ${users.length} users`);
-    res.json({ users });
+    console.log(`👥 Admin loaded ${users.length} users (Page ${page} of ${Math.ceil(total/limit)})`);
+    
+    res.json({ 
+      users,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit)
+      }
+    });
   } catch (error) {
     console.error('❌ Users error:', error);
     res.status(500).json({ error: 'Failed to load users' });
@@ -1378,9 +1451,38 @@ export const permissionsStream = async (req, res) => {
 
 export const getChats = async (req, res) => {
   try {
-    const { search, department } = req.query;
+    const { search, department, page = 1, limit = 10 } = req.query;
+    const offset = (page - 1) * limit;
 
-    let sql = `
+    // Base conditions
+    let whereClause = 'WHERE 1=1';
+    const params = [];
+
+    if (search) {
+      whereClause += ` AND (e.name LIKE ? OR e.email LIKE ? OR cs.title LIKE ?)`;
+      params.push(`%${search}%`, `%${search}%`, `%${search}%`);
+    }
+
+    if (department) {
+      whereClause += ` AND e.department = ?`;
+      params.push(department);
+    }
+
+    // 1. Get total count
+    const countSql = `
+      SELECT COUNT(DISTINCT uc.session_id) as total
+      FROM user_chats uc
+      JOIN employees e ON uc.employee_id = e.id
+      LEFT JOIN chat_sessions cs ON uc.session_id = cs.session_id
+      ${whereClause}
+    `;
+    
+    const [countResult] = await pool.execute(countSql, params);
+    const totalRecords = countResult[0].total;
+
+    // 2. Get paginated data
+    // Note: Injecting limit/offset directly to avoid MySQL prepared statement issues with LIMIT ?
+    const dataSql = `
       SELECT 
         e.name as user_name,
         e.email as user_email,
@@ -1392,29 +1494,24 @@ export const getChats = async (req, res) => {
       FROM user_chats uc
       JOIN employees e ON uc.employee_id = e.id
       LEFT JOIN chat_sessions cs ON uc.session_id = cs.session_id
-      WHERE 1=1
-    `;
-
-    const params = [];
-
-    if (search) {
-      sql += ` AND (e.name LIKE ? OR e.email LIKE ? OR cs.title LIKE ?)`;
-      params.push(`%${search}%`, `%${search}%`, `%${search}%`);
-    }
-
-    if (department) {
-      sql += ` AND e.department = ?`;
-      params.push(department);
-    }
-
-    sql += `
+      ${whereClause}
       GROUP BY e.id, e.name, e.email, e.department, uc.session_id, cs.title
       ORDER BY last_activity DESC
-      LIMIT 200
+      LIMIT ${Number(limit)} OFFSET ${Number(offset)}
     `;
+
+    // Use original params (without limit/offset)
+    const [chats] = await pool.execute(dataSql, params);
     
-    const [chats] = await pool.execute(sql, params);
-    res.json({ chats });
+    res.json({ 
+      chats,
+      pagination: {
+        total: totalRecords,
+        page: Number(page),
+        limit: Number(limit),
+        totalPages: Math.ceil(totalRecords / limit)
+      }
+    });
   } catch (error) {
     console.error('❌ Chats error:', error);
     res.status(500).json({ error: 'Failed to load chats' });

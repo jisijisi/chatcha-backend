@@ -7,6 +7,10 @@ import { showToast, openModal, closeModal, showConfirmationModal } from '../core
 let allChats = [];
 let currentChatTab = 'history';
 let viewingSessionId = null;
+let currentPage = 1;
+let itemsPerPage = 10;
+let totalRecords = 0;
+let totalPages = 1;
 
 // Initialize chat management
 function setupChatManagement() {
@@ -28,13 +32,37 @@ function setupChatManagement() {
 
   if (searchInput) {
     searchInput.addEventListener('input', debounce(() => {
+      currentPage = 1; // Reset to first page on search
       loadChats();
     }, 500));
   }
 
   if (deptFilter) {
     deptFilter.addEventListener('change', () => {
+      currentPage = 1; // Reset to first page on filter change
       loadChats();
+    });
+  }
+
+  // Pagination Controls
+  const prevBtn = document.getElementById('chat-prev-btn');
+  const nextBtn = document.getElementById('chat-next-btn');
+
+  if (prevBtn) {
+    prevBtn.addEventListener('click', () => {
+      if (currentPage > 1) {
+        currentPage--;
+        loadChats();
+      }
+    });
+  }
+
+  if (nextBtn) {
+    nextBtn.addEventListener('click', () => {
+      if (currentPage < totalPages) {
+        currentPage++;
+        loadChats();
+      }
     });
   }
 
@@ -104,10 +132,23 @@ async function loadChats() {
     const params = new URLSearchParams();
     if (search) params.append('search', search);
     if (dept) params.append('department', dept);
+    params.append('page', currentPage);
+    params.append('limit', itemsPerPage);
 
     const data = await apiFetch(`/admin/chats?${params.toString()}`);
     allChats = data.chats || [];
+    
+    if (data.pagination) {
+      totalRecords = data.pagination.total;
+      totalPages = data.pagination.totalPages;
+      currentPage = data.pagination.page;
+    } else {
+      totalRecords = allChats.length;
+      totalPages = 1;
+    }
+
     renderChatHistoryTable();
+    renderPagination();
   } catch (error) {
     console.error('Error loading chats:', error);
     showToast('Failed to load chat history', 'error');
@@ -116,33 +157,104 @@ async function loadChats() {
 
 function renderChatHistoryTable() {
   const tbody = document.getElementById('chat-history-table-body');
+  const paginationControls = document.getElementById('chat-pagination');
   
   if (!tbody) return;
 
   if (allChats.length === 0) {
     tbody.innerHTML = '<tr><td colspan="5" class="loading-cell">No chats found.</td></tr>';
+    if (paginationControls) paginationControls.style.display = 'none';
     return;
   }
+  
+  if (paginationControls) paginationControls.style.display = 'flex';
 
   tbody.innerHTML = allChats.map(chat => `
     <tr>
-      <td>
-        <div style="font-weight: 600;">${chat.user_name}</div>
-        <div style="font-size: 0.8rem; color: #666;">${chat.department || 'No Dept'}</div>
+      <td data-label="User">
+        <div>
+          <div style="font-weight: 600;">${chat.user_name}</div>
+          <div style="font-size: 0.8rem; color: #666;">${chat.department || 'No Dept'}</div>
+        </div>
       </td>
-      <td>${chat.session_title}</td>
-      <td>${chat.message_count}</td>
-      <td>${formatDateTime(chat.last_activity)}</td>
-      <td>
-        <button class="action-btn action-btn-view" onclick="window.ChatManagement.viewChatSession('${chat.session_id}')">
-          <span class="material-symbols-outlined" style="font-size: 14px;">visibility</span> View
-        </button>
-        <button class="action-btn action-btn-delete" onclick="window.ChatManagement.deleteChatSession('${chat.session_id}')">
-          <span class="material-symbols-outlined" style="font-size: 14px;">delete</span>
-        </button>
+      <td data-label="Session Title">${chat.session_title}</td>
+      <td data-label="Messages">${chat.message_count}</td>
+      <td data-label="Last Activity">${formatDateTime(chat.last_activity)}</td>
+      <td data-label="Actions">
+        <div class="action-buttons">
+          <button class="action-btn action-btn-view" onclick="window.ChatManagement.viewChatSession('${chat.session_id}')">
+            <span class="material-symbols-outlined">visibility</span> View
+          </button>
+          <button class="action-btn action-btn-delete" onclick="window.ChatManagement.deleteChatSession('${chat.session_id}')">
+            <span class="material-symbols-outlined">delete</span> Delete
+          </button>
+        </div>
       </td>
     </tr>
   `).join('');
+}
+
+function renderPagination() {
+  const startRecord = (currentPage - 1) * itemsPerPage + 1;
+  const endRecord = Math.min(startRecord + allChats.length - 1, totalRecords);
+  
+  const startEl = document.getElementById('chat-start-record');
+  const endEl = document.getElementById('chat-end-record');
+  const totalEl = document.getElementById('chat-total-records');
+  
+  if (startEl) startEl.textContent = totalRecords === 0 ? 0 : startRecord;
+  if (endEl) endEl.textContent = endRecord;
+  if (totalEl) totalEl.textContent = totalRecords;
+
+  const prevBtn = document.getElementById('chat-prev-btn');
+  const nextBtn = document.getElementById('chat-next-btn');
+  
+  if (prevBtn) prevBtn.disabled = currentPage <= 1;
+  if (nextBtn) nextBtn.disabled = currentPage >= totalPages;
+
+  // Render page numbers
+  const pageContainer = document.getElementById('chat-page-numbers');
+  if (!pageContainer) return;
+  
+  pageContainer.innerHTML = '';
+  
+  let pages = [];
+  const maxVisible = 5;
+  
+  if (totalPages <= maxVisible) {
+    for(let i=1; i<=totalPages; i++) pages.push(i);
+  } else {
+    if (currentPage <= 3) {
+      pages = [1, 2, 3, 4, '...', totalPages];
+    } else if (currentPage >= totalPages - 2) {
+      pages = [1, '...', totalPages-3, totalPages-2, totalPages-1, totalPages];
+    } else {
+      pages = [1, '...', currentPage-1, currentPage, currentPage+1, '...', totalPages];
+    }
+  }
+
+  pages.forEach(p => {
+    if (p === '...') {
+      const span = document.createElement('span');
+      span.textContent = '...';
+      span.style.padding = '5px';
+      span.style.color = '#666';
+      pageContainer.appendChild(span);
+    } else {
+      const btn = document.createElement('button');
+      btn.textContent = p;
+      btn.className = `btn btn-sm ${p === currentPage ? 'btn-primary' : 'btn-outline'}`;
+      btn.style.padding = '5px 10px';
+      btn.style.minWidth = '30px';
+      if (p !== currentPage) {
+        btn.onclick = () => {
+          currentPage = p;
+          loadChats();
+        };
+      }
+      pageContainer.appendChild(btn);
+    }
+  });
 }
 
 // Chat viewer modal
@@ -391,7 +503,7 @@ async function exportChatHistory() {
     showToast('Export failed', 'error');
   } finally {
     btn.disabled = false;
-    btn.innerHTML = '<span><span class="material-symbols-outlined" style="font-size: 14px;">download</span></span> Export CSV';
+    btn.innerHTML = '<span><span class="material-symbols-outlined">download</span></span> Export CSV';
   }
 }
 

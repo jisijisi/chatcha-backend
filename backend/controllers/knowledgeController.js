@@ -208,6 +208,38 @@ export const convertFileToJson = async (req, res) => {
 
 export const getDocuments = async (req, res) => {
   try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const offset = (page - 1) * limit;
+    const search = req.query.search || '';
+    const categoryId = req.query.category || '';
+
+    let whereClause = 'WHERE 1=1';
+    let params = [];
+
+    if (search) {
+      whereClause += ' AND (kd.title LIKE ?)';
+      params.push(`%${search}%`);
+    }
+
+    if (categoryId) {
+      whereClause += ' AND kc.id = ?';
+      params.push(categoryId);
+    }
+
+    // Get total count
+    const [countResult] = await pool.execute(`
+      SELECT COUNT(*) as total
+      FROM knowledge_documents kd
+      JOIN knowledge_subcategories ksc ON kd.subcategory_id = ksc.id
+      JOIN knowledge_categories kc ON ksc.category_id = kc.id
+      ${whereClause}
+    `, params);
+    
+    const total = countResult[0].total;
+
+    // Get paginated documents
+    // Using direct injection for limit/offset to avoid MySQL prepared statement issues
     const [documents] = await pool.execute(`
       SELECT 
         kd.id,
@@ -221,9 +253,20 @@ export const getDocuments = async (req, res) => {
       FROM knowledge_documents kd
       JOIN knowledge_subcategories ksc ON kd.subcategory_id = ksc.id
       JOIN knowledge_categories kc ON ksc.category_id = kc.id
+      ${whereClause}
       ORDER BY kd.updated_at DESC
-    `);
-    res.json({ documents });
+      LIMIT ${Number(limit)} OFFSET ${Number(offset)}
+    `, params);
+
+    res.json({ 
+      documents,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit)
+      }
+    });
   } catch (error) {
     console.error('❌ Documents error:', error);
     res.status(500).json({ error: 'Failed to load documents' });
@@ -345,12 +388,44 @@ export const deleteDocument = async (req, res) => {
 
 export const getCategories = async (req, res) => {
   try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const offset = (page - 1) * limit;
+    const search = req.query.search || '';
+
+    let whereClause = 'WHERE 1=1';
+    let params = [];
+
+    if (search) {
+      whereClause += ' AND (name LIKE ? OR description LIKE ?)';
+      params.push(`%${search}%`, `%${search}%`);
+    }
+
+    // Total count
+    const [countResult] = await pool.execute(`
+      SELECT COUNT(*) as total FROM knowledge_categories ${whereClause}
+    `, params);
+    const total = countResult[0].total;
+
+    // Paginated results
     const [categories] = await pool.execute(`
-      SELECT id, name, description FROM knowledge_categories ORDER BY name
-    `);
-    res.json({ categories });
+      SELECT id, name, description FROM knowledge_categories 
+      ${whereClause}
+      ORDER BY name
+      LIMIT ${Number(limit)} OFFSET ${Number(offset)}
+    `, params);
+
+    res.json({ 
+      categories,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit)
+      }
+    });
   } catch (error) {
-    console.error('❌ Categories error:', error);
+    console.error('❌ Get categories error:', error);
     res.status(500).json({ error: 'Failed to load categories' });
   }
 };
@@ -516,23 +591,58 @@ export const getSubcategories = async (req, res) => {
 
 export const getAllSubcategories = async (req, res) => {
   try {
-    const [subcategories] = await pool.execute(`
-      SELECT 
-        ksc.id,
-        ksc.name,
-        ksc.category_id,
-        ksc.description,
-        kc.name as category_name,
-        COUNT(kd.id) as document_count
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const offset = (page - 1) * limit;
+    const search = req.query.search || '';
+    const categoryId = req.query.category || '';
+
+    let whereClause = 'WHERE 1=1';
+    let params = [];
+
+    if (search) {
+      whereClause += ' AND (ksc.name LIKE ? OR ksc.description LIKE ?)';
+      params.push(`%${search}%`, `%${search}%`);
+    }
+
+    if (categoryId) {
+      whereClause += ' AND ksc.category_id = ?';
+      params.push(categoryId);
+    }
+
+    // Total count
+    const [countResult] = await pool.execute(`
+      SELECT COUNT(*) as total 
       FROM knowledge_subcategories ksc
       JOIN knowledge_categories kc ON ksc.category_id = kc.id
-      LEFT JOIN knowledge_documents kd ON ksc.id = kd.subcategory_id
-      GROUP BY ksc.id, ksc.name, ksc.category_id, ksc.description, kc.name
+      ${whereClause}
+    `, params);
+    const total = countResult[0].total;
+
+    // Paginated results
+    const [subcategories] = await pool.execute(`
+      SELECT 
+        ksc.id, 
+        ksc.name, 
+        ksc.description, 
+        ksc.category_id,
+        kc.name as category_name
+      FROM knowledge_subcategories ksc
+      JOIN knowledge_categories kc ON ksc.category_id = kc.id
+      ${whereClause}
       ORDER BY kc.name, ksc.name
-    `);
-    
-    res.json({ subcategories });
-    
+      LIMIT ${Number(limit)} OFFSET ${Number(offset)}
+    `, params);
+
+    res.json({ 
+      subcategories,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit)
+      }
+    });
   } catch (error) {
     console.error('❌ Get all subcategories error:', error);
     res.status(500).json({ error: 'Failed to load subcategories' });

@@ -1160,7 +1160,7 @@ class ChatApp {
 
           // Debounce check for mobile compatibility
           const now = Date.now();
-          if (now - lastToggleTime < 500) return;
+          if (now - lastToggleTime < 300) return;
           lastToggleTime = now;
 
           if (!window.isSecureContext && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
@@ -1177,8 +1177,17 @@ class ChatApp {
             return;
           }
 
-          if (isRecognizing) {
-            recognition.stop();
+          if (isRecognizing || micBtn.classList.contains('recording')) {
+            try {
+                recognition.stop();
+            } catch (e) {
+                console.warn("Recognition stop error:", e);
+            }
+            // Force cleanup if flag was desynced
+            if (!isRecognizing) {
+                 micBtn.classList.remove('recording');
+                 micBtn.setAttribute('aria-label', 'Use voice input');
+            }
           } else {
             if (this.isLoading) {
               const t = TRANSLATIONS[this.currentLang] || TRANSLATIONS.en;
@@ -1205,7 +1214,9 @@ class ChatApp {
                 console.error("Failed to start recognition:", err);
                 
                 if (err.name === 'InvalidStateError') {
-                    // It is already running. Sync state to true so user can stop it next time.
+                    // It is already running. Sync state to true.
+                    // If user clicked, they likely wanted to stop, but since we are in the 'start' block, 
+                    // it means the UI showed 'stopped'. So we sync to 'recording'.
                     isRecognizing = true;
                     micBtn.classList.add('recording');
                     micBtn.setAttribute('aria-label', 'Stop listening');

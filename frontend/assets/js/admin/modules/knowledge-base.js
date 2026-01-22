@@ -14,6 +14,11 @@ let editingSubcategoryId = null;
 let categoryModalMode = 'category';
 let cacheNeedsRegeneration = false;
 
+// Pagination State
+let docPagination = { page: 1, limit: 10, total: 0, totalPages: 1 };
+let catPagination = { page: 1, limit: 10, total: 0, totalPages: 1 };
+let subcatPagination = { page: 1, limit: 10, total: 0, totalPages: 1 };
+
 // SSE Store
 let progressEventSource = null;
 
@@ -32,9 +37,86 @@ function setupKnowledgeBase() {
   const docStatusFilter = document.getElementById('doc-status-filter');
   const subcatCategoryFilter = document.getElementById('subcat-category-filter');
   
-  if (docSearch) docSearch.addEventListener('input', renderDocumentsTable);
-  if (docStatusFilter) docStatusFilter.addEventListener('change', renderDocumentsTable);
-  if (subcatCategoryFilter) subcatCategoryFilter.addEventListener('change', renderSubcategoriesTable);
+  // Use debounce for search inputs to prevent excessive API calls
+  if (docSearch) {
+    let timeout;
+    docSearch.addEventListener('input', () => {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => {
+        docPagination.page = 1;
+        loadDocuments();
+      }, 500);
+    });
+  }
+  
+  if (docStatusFilter) docStatusFilter.addEventListener('change', () => {
+    docPagination.page = 1;
+    loadDocuments();
+  });
+  
+  if (subcatCategoryFilter) subcatCategoryFilter.addEventListener('change', () => {
+    subcatPagination.page = 1;
+    loadSubcategories();
+  });
+
+  // Setup Pagination Listeners
+  setupPaginationListeners();
+}
+
+function setupPaginationListeners() {
+  // Document Pagination
+  const docPrev = document.getElementById('doc-prev-btn');
+  const docNext = document.getElementById('doc-next-btn');
+  
+  if (docPrev) docPrev.addEventListener('click', () => {
+    if (docPagination.page > 1) {
+      docPagination.page--;
+      loadDocuments();
+    }
+  });
+  
+  if (docNext) docNext.addEventListener('click', () => {
+    if (docPagination.page < docPagination.totalPages) {
+      docPagination.page++;
+      loadDocuments();
+    }
+  });
+
+  // Category Pagination
+  const catPrev = document.getElementById('cat-prev-btn');
+  const catNext = document.getElementById('cat-next-btn');
+  
+  if (catPrev) catPrev.addEventListener('click', () => {
+    if (catPagination.page > 1) {
+      catPagination.page--;
+      loadCategories();
+    }
+  });
+  
+  if (catNext) catNext.addEventListener('click', () => {
+    if (catPagination.page < catPagination.totalPages) {
+      catPagination.page++;
+      loadCategories();
+    }
+  });
+
+  // Subcategory Pagination
+  const subcatPrev = document.getElementById('subcat-prev-btn');
+  const subcatNext = document.getElementById('subcat-next-btn');
+  
+  if (subcatPrev) subcatPrev.addEventListener('click', () => {
+    if (subcatPagination.page > 1) {
+      subcatPagination.page--;
+      loadSubcategories();
+    }
+  });
+  
+  if (subcatNext) subcatNext.addEventListener('click', () => {
+    if (subcatPagination.page < subcatPagination.totalPages) {
+      subcatPagination.page++;
+      loadSubcategories();
+    }
+  });
 }
 
 // Setup cache progress modal handlers for Knowledge Base view
@@ -399,22 +481,14 @@ function switchKBTab(tabName) {
 // Main data loader
 async function loadKnowledgeBaseData() {
   try {
-    const [docs, cats, allSubcats] = await Promise.all([
-      apiFetch('/admin/documents'),
-      apiFetch('/admin/categories'),
-      apiFetch('/admin/all-subcategories')
+    // Load data concurrently
+    await Promise.all([
+      loadDocuments(),
+      loadCategories(),
+      loadSubcategories()
     ]);
     
-    allDocuments = docs.documents || [];
-    allCategories = cats.categories || [];
-    allSubcategories = allSubcats.subcategories || [];
-    
     populateCategoryDropdowns();
-    
-    if (currentKBTab === 'documents') renderDocumentsTable();
-    else if (currentKBTab === 'categories') renderCategoriesTable();
-    else if (currentKBTab === 'subcategories') renderSubcategoriesTable();
-    
     await loadCacheStatus();
   } catch (error) {
     console.error('❌ Error loading KB data:', error);
@@ -424,54 +498,144 @@ async function loadKnowledgeBaseData() {
 
 // Document management
 async function loadDocuments() {
+  const tbody = document.getElementById('documents-table-body');
+  if (tbody) tbody.innerHTML = '<tr><td colspan="5" class="loading-cell">Loading documents...</td></tr>';
+
   try {
-    const data = await apiFetch('/admin/documents');
+    const search = document.getElementById('doc-search')?.value || '';
+    const status = document.getElementById('doc-status-filter')?.value || '';
+
+    const params = new URLSearchParams();
+    if (search) params.append('search', search);
+    if (status) params.append('status', status); // Note: Backend needs to support this if we want server-side status filtering
+    params.append('page', docPagination.page);
+    params.append('limit', docPagination.limit);
+
+    const data = await apiFetch(`/admin/documents?${params.toString()}`);
     allDocuments = data.documents || [];
+    
+    if (data.pagination) {
+      docPagination = { ...docPagination, ...data.pagination };
+    } else {
+      docPagination.total = allDocuments.length;
+      docPagination.totalPages = 1;
+    }
+
     renderDocumentsTable();
+    renderPagination('doc', docPagination, loadDocuments);
   } catch (error) {
     console.error('❌ Error loading documents:', error);
+    if (tbody) tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: red;">Failed to load documents</td></tr>';
   }
 }
 
 function renderDocumentsTable() {
   const tbody = document.getElementById('documents-table-body');
+  const paginationControls = document.getElementById('doc-pagination');
+  
   if (!tbody) return;
   
-  const searchTerm = (document.getElementById('doc-search')?.value || '').toLowerCase();
+  // Client-side status filtering if backend doesn't support it yet
   const statusFilter = document.getElementById('doc-status-filter')?.value || '';
-  
-  const filtered = allDocuments.filter(doc => {
-    const matchesSearch = doc.title.toLowerCase().includes(searchTerm);
-    const matchesStatus = !statusFilter || doc.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  const filtered = statusFilter ? allDocuments.filter(d => d.status === statusFilter) : allDocuments;
   
   if (filtered.length === 0) { 
     tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 40px;">No documents found.</td></tr>'; 
+    if (paginationControls) paginationControls.style.display = 'none';
     return; 
   }
   
+  if (paginationControls) paginationControls.style.display = 'flex';
+  
   tbody.innerHTML = filtered.map(doc => `
     <tr>
-      <td><strong>${doc.title}</strong></td>
-      <td>${doc.category_name} → ${doc.subcategory_name}</td>
-      <td><span class="badge badge-${getStatusColor(doc.status)}">${doc.status}</span></td>
-      <td>${formatDateTime(doc.updated_at)}</td>
-      <td>
+      <td data-label="Title"><strong>${doc.title}</strong></td>
+      <td data-label="Category">${doc.category_name} → ${doc.subcategory_name}</td>
+      <td data-label="Status"><span class="badge badge-${getStatusColor(doc.status)}">${doc.status}</span></td>
+      <td data-label="Updated">${formatDateTime(doc.updated_at)}</td>
+      <td data-label="Actions">
         <div class="action-buttons">
           <button class="action-btn action-btn-view" onclick="window.KnowledgeBase.previewDocument(${doc.id})">
-            <span class="material-symbols-outlined" style="font-size: 14px;">visibility</span> View
+            <span class="material-symbols-outlined">visibility</span> View
           </button>
           <button class="action-btn action-btn-edit" onclick="window.KnowledgeBase.editDocument(${doc.id})">
-            <span class="material-symbols-outlined" style="font-size: 14px;">edit</span> Edit
+            <span class="material-symbols-outlined">edit</span> Edit
           </button>
           <button class="action-btn action-btn-delete" onclick="window.KnowledgeBase.deleteDocument(${doc.id}, '${escapeHtml(doc.title)}')">
-            <span class="material-symbols-outlined" style="font-size: 14px;">delete</span> Delete
+            <span class="material-symbols-outlined">delete</span> Delete
           </button>
         </div>
       </td>
     </tr>
   `).join('');
+}
+
+// Generic Pagination Renderer
+function renderPagination(prefix, state, loadFn) {
+    const startRecord = (state.page - 1) * state.limit + 1;
+    const endRecord = Math.min(startRecord + state.limit - 1, state.total);
+    
+    const startEl = document.getElementById(`${prefix}-start-record`);
+    const endEl = document.getElementById(`${prefix}-end-record`);
+    const totalEl = document.getElementById(`${prefix}-total-records`);
+    
+    if (startEl) startEl.textContent = state.total === 0 ? 0 : startRecord;
+    if (endEl) endEl.textContent = endRecord;
+    if (totalEl) totalEl.textContent = state.total;
+  
+    const prevBtn = document.getElementById(`${prefix}-prev-btn`);
+    const nextBtn = document.getElementById(`${prefix}-next-btn`);
+    
+    if (prevBtn) prevBtn.disabled = state.page <= 1;
+    if (nextBtn) nextBtn.disabled = state.page >= state.totalPages;
+  
+    // Render page numbers
+    const pageContainer = document.getElementById(`${prefix}-page-numbers`);
+    if (!pageContainer) return;
+    
+    pageContainer.innerHTML = '';
+    
+    let pages = [];
+    const maxVisible = 5;
+    const totalPages = state.totalPages;
+    const currentPage = state.page;
+    
+    if (totalPages <= maxVisible) {
+      for(let i=1; i<=totalPages; i++) pages.push(i);
+    } else {
+      if (currentPage <= 3) {
+        pages = [1, 2, 3, 4, '...', totalPages];
+      } else if (currentPage >= totalPages - 2) {
+        pages = [1, '...', totalPages-3, totalPages-2, totalPages-1, totalPages];
+      } else {
+        pages = [1, '...', currentPage-1, currentPage, currentPage+1, '...', totalPages];
+      }
+    }
+  
+    pages.forEach(p => {
+      if (p === '...') {
+        const span = document.createElement('span');
+        span.textContent = '...';
+        span.style.padding = '5px';
+        span.style.color = '#666';
+        pageContainer.appendChild(span);
+      } else {
+        const btn = document.createElement('button');
+        btn.textContent = p;
+        btn.className = `btn btn-sm ${p === currentPage ? 'btn-primary' : 'btn-outline'}`;
+        btn.style.padding = '5px 10px';
+        btn.style.minWidth = '30px';
+        if (p !== currentPage) {
+          btn.onclick = () => {
+            if (prefix === 'doc') docPagination.page = p;
+            else if (prefix === 'cat') catPagination.page = p;
+            else if (prefix === 'subcat') subcatPagination.page = p;
+            loadFn();
+          };
+        }
+        pageContainer.appendChild(btn);
+      }
+    });
 }
 
 // Document editor
@@ -944,24 +1108,57 @@ async function previewDocument(id) {
 
 // Categories and Subcategories management
 async function loadCategories() {
-  const data = await apiFetch('/admin/categories');
-  allCategories = data.categories || [];
-  renderCategoriesTable();
+  const tbody = document.getElementById('categories-table-body');
+  if (tbody) tbody.innerHTML = '<tr><td colspan="4" class="loading-cell">Loading categories...</td></tr>';
+
+  try {
+    const params = new URLSearchParams();
+    params.append('page', catPagination.page);
+    params.append('limit', catPagination.limit);
+    
+    // We don't have a category search input in UI yet, but we could support it
+    // const search = document.getElementById('cat-search')?.value || '';
+    // if (search) params.append('search', search);
+
+    const data = await apiFetch(`/admin/categories?${params.toString()}`);
+    allCategories = data.categories || [];
+    
+    if (data.pagination) {
+      catPagination = { ...catPagination, ...data.pagination };
+    }
+
+    renderCategoriesTable();
+    renderPagination('cat', catPagination, loadCategories);
+  } catch (error) {
+    console.error('❌ Error loading categories:', error);
+  }
 }
 
 function renderCategoriesTable() {
   const tbody = document.getElementById('categories-table-body');
+  const paginationControls = document.getElementById('cat-pagination');
+  
   if (!tbody) return;
   
+  if (allCategories.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px;">No categories found.</td></tr>';
+    if (paginationControls) paginationControls.style.display = 'none';
+    return;
+  }
+  
+  if (paginationControls) paginationControls.style.display = 'flex';
+  
   tbody.innerHTML = allCategories.map(cat => {
-    const subCount = allSubcategories.filter(s => s.category_id === cat.id).length;
+    // Note: subCount is accurate only if we load ALL subcategories or if backend provides count
+    // Currently backend doesn't provide subcategory count in getCategories pagination response
+    // We can display '-' or fetch counts separately. For now, let's just not show count or show '...'
     const description = cat.description || '';
 
     return `<tr>
-      <td><strong>${cat.name}</strong></td>
-      <td>${subCount}</td>
-      <td>${escapeHtml(description)}</td>
-      <td>
+      <td data-label="Category Name"><strong>${cat.name}</strong></td>
+      <td data-label="Subcategories">-</td> 
+      <td data-label="Description">${escapeHtml(description)}</td>
+      <td data-label="Actions">
         <button class="action-btn action-btn-edit" onclick="window.KnowledgeBase.editCategory(${cat.id})">Edit</button>
         <button class="action-btn action-btn-delete" onclick="window.KnowledgeBase.deleteCategory(${cat.id})">Delete</button>
       </td>
@@ -970,25 +1167,52 @@ function renderCategoriesTable() {
 }
 
 async function loadSubcategories() {
-  const data = await apiFetch('/admin/all-subcategories');
-  allSubcategories = data.subcategories || [];
-  renderSubcategoriesTable();
+  const tbody = document.getElementById('subcategories-table-body');
+  if (tbody) tbody.innerHTML = '<tr><td colspan="4" class="loading-cell">Loading subcategories...</td></tr>';
+
+  try {
+    const filter = document.getElementById('subcat-category-filter')?.value || '';
+    
+    const params = new URLSearchParams();
+    params.append('page', subcatPagination.page);
+    params.append('limit', subcatPagination.limit);
+    if (filter) params.append('category', filter);
+
+    const data = await apiFetch(`/admin/all-subcategories?${params.toString()}`);
+    allSubcategories = data.subcategories || [];
+    
+    if (data.pagination) {
+      subcatPagination = { ...subcatPagination, ...data.pagination };
+    }
+
+    renderSubcategoriesTable();
+    renderPagination('subcat', subcatPagination, loadSubcategories);
+  } catch (error) {
+    console.error('❌ Error loading subcategories:', error);
+  }
 }
 
 function renderSubcategoriesTable() {
   const tbody = document.getElementById('subcategories-table-body');
+  const paginationControls = document.getElementById('subcat-pagination');
+  
   if (!tbody) return;
   
-  const filter = document.getElementById('subcat-category-filter')?.value || '';
-  const filtered = allSubcategories.filter(s => !filter || s.category_id == filter);
+  if (allSubcategories.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px;">No subcategories found.</td></tr>';
+    if (paginationControls) paginationControls.style.display = 'none';
+    return;
+  }
   
-  tbody.innerHTML = filtered.map(sub => {
+  if (paginationControls) paginationControls.style.display = 'flex';
+  
+  tbody.innerHTML = allSubcategories.map(sub => {
     const description = sub.description || '';
     return `<tr>
-      <td><strong>${sub.name}</strong></td>
-      <td>${sub.category_name}</td>
-      <td>${escapeHtml(description)}</td>
-      <td>
+      <td data-label="Subcategory Name"><strong>${sub.name}</strong></td>
+      <td data-label="Parent Category">${sub.category_name}</td>
+      <td data-label="Description">${escapeHtml(description)}</td>
+      <td data-label="Actions">
         <button class="action-btn action-btn-edit" onclick="window.KnowledgeBase.editSubcategory(${sub.id})">Edit</button>
         <button class="action-btn action-btn-delete" onclick="window.KnowledgeBase.deleteSubcategory(${sub.id})">Delete</button>
       </td>

@@ -738,7 +738,7 @@ function resetModalState(type) {
         const saveBtn = document.getElementById('sheet-modal-save');
         if (saveBtn) {
             const btnText = saveBtn.querySelector('.btn-text');
-            if (btnText) btnText.innerHTML = '<span class="material-symbols-outlined" style="font-size: 16px;">link</span> Link Sheet';
+            if (btnText) btnText.innerHTML = '<span class="material-symbols-outlined">link</span> Link Sheet';
         }
     } else if (type === 'api') {
         safeSetValue('api-name', '');
@@ -768,7 +768,7 @@ function resetModalState(type) {
         const saveBtn = document.getElementById('db-modal-save');
         if (saveBtn) {
             const btnText = saveBtn.querySelector('.btn-text');
-            if (btnText) btnText.innerHTML = '<span class="material-symbols-outlined" style="font-size: 16px;">database</span> Connect Database';
+            if (btnText) btnText.innerHTML = '<span class="material-symbols-outlined">database</span> Connect Database';
         }
     } else if (type === 'sap') {
         safeSetValue('sap-name', '');
@@ -785,7 +785,7 @@ function resetModalState(type) {
         const saveBtn = document.getElementById('sap-modal-save');
         if (saveBtn) {
             const btnText = saveBtn.querySelector('.btn-text');
-            if (btnText) btnText.innerHTML = '<span class="material-symbols-outlined" style="font-size: 16px;">dns</span> Connect SAP';
+            if (btnText) btnText.innerHTML = '<span class="material-symbols-outlined">dns</span> Connect SAP';
         }
     }
 }
@@ -831,10 +831,10 @@ function toggleFullscreenDescription(btn, groupId) {
     
     if (group.classList.contains('fullscreen-mode')) {
         group.classList.remove('fullscreen-mode');
-        btn.innerHTML = `<span class="material-symbols-outlined" style="font-size: 12px;">open_in_full</span> Expand`;
+        btn.innerHTML = `<span class="material-symbols-outlined">open_in_full</span> Expand`;
     } else {
         group.classList.add('fullscreen-mode');
-        btn.innerHTML = `<span class="material-symbols-outlined" style="font-size: 12px;">close_fullscreen</span> Collapse`;
+        btn.innerHTML = `<span class="material-symbols-outlined">close_fullscreen</span> Collapse`;
         if (textarea) textarea.focus();
     }
 }
@@ -1167,19 +1167,29 @@ function renderSourcesTable() {
 
         return `
       <tr>
-        <td>
-            <strong>${escapeHtml(source.name)}</strong>
-            ${source.category_name ? `<br><small style="color:#666; display:flex; align-items:center; gap:4px;"><span class="material-symbols-outlined" style="font-size: 12px;">folder</span> ${escapeHtml(source.category_name)}</small>` : ''}
+        <td data-label="Source Name">
+            <div>
+                <strong>${escapeHtml(source.name)}</strong>
+                ${source.category_name ? `<div style="color:#666; display:flex; align-items:center; gap:4px; font-size:0.75rem; margin-top:2px;"><span class="material-symbols-outlined" style="font-size: 12px;">folder</span> ${escapeHtml(source.category_name)}</div>` : ''}
+            </div>
         </td>
-        <td>${typeBadge}</td>
-        <td class="description-cell" title="${escapeHtml(source.description)}">
-          ${escapeHtml(source.description)}
+        <td data-label="Type">${typeBadge}</td>
+        <td data-label="Description" class="description-cell" title="${escapeHtml(source.description)}">
+          <div class="truncate-wrapper">${escapeHtml(source.description)}</div>
         </td>
-        <td>${formatDateTime(source.updated_at)}</td>
-        <td>
-          <button class="action-btn action-btn-view" onclick="Integrations.viewLiveSource(${source.id})">View</button>
-          <button class="action-btn action-btn-edit" onclick="Integrations.editLiveSource(${source.id})">Edit</button>
-          <button class="action-btn action-btn-delete" onclick="Integrations.deleteLiveSource(${source.id})">Disconnect</button>
+        <td data-label="Last Synced">${formatDateTime(source.updated_at)}</td>
+        <td data-label="Actions">
+          <div class="action-buttons">
+            <button class="action-btn action-btn-view" onclick="Integrations.viewLiveSource(${source.id})">
+                <span class="material-symbols-outlined">visibility</span> View
+            </button>
+            <button class="action-btn action-btn-edit" onclick="Integrations.editLiveSource(${source.id})">
+                <span class="material-symbols-outlined">edit</span> Edit
+            </button>
+            <button class="action-btn action-btn-disconnect" onclick="Integrations.deleteLiveSource(${source.id})">
+                <span class="material-symbols-outlined">link_off</span> Disconnect
+            </button>
+          </div>
         </td>
       </tr>
     `;
@@ -1206,12 +1216,12 @@ function renderInternalFlagsTable() {
         const typeBadge = '<span class="badge badge-secondary">Internal Flag</span>';
         return `
       <tr>
-        <td><strong>${escapeHtml(source.name)}</strong></td>
-        <td>${typeBadge}</td>
-        <td class="description-cell" title="${escapeHtml(source.description)}">
-          ${escapeHtml(source.description)}
+        <td data-label="Flag Name"><strong>${escapeHtml(source.name)}</strong></td>
+        <td data-label="Type">${typeBadge}</td>
+        <td data-label="Description" class="description-cell" title="${escapeHtml(source.description)}">
+          <div class="truncate-wrapper">${escapeHtml(source.description)}</div>
         </td>
-        <td>${formatDateTime(source.updated_at)}</td>
+        <td data-label="Last Updated">${formatDateTime(source.updated_at)}</td>
       </tr>
     `;
     }).join('');
