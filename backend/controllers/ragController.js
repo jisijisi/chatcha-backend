@@ -71,7 +71,7 @@ export const getRagStatus = (req, res) => {
         status: ragSystem.isInitialized ? "ready" : "initializing",
         service: "NEW Database-Driven Company Knowledge RAG",
         database_schema: "new_relational_v1",
-        embedding_model: "text-embedding-004",
+        embedding_model: "gemini-embedding-001",
         chunks: ragSystem.chunks.length,
         aggregate_chunks: ragSystem.chunks.filter(c => c.isAggregate).length,
         embeddings: ragSystem.embeddings.length,
