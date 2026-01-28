@@ -43,7 +43,7 @@ export class ModalManager {
     
     // Cleanup previous elements
     const cleanup = () => {
-      ['welcome-avatar-section', 'employee-status-group', 'employee-number-group', 'profile-details-group', 'guest-name-group'].forEach(id => {
+      ['welcome-avatar-section', 'employee-status-group', 'profile-details-group', 'name-group'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.remove();
       });
@@ -66,376 +66,58 @@ export class ModalManager {
       modal.appendChild(avatarSection);
     }
 
-    // --- STEP 1 UI: Employee Status Question ---
-    const statusGroup = document.createElement('div');
-    statusGroup.id = 'employee-status-group';
-    
-    const yesChecked = isCompany ? 'checked' : '';
-    
-    statusGroup.innerHTML = `
-      <label class="employee-status-label">Are you an employee of CDO Foodsphere?</label>
-      <div class="radio-card-container">
-        <label class="radio-card ${isCompany ? 'selected' : ''}" data-value="yes">
-          <input type="radio" name="is_cdo_employee" value="yes" ${yesChecked}>
-          <div class="radio-card-icon">✓</div>
-          <div class="radio-card-label">Yes</div>
-        </label>
-        <label class="radio-card" data-value="no">
-          <input type="radio" name="is_cdo_employee" value="no">
-          <div class="radio-card-icon">✕</div>
-          <div class="radio-card-label">No</div>
-        </label>
-      </div>
-    `;
-
-    // If company user, hide the question
-    if (isCompany) {
-      statusGroup.style.display = 'none';
-    }
-
-    const numberGroup = document.createElement('div');
-    numberGroup.id = 'employee-number-group';
-    numberGroup.style.display = 'none';
-    numberGroup.innerHTML = `
-      <label class="form-label" style="display:block; margin-bottom:8px; font-weight:600;">Employee Number *</label>
-      <input type="text" id="employee-number-input" class="modal-input" placeholder="e.g. 123456" autocomplete="off" style="margin-bottom: 20px;">
-    `;
-    
-    const guestNameGroup = document.createElement('div');
-    guestNameGroup.id = 'guest-name-group';
-    guestNameGroup.style.display = 'none';
-    guestNameGroup.innerHTML = `
+    // --- STEP 1 UI: Preferred Name Input ---
+    const nameGroup = document.createElement('div');
+    nameGroup.id = 'name-group';
+    nameGroup.innerHTML = `
       <label class="form-label" style="display:block; margin-bottom:8px; font-weight:600;">What should I call you?</label>
-      <input type="text" id="guest-name-input" class="modal-input" placeholder="Enter your name" value="${currentName || ''}" autocomplete="off" style="margin-bottom: 20px;">
+      <input type="text" id="name-input" class="modal-input" placeholder="Enter your name" value="${currentName || ''}" autocomplete="off" style="margin-bottom: 20px;">
     `;
 
-    body.appendChild(statusGroup);
-    body.appendChild(numberGroup);
-    body.appendChild(guestNameGroup);
+    body.appendChild(nameGroup);
 
-    const yesCard = statusGroup.querySelector('.radio-card[data-value="yes"]');
-    const noCard = statusGroup.querySelector('.radio-card[data-value="no"]');
-    const yesRadio = statusGroup.querySelector('input[value="yes"]');
-    const noRadio = statusGroup.querySelector('input[value="no"]');
-    const numberInput = numberGroup.querySelector('#employee-number-input');
-    const guestInput = guestNameGroup.querySelector('#guest-name-input');
+    const nameInput = nameGroup.querySelector('#name-input');
 
-    // Handle Guest Mode (Hide Avatar & Status Question)
+    // Handle Guest Mode (Hide Avatar)
     if (isGuest) {
-        statusGroup.style.display = 'none';
         if (avatarSection) avatarSection.style.display = 'none';
-        noRadio.checked = true;
     }
 
-    const updateCardSelection = () => {
-      yesCard.classList.toggle('selected', yesRadio.checked);
-      noCard.classList.toggle('selected', noRadio.checked);
+    const updateModalState = () => {
+      this.elements.modalConfirm.textContent = "Let's Get Started! 🚀";
+      this.elements.modalConfirm.dataset.originalText = "Let's Get Started! 🚀";
+      this.elements.modalConfirm.style.display = 'inline-block';
       
-      if (yesRadio.checked) {
-        numberGroup.style.display = 'block';
-        guestNameGroup.style.display = 'none';
-        this.elements.modalConfirm.textContent = "Next";
-        this.elements.modalConfirm.dataset.originalText = "Next";
-        this.elements.modalConfirm.style.display = 'inline-block';
-        
-        // Disable button if input is empty
-        this.elements.modalConfirm.disabled = !numberInput.value.trim();
-        
-        setTimeout(() => numberInput.focus(), 100);
-      } else if (noRadio.checked) {
-        numberGroup.style.display = 'none';
-        guestNameGroup.style.display = 'block';
-        this.elements.modalConfirm.textContent = "Let's Get Started! 🚀";
-        this.elements.modalConfirm.dataset.originalText = "Let's Get Started! 🚀";
-        this.elements.modalConfirm.style.display = 'inline-block';
-        
-        // Disable button if input is empty
-        this.elements.modalConfirm.disabled = !guestInput.value.trim();
-        
-        setTimeout(() => guestInput.focus(), 100);
-      } else {
-        // If neither selected (shouldn't happen with default logic but good for safety)
-        this.elements.modalConfirm.style.display = 'none';
-      }
+      // Disable button if input is empty
+      this.elements.modalConfirm.disabled = !nameInput.value.trim();
+      
+      setTimeout(() => nameInput.focus(), 100);
     };
 
-    yesCard.addEventListener('click', () => {
-      yesRadio.checked = true;
-      updateCardSelection();
-    });
-
-    noCard.addEventListener('click', () => {
-      noRadio.checked = true;
-      updateCardSelection();
-    });
-
-    yesRadio.addEventListener('change', updateCardSelection);
-    noRadio.addEventListener('change', updateCardSelection);
-
     // Input listeners to enable/disable button
-    numberInput.addEventListener('input', () => {
-      if (yesRadio.checked) {
-        this.elements.modalConfirm.disabled = !numberInput.value.trim();
-      }
-    });
-
-    guestInput.addEventListener('input', () => {
-      if (noRadio.checked) {
-        this.elements.modalConfirm.disabled = !guestInput.value.trim();
-      }
+    nameInput.addEventListener('input', () => {
+      this.elements.modalConfirm.disabled = !nameInput.value.trim();
     });
 
     // Initial state
-    updateCardSelection();
+    updateModalState();
 
     // Define the wrapper callback
     const wrapperCallback = async (val) => {
       console.log('📘 Modal Confirm Callback Triggered', { step: this.currentStep, val });
       
       if (this.currentStep === 1) {
-        const isEmployee = yesRadio.checked;
-        const isExternal = noRadio.checked;
-
-        if (!isEmployee && !isExternal) {
-          this.showToast('Please select if you are an employee or not.', 'warning');
+        const displayName = nameInput.value.trim();
+        if (!displayName) {
+          this.showToast('Please enter a display name', 'error');
           return false;
         }
         
-        console.log('👤 Is Employee:', isEmployee);
+        // Employee status is now determined by email domain (passed via options.isCompany)
+        localStorage.setItem('is_cdo_employee', isCompany ? 'yes' : 'no');
         
-        if (isEmployee) {
-          const empNo = numberInput.value.trim();
-          console.log('🔢 Employee Number:', empNo);
-          
-          if (!empNo) {
-            this.showToast('Employee number is required', 'error', 3500);
-            return false;
-          }
-
-          try {
-            console.log('🚀 Sending validation request to:', `${CONFIG.API_BASE}/auth/validate-employee`);
-            const response = await fetch(`${CONFIG.API_BASE}/auth/validate-employee`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ emp_id: empNo })
-            });
-            
-            const data = await response.json();
-            
-            if (!data.valid) {
-               // Show Employee Not Found Error State
-               this.currentStep = 'error_not_found';
-               
-               cleanup();
-               if (avatarSection) avatarSection.remove();
-               
-               this.elements.modalTitle.textContent = "Employee ID Not Found";
-               this.elements.modalMessage.textContent = `The employee ID ${empNo} does not exist in the database. Would you like to try again or login as an external user?`;
-               
-               // Setup "Try Again" button (Cancel btn)
-               if (this.elements.modalCancel) {
-                 const cancelBtn = this.elements.modalCancel;
-                 const newCancelBtn = cancelBtn.cloneNode(true);
-                 cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
-                 this.elements.modalCancel = newCancelBtn;
-                 
-                 this.elements.modalCancel.textContent = "Try Again";
-                 this.elements.modalCancel.style.display = 'inline-block';
-                 
-                 this.elements.modalCancel.addEventListener('click', (e) => {
-                     e.preventDefault();
-                     // Reset to Step 1
-                     this.showWelcomeModal({ currentName, isCompany }, onConfirm);
-                 });
-               }
-               
-               // Setup "Login as External" button (Confirm btn)
-               this.elements.modalConfirm.textContent = "Login as external user";
-               this.elements.modalConfirm.dataset.originalText = "Login as external user";
-               this.elements.modalConfirm.disabled = false;
-               this.elements.modalConfirm.classList.remove('loading');
-               
-               return false;
-            }
-
-            // Valid Employee! Switch to Step 2
-            this.currentStep = 2;
-            this.tempEmployeeData = data.employee;
-
-            // Update UI for Step 2
-            cleanup();
-            if (avatarSection) avatarSection.remove();
-            
-            this.elements.modalTitle.textContent = "Confirm Your Profile";
-            this.elements.modalMessage.textContent = "Please review and confirm your employee details.";
-            
-            const profileGroup = document.createElement('div');
-            profileGroup.id = 'profile-details-group';
-            profileGroup.innerHTML = `
-              <div style="margin-bottom:16px;">
-                <label class="form-label" style="display:block; margin-bottom:6px; font-weight:600;">Display Name *</label>
-                <input type="text" id="profile-name" class="modal-input" value="${data.employee.full_name || ''}" autocomplete="off">
-              </div>
-              <div style="margin-bottom:16px;">
-                <label class="form-label" style="display:block; margin-bottom:6px; font-weight:600;">Department *</label>
-                <input type="text" id="profile-dept" class="modal-input" value="${data.employee.department || ''}" readonly style="background:var(--bg-secondary);" autocomplete="off">
-              </div>
-              <div style="margin-bottom:16px;">
-                <label class="form-label" style="display:block; margin-bottom:6px; font-weight:600;">Job Position *</label>
-                <input type="text" id="profile-pos" class="modal-input" value="${data.employee.position || ''}" readonly style="background:var(--bg-secondary);" autocomplete="off">
-              </div>
-            `;
-            body.appendChild(profileGroup);
-            
-            this.elements.modalConfirm.textContent = "Let's Get Started! 🚀";
-            this.elements.modalConfirm.dataset.originalText = "Let's Get Started! 🚀";
-            
-            // --- Step 2 Input Validation ---
-            const profileNameInput = document.getElementById('profile-name');
-            if (profileNameInput) {
-                // Initial check
-                this.elements.modalConfirm.disabled = !profileNameInput.value.trim();
-                
-                // Add listener
-                profileNameInput.addEventListener('input', () => {
-                    this.elements.modalConfirm.disabled = !profileNameInput.value.trim();
-                });
-            }
-
-            // Add Back Button logic for Step 2
-            if (this.elements.modalCancel) {
-              const backBtn = this.elements.modalCancel;
-              const newBackBtn = backBtn.cloneNode(true);
-              backBtn.parentNode.replaceChild(newBackBtn, backBtn);
-              this.elements.modalCancel = newBackBtn;
-              
-              this.elements.modalCancel.textContent = "Back";
-              this.elements.modalCancel.style.display = "inline-block";
-              
-              this.elements.modalCancel.addEventListener('click', (e) => {
-                  e.preventDefault();
-                  // Return to Step 1
-                  this.showWelcomeModal({ currentName, isCompany }, onConfirm);
-              });
-            }
-            
-            return false;
-
-          } catch (err) {
-            console.error("❌ Validation error:", err);
-            this.showToast('Validation failed. Please try again.', 'error');
-            return false;
-          }
-
-        } else {
-          // Non-employee
-          const guestName = guestInput.value.trim();
-          if (!guestName) {
-            this.showToast('Please enter a display name', 'error');
-            return false;
-          }
-          
-          try {
-            const userEmail = this.getSessionEmail();
-            if (userEmail) {
-              await fetch(`${CONFIG.API_BASE}/api/user/profile`, {
-                method: 'PUT',
-                headers: { 
-                  'Content-Type': 'application/json',
-                  'X-User-Email': userEmail 
-                },
-                body: JSON.stringify({ 
-                  email: userEmail,
-                  name: guestName,
-                  department: 'External',
-                  position: 'External User'
-                })
-              });
-            }
-          } catch (e) {
-            console.warn('Failed to save external profile', e);
-          }
-          
-          localStorage.setItem('is_cdo_employee', 'no');
-          localStorage.removeItem('employee_number');
-          
-          if (typeof onConfirm === 'function') return onConfirm(guestName);
-          return true;
-        }
-      }
-
-      if (this.currentStep === 'error_not_found') {
-        // User clicked "Login as External"
-        
-        // Restore Guest View (Step 1 with No selected)
-        cleanup();
-        
-        this.elements.modalTitle.textContent = "Welcome to ChatCDO! ✨";
-        this.elements.modalMessage.textContent = "I'm Cindy, your AI assistant for CDO Foodsphere! I'm here to help with questions about company policies, history, products, and more.";
-        
-        // Restore Avatar
-        if (header.nextSibling) {
-          modal.insertBefore(avatarSection, header.nextSibling);
-        } else {
-          modal.appendChild(avatarSection);
-        }
-        
-        // Re-append groups
-        body.appendChild(statusGroup);
-        body.appendChild(numberGroup);
-        body.appendChild(guestNameGroup);
-        
-        // Force "No" selection
-        noRadio.checked = true;
-        
-        // This will update UI to show guest input and hide employee input
-        // And update confirm button text to "Let's Get Started!"
-        updateCardSelection(); 
-        
-        // Hide Cancel button (since we are back to "Step 1" state where cancel is hidden)
-        this.elements.modalCancel.style.display = 'none';
-        
-        // Reset step
-        this.currentStep = 1;
-        
-        return false;
-      }
-
-      if (this.currentStep === 2) {
-        const profileName = document.getElementById('profile-name').value.trim();
-        if (!profileName) {
-          this.showToast('Display Name is required', 'error');
-          return false;
-        }
-
-        try {
-          const userEmail = this.getSessionEmail();
-          const regResponse = await fetch(`${CONFIG.API_BASE}/auth/register-employee`, {
-            method: 'POST',
-            headers: { 
-              'Content-Type': 'application/json',
-              'X-User-Email': userEmail
-            },
-            body: JSON.stringify({ emp_id: this.tempEmployeeData.emp_id })
-          });
-          
-          const regData = await regResponse.json();
-          if (!regData.success) {
-            this.showToast(regData.message || 'Registration failed', 'error');
-            return false;
-          }
-
-          localStorage.setItem('is_cdo_employee', 'yes');
-          localStorage.setItem('employee_number', this.tempEmployeeData.emp_id);
-          
-          if (typeof onConfirm === 'function') return onConfirm(profileName);
-          return true;
-
-        } catch (err) {
-          console.error("❌ Registration error:", err);
-          this.showToast('Failed to register employee. Try again.', 'error');
-          return false;
-        }
+        if (typeof onConfirm === 'function') return onConfirm(displayName);
+        return true;
       }
     };
 
@@ -459,6 +141,12 @@ export class ModalManager {
       confirmClass = "", 
       onConfirm 
     } = options;
+
+    // --- Cleanup any existing onboarding elements ---
+    ['welcome-avatar-section', 'employee-status-group', 'employee-number-group', 'profile-details-group', 'guest-name-group', 'name-group'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.remove();
+    });
     
     this.elements.modalTitle.textContent = title;
     this.elements.modalMessage.textContent = message;
@@ -527,7 +215,7 @@ export class ModalManager {
     this.modalConfirmCallback = null;
     
     const body = this.elements.modalOverlay.querySelector('.modal-body') || this.elements.modalMessage.parentNode;
-    ['welcome-avatar-section', 'employee-status-group', 'employee-number-group', 'profile-details-group', 'guest-name-group'].forEach(id => {
+    ['welcome-avatar-section', 'employee-status-group', 'employee-number-group', 'profile-details-group', 'guest-name-group', 'name-group'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.remove();
     });

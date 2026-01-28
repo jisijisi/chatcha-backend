@@ -2,7 +2,7 @@
 import fetch from 'node-fetch';
 import { GoogleGenerativeAI } from "@google/generative-ai"; 
 import { pool } from '../config/database.js';
-import { ragSystem, databaseCacheManager } from '../services/ragService.js';
+import { ragSystem, databaseCacheManager, getUserPermissions } from '../services/ragService.js';
 import { getEnhancedContext } from '../services/aiService.js';
 import { ToolService } from '../services/toolService.js'; 
 import { IntentService } from '../services/intentService.js';
@@ -132,17 +132,30 @@ export const askQuestion = async (req, res) => {
     const currentCacheInfo = cacheService.getCacheInfo();
     const currentSignature = currentCacheInfo ? currentCacheInfo.signature : null;
 
-    const cachedResponse = responseCache.get(prompt, currentSignature);
-    if (cachedResponse) {
-        return res.json({
-            ...cachedResponse,
-            meta: { 
-                ...cachedResponse.meta, 
-                cached: true,
-                response_time: "0ms (Cached)"
-            }
-        });
+    // Fetch User Permissions for Secure Cache Access
+    let userPermissions = null;
+    if (userEmail) {
+        try {
+            userPermissions = await getUserPermissions(userEmail);
+        } catch (err) {
+            console.error("⚠️ Failed to fetch permissions for cache check:", err);
+            // If permission fetch fails, treat as no permissions (safe default)
+            userPermissions = [];
+        }
     }
+
+    // ⚡ CACHE DISABLED
+    // const cachedResponse = responseCache.get(prompt, currentSignature, userPermissions);
+    // if (cachedResponse) {
+    //     return res.json({
+    //         ...cachedResponse,
+    //         meta: { 
+    //             ...cachedResponse.meta, 
+    //             cached: true,
+    //             response_time: "0ms (Cached)"
+    //         }
+    //     });
+    // }
 
     let finalAnswer = "";
 
@@ -346,6 +359,29 @@ export const askQuestion = async (req, res) => {
                 if (use_rag && ragSystem.isInitialized) {
                     // ⚡ OPTIMIZED: Reduced top_k from 15 to 8 for speed
                     const ragResult = await getEnhancedContext(searchTerms, ragSystem, 8, userEmail);
+                    
+                    // 🚫 BLOCK ACCESS IF PERMISSIONS FAIL
+                    if (ragResult.accessDenied) {
+                        return res.json({
+                            answer: ragResult.finalContext,
+                            intent: intent,
+                            analysis: {
+                                emotion: intentData.user_emotion,
+                                complexity: intentData.complexity,
+                                is_followup: intentData.is_followup,
+                                rewritten: searchTerms,
+                                pending_action: null
+                            },
+                            accessed_documents: [],
+                            accessed_tools: [],
+                            source_categories: {},
+                            rag_used: false,
+                            tool_used: false,
+                            success: true,
+                            meta: { thinking_phrases: thinkingPhrases }
+                        });
+                    }
+                    
                     ragContext = ragResult.finalContext;
                     sourceMap = ragResult.sourceMap || {};
                     sourceCategories = ragResult.categoryMap || {};
@@ -517,10 +553,12 @@ Based on conversation history, this interprets to: "${searchTerms}"
         // 6. PROCESS SOURCES
         let cleanAnswer = finalAnswer;
         let citedSourceNames = [];
+        let missingKnowledge = false;
 
         // --- NEW: MISSING KNOWLEDGE CHECK ---
         if (cleanAnswer.includes('<MISSING_KNOWLEDGE>')) {
             console.log("🚩 Missing knowledge detected in response.");
+            missingKnowledge = true;
             cleanAnswer = cleanAnswer.replace('<MISSING_KNOWLEDGE>', '').trim();
             
             // Only notify if user is logged in (not guest)
@@ -537,6 +575,7 @@ Based on conversation history, this interprets to: "${searchTerms}"
             cleanAnswer.toLowerCase().includes("i recommend checking with hr")
         ) {
              console.log("🚩 Implicit missing knowledge detected.");
+             missingKnowledge = true;
              if (userEmail) {
                 const notifyMessage = `Missing Knowledge (Implicit): User "${userName}" asked: "${prompt}". AI response indicated lack of specific info.`;
                 notifyAdmins(notifyMessage).catch(err => console.error('Failed to notify admins:', err));
@@ -549,55 +588,61 @@ Based on conversation history, this interprets to: "${searchTerms}"
             citedSourceNames = splitArr[1].split(/,|\n/).map(s => s.trim()).filter(s => s.length > 0);
         }
 
-        const documentSources = [];
-        const toolSources = [];
+        let documentSources = [];
+        let toolSources = [];
         const availableSourceNames = Object.keys(sourceMap);
 
-        if (citedSourceNames.length > 0) {
-            for (const citedName of citedSourceNames) {
-                const match = availableSourceNames.find(
-                    name => name.toLowerCase().includes(citedName.toLowerCase()) || 
-                            citedName.toLowerCase().includes(name.toLowerCase())
-                );
-                if (match) {
-                    const docId = sourceMap[match];
-                    if (typeof docId === 'number' && docId > 0) {
-                        if (!documentSources.some(d => d.id === docId)) {
-                            documentSources.push({ id: docId, name: match, category: sourceCategories[match] || 'General' });
+        // ONLY process sources if knowledge is NOT missing
+        if (!missingKnowledge) {
+            if (citedSourceNames.length > 0) {
+                for (const citedName of citedSourceNames) {
+                    const match = availableSourceNames.find(
+                        name => name.toLowerCase().includes(citedName.toLowerCase()) || 
+                                citedName.toLowerCase().includes(name.toLowerCase())
+                    );
+                    if (match) {
+                        const docId = sourceMap[match];
+                        if (typeof docId === 'number' && docId > 0) {
+                            if (!documentSources.some(d => d.id === docId)) {
+                                documentSources.push({ id: docId, name: match, category: sourceCategories[match] || 'General' });
+                            }
+                        } else if (docId !== -1) {
+                            documentSources.push({ id: docId || 'ext', name: match, category: 'External' });
                         }
-                    } else if (docId !== -1) {
-                        documentSources.push({ id: docId || 'ext', name: match, category: 'External' });
                     }
                 }
-            }
-        } 
-        
-        // Fallback: If no documents were matched (either no citations or citations failed matching),
-        // but we have available sources and intent is KB, use the top source.
-        if (documentSources.length === 0 && intent === 'KNOWLEDGE_BASE' && availableSourceNames.length > 0) {
-            const topName = availableSourceNames[0];
-            const topId = sourceMap[topName];
-            if (topId !== -1) {
-                documentSources.push({ id: topId, name: topName, category: sourceCategories[topName] || 'General' });
-            }
-        }
-
-        for (const toolId of usedToolIds) {
-            if (toolId === "calendar-tool") {
-                toolSources.push({ id: "calendar", name: "Google Calendar", category: "Personal Integration" });
             } 
-            else if (toolId === "gmail-tool") {
-                toolSources.push({ id: "gmail", name: "Google Mail", category: "Personal Integration" });
+            
+            // Fallback: If no documents were matched (either no citations or citations failed matching),
+            // but we have available sources and intent is KB, use the top source.
+            if (documentSources.length === 0 && intent === 'KNOWLEDGE_BASE' && availableSourceNames.length > 0) {
+                const topName = availableSourceNames[0];
+                const topId = sourceMap[topName];
+                if (topId !== -1) {
+                    documentSources.push({ id: topId, name: topName, category: sourceCategories[topName] || 'General' });
+                }
             }
-            else {
-                const toolName = Object.keys(sourceMap).find(key => sourceMap[key] === -1 && key.includes('Live')) || 'Live Data Tool';
-                toolSources.push({ id: toolId, name: toolName, category: 'Live Data' });
+
+            for (const toolId of usedToolIds) {
+                if (toolId === "calendar-tool") {
+                    toolSources.push({ id: "calendar", name: "Google Calendar", category: "Personal Integration" });
+                } 
+                else if (toolId === "gmail-tool") {
+                    toolSources.push({ id: "gmail", name: "Google Mail", category: "Personal Integration" });
+                }
+                else {
+                    const toolName = Object.keys(sourceMap).find(key => sourceMap[key] === -1 && key.includes('Live')) || 'Live Data Tool';
+                    toolSources.push({ id: toolId, name: toolName, category: 'Live Data' });
+                }
             }
+        } else {
+            console.log("🚫 Skipping source population due to missing knowledge.");
         }
 
         const responsePayload = { 
             answer: cleanAnswer,
             intent: intent,
+            missing_knowledge: missingKnowledge,
             analysis: {
                 emotion: intentData.user_emotion,
                 complexity: intentData.complexity,
@@ -617,10 +662,10 @@ Based on conversation history, this interprets to: "${searchTerms}"
             meta: { thinking_phrases: thinkingPhrases }
         };
 
-        // ⚡ CACHE THE RESPONSE (If it's a good response)
-        if (intent === 'GENERAL' || intent === 'KNOWLEDGE_BASE') {
-            responseCache.set(prompt, responsePayload, currentSignature);
-        }
+        // ⚡ CACHE THE RESPONSE (If it's a good response) - DISABLED
+        // if (intent === 'GENERAL' || intent === 'KNOWLEDGE_BASE') {
+        //     responseCache.set(prompt, responsePayload, currentSignature);
+        // }
 
         res.json(responsePayload);
 

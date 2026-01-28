@@ -63,6 +63,21 @@ function setupKnowledgeBase() {
   setupPaginationListeners();
 }
 
+function setKnowledgeLoading(isLoading) {
+  const content = document.getElementById('knowledge-content');
+  const skeleton = document.getElementById('knowledge-skeleton');
+  
+  if (!content || !skeleton) return;
+
+  if (isLoading) {
+    content.style.display = 'none';
+    skeleton.style.display = 'block';
+  } else {
+    content.style.display = 'block';
+    skeleton.style.display = 'none';
+  }
+}
+
 function setupPaginationListeners() {
   // Document Pagination
   const docPrev = document.getElementById('doc-prev-btn');
@@ -398,9 +413,10 @@ function handleProgressUpdate(data) {
       const statusMessage = document.getElementById('cache-status-message');
       if (statusMessage) {
         let message = data.message;
-        if (data.detail) {
-          message += ` (${data.detail.current}/${data.detail.total} - ${data.detail.percentage}%)`;
-        }
+        // Removed redundant detail appending as per user request
+        // if (data.detail) {
+        //   message += ` (${data.detail.current}/${data.detail.total} - ${data.detail.percentage}%)`;
+        // }
         statusMessage.textContent = message;
       }
       break;
@@ -480,6 +496,7 @@ function switchKBTab(tabName) {
 
 // Main data loader
 async function loadKnowledgeBaseData() {
+  setKnowledgeLoading(true);
   try {
     // Load data concurrently
     await Promise.all([
@@ -493,13 +510,28 @@ async function loadKnowledgeBaseData() {
   } catch (error) {
     console.error('❌ Error loading KB data:', error);
     showToast('Failed to load knowledge base data', 'error');
+  } finally {
+    setKnowledgeLoading(false);
   }
+}
+
+// Helper to generate skeleton rows
+function getSkeletonRows(cols = 5, rows = 5) {
+  let html = '';
+  for (let i = 0; i < rows; i++) {
+    html += `<tr class="skeleton-row">`;
+    for (let j = 0; j < cols; j++) {
+      html += `<td><div class="skeleton" style="width: 100%; height: 20px; border-radius: 4px;"></div></td>`;
+    }
+    html += `</tr>`;
+  }
+  return html;
 }
 
 // Document management
 async function loadDocuments() {
   const tbody = document.getElementById('documents-table-body');
-  if (tbody) tbody.innerHTML = '<tr><td colspan="5" class="loading-cell">Loading documents...</td></tr>';
+  if (tbody) tbody.innerHTML = getSkeletonRows(5);
 
   try {
     const search = document.getElementById('doc-search')?.value || '';
@@ -1109,7 +1141,7 @@ async function previewDocument(id) {
 // Categories and Subcategories management
 async function loadCategories() {
   const tbody = document.getElementById('categories-table-body');
-  if (tbody) tbody.innerHTML = '<tr><td colspan="4" class="loading-cell">Loading categories...</td></tr>';
+  if (tbody) tbody.innerHTML = getSkeletonRows(4);
 
   try {
     const params = new URLSearchParams();
@@ -1156,7 +1188,7 @@ function renderCategoriesTable() {
 
     return `<tr>
       <td data-label="Category Name"><strong>${cat.name}</strong></td>
-      <td data-label="Subcategories">-</td> 
+      <td data-label="Subcategories">${cat.subcategory_count || 0}</td> 
       <td data-label="Description">${escapeHtml(description)}</td>
       <td data-label="Actions">
         <button class="action-btn action-btn-edit" onclick="window.KnowledgeBase.editCategory(${cat.id})">Edit</button>
@@ -1168,7 +1200,7 @@ function renderCategoriesTable() {
 
 async function loadSubcategories() {
   const tbody = document.getElementById('subcategories-table-body');
-  if (tbody) tbody.innerHTML = '<tr><td colspan="4" class="loading-cell">Loading subcategories...</td></tr>';
+  if (tbody) tbody.innerHTML = getSkeletonRows(4);
 
   try {
     const filter = document.getElementById('subcat-category-filter')?.value || '';

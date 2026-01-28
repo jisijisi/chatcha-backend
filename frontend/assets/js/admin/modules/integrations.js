@@ -1102,10 +1102,14 @@ function addSapParameterRow(param = {}) {
 async function loadIntegrationData() {
   const liveTbody = document.getElementById('live-sources-table-body');
   const flagsTbody = document.getElementById('internal-flags-table-body');
-  if (!liveTbody) return;
-  
-  liveTbody.innerHTML = '<tr><td colspan="5" class="loading-cell">Loading active sources...</td></tr>';
-  if (flagsTbody) flagsTbody.innerHTML = '<tr><td colspan="4" class="loading-cell">Loading system flags...</td></tr>';
+  const skeleton = document.getElementById('integrations-skeleton');
+  const content = document.getElementById('integrations-content');
+
+  // Show Skeleton
+  if (skeleton && content) {
+    content.style.display = 'none';
+    skeleton.style.display = 'block';
+  }
   
   try {
     const data = await apiFetch('/admin/integrations');
@@ -1114,8 +1118,14 @@ async function loadIntegrationData() {
     renderInternalFlagsTable();
   } catch (error) {
     console.error(error);
-    liveTbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:red;">Failed to load sources.</td></tr>';
+    if (liveTbody) liveTbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:red;">Failed to load sources.</td></tr>';
     if (flagsTbody) flagsTbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:red;">Failed to load system flags.</td></tr>';
+  } finally {
+      // Hide Skeleton
+      if (skeleton && content) {
+          content.style.display = 'block';
+          skeleton.style.display = 'none';
+      }
   }
 }
 

@@ -54,6 +54,12 @@ const VIEW_CONFIG = {
       module.setupSettingsManagement();
       return module.loadSettingsData();
     })
+  },
+  speech: {
+    title: 'Pronunciation Rules',
+    loader: () => import('../modules/speech.js').then(module => {
+      module.setupSpeechManagement();
+    })
   }
 };
 

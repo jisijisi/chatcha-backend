@@ -1,11 +1,12 @@
 // backend/services/ttsService.js
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { normalizeForSpeech } from "../utils/speechNormalizer.js";
 
 // 📋 Priority List of Models to try
 // We use the exact IDs found in your diagnostic script.
 const AVAILABLE_MODELS = [
-  "gemini-2.5-flash-preview-tts",
-  "gemini-2.5-pro-preview-tts"
+  "gemini-2.5-pro-preview-tts",
+  "gemini-2.5-flash-preview-tts"
 ];
 
 let genAI = null;
@@ -27,12 +28,34 @@ function getGenAIClient() {
 async function tryGenerateWithModel(client, modelName, text, voiceName) {
   console.log(`🔊 Attempting TTS with model: ${modelName}...`);
   
+  // Check for SSML/Phonetics
+  const hasSSML = /<speak>|<phoneme/i.test(text);
+  let promptText = text;
+
+  if (hasSSML) {
+    console.log("🎤 SSML tags detected. Adding pronunciation instructions...");
+    promptText = `Please generate natural-sounding speech for the following text. 
+    Important: The text contains SSML-like tags for specific pronunciations. 
+    - When you see <phoneme alphabet="ipa" ph="...">word</phoneme>, pronounce "word" exactly as the IPA phonetic string specified in 'ph'.
+    - Do NOT read the XML tags (like <speak>, <phoneme>, </phoneme>) out loud.
+    - Maintain smooth, natural prosody. Do NOT pause or break the flow when encountering these tags.
+    - Only speak the content.
+    
+    Text to speak:
+    ${text}`;
+    
+    console.log("📝 [TTS Service] Final Prompt being sent to model:");
+    console.log(promptText);
+  }
+
+  // Use system instruction to ensure model focuses on audio generation
   const model = client.getGenerativeModel({ 
-    model: modelName 
+    model: modelName,
+    // systemInstruction removed as it causes issues with TTS models
   });
 
   const result = await model.generateContent({
-    contents: [{ parts: [{ text: text }] }],
+    contents: [{ role: 'user', parts: [{ text: promptText }] }],
     generationConfig: {
       responseModalities: ["AUDIO"], 
       speechConfig: {
@@ -56,6 +79,7 @@ async function tryGenerateWithModel(client, modelName, text, voiceName) {
     return { data, mimeType };
   }
   
+  console.warn(`⚠️ TTS No Audio for ${modelName}. Response:`, JSON.stringify(response, null, 2));
   throw new Error(`Model ${modelName} returned no audio data.`);
 }
 
@@ -67,6 +91,9 @@ async function tryGenerateWithModel(client, modelName, text, voiceName) {
  * @returns {Promise<string>} - The base64 encoded audio string.
  */
 export async function generateSpeech(text, voiceName = "Leda") {
+  // Normalize text for better pronunciation (native languages, acronyms, etc.)
+  const normalizedText = await normalizeForSpeech(text);
+
   const client = getGenAIClient();
   let lastError = null;
 
@@ -74,7 +101,7 @@ export async function generateSpeech(text, voiceName = "Leda") {
   for (const modelName of AVAILABLE_MODELS) {
     try {
       // If successful, return immediately (stopping the loop)
-      const audio = await tryGenerateWithModel(client, modelName, text, voiceName);
+      const audio = await tryGenerateWithModel(client, modelName, normalizedText, voiceName);
       return audio; 
     } catch (error) {
       console.warn(`⚠️ TTS Failed on ${modelName}: ${error.message}`);

@@ -254,9 +254,10 @@ function handleProgressUpdate(data) {
       const statusMessage = document.getElementById('cache-status-message');
       if (statusMessage) {
         let message = data.message;
-        if (data.detail) {
-          message += ` (${data.detail.current}/${data.detail.total} - ${data.detail.percentage}%)`;
-        }
+        // Removed redundant detail appending as per user request
+        // if (data.detail) {
+        //   message += ` (${data.detail.current}/${data.detail.total} - ${data.detail.percentage}%)`;
+        // }
         statusMessage.textContent = message;
       }
       break;
@@ -401,10 +402,29 @@ function showCacheRegenerationError(errorMessage) {
 
 // Load settings data
 async function loadSettingsData() {
-  await Promise.all([
-    loadGeneralSettings(),
-    loadSystemHealth()
-  ]);
+  const skeleton = document.getElementById('settings-skeleton');
+  const content = document.getElementById('settings-content');
+
+  // Show Skeleton
+  if (skeleton && content) {
+    content.style.display = 'none';
+    skeleton.style.display = 'block';
+  }
+
+  try {
+      await Promise.all([
+        loadGeneralSettings(),
+        loadSystemHealth()
+      ]);
+  } catch(error) {
+      console.error('Failed to load settings data', error);
+  } finally {
+      // Hide Skeleton
+      if (skeleton && content) {
+          content.style.display = 'block';
+          skeleton.style.display = 'none';
+      }
+  }
 }
 
 // === UPDATED: LOAD SETTINGS WITH TWO DROPDOWNS & SAFETY ===

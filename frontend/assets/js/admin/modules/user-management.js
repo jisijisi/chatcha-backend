@@ -21,20 +21,12 @@ function setupUserManagement() {
   if (isInitialized) return;
   console.log('Setting up User Management module...');
   
-  const addUserBtn = document.getElementById('add-user-btn');
   const modalClose = document.getElementById('user-modal-close');
   const modalCancel = document.getElementById('user-modal-cancel');
   const modalSave = document.getElementById('user-modal-save');
   const searchInput = document.getElementById('user-search');
   const deptFilter = document.getElementById('user-dept-filter');
 
-  // Bulk Upload Setup
-  const bulkBtn = document.getElementById('bulk-user-btn');
-  const bulkClose = document.getElementById('bulk-upload-close');
-  const bulkCancel = document.getElementById('bulk-upload-cancel');
-  const bulkSave = document.getElementById('bulk-upload-save');
-
-  if (addUserBtn) addUserBtn.addEventListener('click', () => openUserModal());
   if (modalClose) modalClose.addEventListener('click', closeUserModal);
   if (modalCancel) modalCancel.addEventListener('click', closeUserModal);
   if (modalSave) modalSave.addEventListener('click', saveUser);
@@ -67,15 +59,25 @@ function setupUserManagement() {
     });
   }
 
-  if (bulkBtn) bulkBtn.addEventListener('click', openBulkUploadModal);
-  if (bulkClose) bulkClose.addEventListener('click', closeBulkUploadModal);
-  if (bulkCancel) bulkCancel.addEventListener('click', closeBulkUploadModal);
-  if (bulkSave) bulkSave.addEventListener('click', submitBulkUpload);
-
   isInitialized = true;
   
   // Initial load of departments
   loadDepartments();
+}
+
+function setUsersLoading(isLoading) {
+  const content = document.getElementById('users-content');
+  const skeleton = document.getElementById('users-skeleton');
+
+  if (!content || !skeleton) return;
+
+  if (isLoading) {
+    content.style.display = 'none';
+    skeleton.style.display = 'block';
+  } else {
+    content.style.display = 'block';
+    skeleton.style.display = 'none';
+  }
 }
 
 // Load departments
@@ -111,6 +113,7 @@ async function loadDepartments() {
 
 // Load users
 async function loadUsers(page = 1) {
+  setUsersLoading(true);
   try {
     const searchInput = document.getElementById('user-search');
     const deptFilter = document.getElementById('user-dept-filter');
@@ -147,6 +150,8 @@ async function loadUsers(page = 1) {
   } catch (error) {
     console.error('❌ Error loading users:', error);
     showToast('Failed to load users', 'error');
+  } finally {
+    setUsersLoading(false);
   }
 }
 
@@ -362,68 +367,7 @@ async function saveUser() {
   }
 }
 
-// Bulk upload functionality
-function openBulkUploadModal() {
-  openModal('bulk-upload-modal');
-  document.getElementById('bulk-excel-upload').value = '';
-  document.getElementById('bulk-upload-status').innerHTML = '';
-}
 
-function closeBulkUploadModal() {
-  closeModal('bulk-upload-modal');
-}
-
-async function submitBulkUpload() {
-  const fileInput = document.getElementById('bulk-excel-upload');
-  const file = fileInput.files[0];
-  const btn = document.getElementById('bulk-upload-save');
-  const statusDiv = document.getElementById('bulk-upload-status');
-
-  if (!file) {
-    showToast('Please select an Excel file', 'warning');
-    return;
-  }
-
-  setButtonLoading(btn, true);
-  statusDiv.innerHTML = '<p style="color: #666;">Uploading and processing...</p>';
-
-  try {
-    const formData = new FormData();
-    formData.append('file', file);
-
-    const response = await fetch(`${window.API_BASE}/admin/users/bulk`, {
-      method: 'POST',
-      headers: {
-        'Authorization': window.getAuthToken()
-      },
-      body: formData
-    });
-
-    const result = await response.json();
-
-    if (!response.ok) throw new Error(result.error || 'Upload failed');
-
-    statusDiv.innerHTML = `
-      <div class="alert alert-success">
-        <strong>Success!</strong> ${result.message}<br>
-        <small>Added: ${result.stats.added}, Updated: ${result.stats.updated}, Failed: ${result.stats.failed}</small>
-      </div>
-    `;
-    
-    setTimeout(() => {
-      closeBulkUploadModal();
-      loadUsers();
-      showToast('Bulk upload complete', 'success');
-    }, 2000);
-
-  } catch (error) {
-    console.error(error);
-    statusDiv.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
-    showToast('Upload failed', 'error');
-  } finally {
-    setButtonLoading(btn, false);
-  }
-}
 
 // User History Functionality
 async function viewUserHistory(userId, userName) {

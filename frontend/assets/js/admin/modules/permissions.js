@@ -203,6 +203,21 @@ function setupPermissionsManagement() {
   }
 }
 
+function setPermissionsLoading(isLoading) {
+  const content = document.getElementById('permissions-content');
+  const skeleton = document.getElementById('permissions-skeleton');
+
+  if (!content || !skeleton) return;
+
+  if (isLoading) {
+    content.style.display = 'none';
+    skeleton.style.display = 'block';
+  } else {
+    content.style.display = 'block';
+    skeleton.style.display = 'none';
+  }
+}
+
 // Setup the toggle all button with fresh event listener
 function setupToggleAllButton(btn) {
   // Remove any existing listeners by cloning and replacing
@@ -246,9 +261,7 @@ function handleToggleAllClick() {
 
 // Load permission users
 async function loadPermissionUsers() {
-  const tbody = document.getElementById('permissions-table-body');
-  if (tbody) tbody.innerHTML = '<tr><td colspan="5" class="loading-cell">Loading users...</td></tr>';
-
+  setPermissionsLoading(true);
   try {
     const search = document.getElementById('perm-search')?.value || '';
     const dept = document.getElementById('perm-dept-filter')?.value || '';
@@ -289,6 +302,8 @@ async function loadPermissionUsers() {
   } catch (error) {
     console.error('❌ Error loading users for permissions:', error);
     showToast('Failed to load users', 'error');
+  } finally {
+    setPermissionsLoading(false);
   }
 }
 

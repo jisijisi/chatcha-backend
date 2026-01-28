@@ -308,6 +308,16 @@ window.SkeletonLoader = SkeletonLoader;
 // Expose showConfirmationModal if needed by inline scripts
 window.showConfirmationModal = showConfirmationModal;
 
+export function confirmAction(title, message, onConfirm) {
+  showConfirmationModal({
+    title,
+    message,
+    confirmText: 'Confirm',
+    confirmType: 'danger',
+    onConfirm
+  });
+}
+
 export {
   showToast,
   openModal,

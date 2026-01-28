@@ -93,6 +93,36 @@ function setupChatManagement() {
   }
 }
 
+function setChatsLoading(isLoading) {
+  const content = document.getElementById('chats-content');
+  const skeleton = document.getElementById('chats-skeleton');
+
+  if (!content || !skeleton) return;
+
+  if (isLoading) {
+    content.style.display = 'none';
+    skeleton.style.display = 'block';
+  } else {
+    content.style.display = 'block';
+    skeleton.style.display = 'none';
+  }
+}
+
+function setAnalyticsLoading(isLoading) {
+  const content = document.getElementById('chat-analytics-content');
+  const skeleton = document.getElementById('chat-analytics-skeleton');
+
+  if (!content || !skeleton) return;
+
+  if (isLoading) {
+    content.style.display = 'none';
+    skeleton.style.display = 'block';
+  } else {
+    content.style.display = 'block';
+    skeleton.style.display = 'none';
+  }
+}
+
 // Tab management
 function switchChatTab(tabName) {
   console.log('Switching chat tab to:', tabName);
@@ -120,11 +150,25 @@ async function loadChatData() {
   else await loadChatAnalytics();
 }
 
+// Helper to generate skeleton rows
+function getSkeletonRows(cols = 5, rows = 5) {
+  let html = '';
+  for (let i = 0; i < rows; i++) {
+    html += `<tr class="skeleton-row">`;
+    for (let j = 0; j < cols; j++) {
+      html += `<td><div class="skeleton" style="width: 100%; height: 20px; border-radius: 4px;"></div></td>`;
+    }
+    html += `</tr>`;
+  }
+  return html;
+}
+
 // Chat history management
 async function loadChats() {
   const tbody = document.getElementById('chat-history-table-body');
-  if (tbody) tbody.innerHTML = '<tr><td colspan="5" class="loading-cell">Loading chats...</td></tr>';
+  if (tbody) tbody.innerHTML = getSkeletonRows(5);
 
+  setChatsLoading(true);
   try {
     const search = document.getElementById('chat-search')?.value || '';
     const dept = document.getElementById('chat-dept-filter')?.value || '';
@@ -152,6 +196,8 @@ async function loadChats() {
   } catch (error) {
     console.error('Error loading chats:', error);
     showToast('Failed to load chat history', 'error');
+  } finally {
+    setChatsLoading(false);
   }
 }
 
@@ -324,6 +370,7 @@ async function deleteChatSession(sessionId) {
 
 // Chat analytics
 async function loadChatAnalytics() {
+  setAnalyticsLoading(true);
   try {
     const data = await apiFetch('/admin/chats/analytics');
     
@@ -337,6 +384,8 @@ async function loadChatAnalytics() {
   } catch (error) {
     console.error('Analytics load error:', error);
     showToast('Failed to load analytics', 'error');
+  } finally {
+    setAnalyticsLoading(false);
   }
 }
 

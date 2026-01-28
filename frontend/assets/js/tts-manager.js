@@ -51,8 +51,8 @@ export class TTSManager {
         if (!this.hasInitialized) await this.init();
 
         try {
-            const allowedVoices = ['Puck','Charon','Kore','Fenrir','Aoede'];
-            const voice = allowedVoices.includes(CONFIG.TTS_VOICE_NAME) ? CONFIG.TTS_VOICE_NAME : 'Kore';
+            const allowedVoices = ['Puck','Charon','Kore','Fenrir','Aoede','Leda'];
+            const voice = allowedVoices.includes(CONFIG.TTS_VOICE_NAME) ? CONFIG.TTS_VOICE_NAME : 'Leda';
             const response = await fetch(`${CONFIG.API_BASE}/tts/speak`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },

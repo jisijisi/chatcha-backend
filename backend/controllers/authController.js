@@ -152,7 +152,9 @@ export const verifyOtp = async (req, res) => {
         let userId = existing.length ? existing[0].id : null;
         let userName = existing.length ? existing[0].name : null;
         let isNewUser = false;
-        let userType = 'external'; // Default to external until verified
+        
+        const isCompanyEmail = email.toLowerCase().endsWith('@cdo.com.ph');
+        let userType = isCompanyEmail ? 'employee' : 'external';
 
         if (existing.length > 0) {
             // Determine type based on DB record
@@ -166,10 +168,9 @@ export const verifyOtp = async (req, res) => {
             isNewUser = true;
             userName = email.split('@')[0]; // Default name
             
-            // Set defaults to NULL to trigger Onboarding Modal
-            // We do NOT assume employee status based on email anymore
-            const defaultDept = null; 
-            const defaultPos = null;
+            // Auto-set department and position for company emails
+            const defaultDept = isCompanyEmail ? 'General' : null; 
+            const defaultPos = isCompanyEmail ? 'Employee' : null;
 
             const [result] = await pool.execute(
                 `INSERT INTO employees (name, email, department, position, is_active, created_at, updated_at) 
@@ -178,24 +179,39 @@ export const verifyOtp = async (req, res) => {
             );
             userId = result.insertId;
             
-            // Default Permissions: EXTERNAL (Safe Default)
-            // They will be upgraded to Employee permissions if they validate their ID in the modal
-            const [categories] = await pool.execute(
-                `SELECT id FROM knowledge_categories 
-                 WHERE LOWER(name) LIKE 'company-general%' 
-                    OR LOWER(name) LIKE 'company general%'
-                    OR LOWER(name) LIKE 'wikipedia%' 
-                    OR LOWER(name) LIKE 'wikepedia%'`
-            );
-            if (categories.length > 0) {
-                const values = categories.map(cat => [userId, cat.id, null, null, 'read', null]);
-                const placeholders = values.map(() => '(?, ?, ?, ?, ?, ?)').join(', ');
-                const flatValues = values.flat();
-                await pool.execute(
-                    `INSERT INTO employee_access_permissions (employee_id, category_id, subcategory_id, source_id, access_level, granted_by)
-                     VALUES ${placeholders}`,
-                    flatValues
+            // Set Permissions
+            if (isCompanyEmail) {
+                // AUTO-PROMOTE: Grant FULL access immediately for company users
+                const [allCategories] = await pool.execute('SELECT id FROM knowledge_categories');
+                if (allCategories.length > 0) {
+                    const values = allCategories.map(cat => [userId, cat.id, null, null, 'read', null]);
+                    const placeholders = values.map(() => '(?, ?, ?, ?, ?, ?)').join(', ');
+                    const flatValues = values.flat();
+                    await pool.execute(
+                        `INSERT INTO employee_access_permissions (employee_id, category_id, subcategory_id, source_id, access_level, granted_by)
+                         VALUES ${placeholders}`,
+                        flatValues
+                    );
+                }
+            } else {
+                // Default Permissions: EXTERNAL (Safe Default for non-company users)
+                const [categories] = await pool.execute(
+                    `SELECT id FROM knowledge_categories 
+                     WHERE LOWER(name) LIKE 'company-general%' 
+                        OR LOWER(name) LIKE 'company general%'
+                        OR LOWER(name) LIKE 'wikipedia%' 
+                        OR LOWER(name) LIKE 'wikepedia%'`
                 );
+                if (categories.length > 0) {
+                    const values = categories.map(cat => [userId, cat.id, null, null, 'read', null]);
+                    const placeholders = values.map(() => '(?, ?, ?, ?, ?, ?)').join(', ');
+                    const flatValues = values.flat();
+                    await pool.execute(
+                        `INSERT INTO employee_access_permissions (employee_id, category_id, subcategory_id, source_id, access_level, granted_by)
+                         VALUES ${placeholders}`,
+                        flatValues
+                    );
+                }
             }
         } else if (existing[0].is_active === 0) {
             await pool.execute(

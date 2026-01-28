@@ -449,12 +449,11 @@ class ChatApp {
                 // Retrieve the validated/selected data from localStorage
                 // (Set by modal.js before calling this callback)
                 const isEmployee = localStorage.getItem('is_cdo_employee') === 'yes';
-                const deptVal = isEmployee ? localStorage.getItem('user_department') : 'External';
-                const positionVal = isEmployee ? localStorage.getItem('user_position') : 'External User';
                 
-                // We need to show a loading state?
-                // modal.js handles the button loading state, but we need to do the API call here.
-                // Note: modal.js awaits the callback result if it returns a promise.
+                // If they are an employee but dept/pos are missing, use defaults
+                // The backend also handles this, but we sync local state here.
+                const deptVal = isEmployee ? (localStorage.getItem('user_department') || 'General') : 'External';
+                const positionVal = isEmployee ? (localStorage.getItem('user_position') || 'Employee') : 'External User';
                 
                 const email = this.authManager.getUserEmail();
                 

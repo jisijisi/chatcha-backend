@@ -74,7 +74,7 @@ export default function attachFullDuplexWS(server) {
             let match;
             while ((match = sentenceRegex.exec(buffer)) !== null) {
               const sentence = match[0].trim();
-              if (sentence.length >= 20) {
+              if (sentence.length >= 2) {
                 chunks.push(sentence);
                 consumedEnd = match.index + match[0].length;
               }
@@ -165,9 +165,12 @@ ${finalContext}
 
               const result = await model.generateContentStream(fullPrompt);
               
+              let fullTextAccumulated = "";
+
               for await (const chunk of result.stream) {
                 const chunkText = chunk.text();
                 sentenceBuffer += chunkText;
+                fullTextAccumulated += chunkText;
 
                 // Extract prosody-safe chunks (sentences first, clauses as fallback)
                 const { chunks, remaining } = extractProsodySafeChunks(sentenceBuffer);
@@ -184,11 +187,11 @@ ${finalContext}
                   }
 
                   // Guard: only send prosody-safe chunks to TTS
-                  // Must end with allowed punctuation and have >= 5 words
+                  // We relax the word count check to ensure short but complete sentences (e.g. "Yes.") are spoken.
                   const endsWithPunct = /[.!?,;:]$/.test(fullSentence.trim());
-                  const wordCount = fullSentence.trim().split(/\s+/).filter(Boolean).length;
-                  if (!endsWithPunct || wordCount < 5) {
-                    // Not safe for TTS yet — skip TTS generation for this chunk
+                  
+                  if (!endsWithPunct && fullSentence.length < 10) {
+                    // Only skip if it's a very short fragment without punctuation
                     continue;
                   }
 
@@ -216,10 +219,8 @@ ${finalContext}
                    ws.send(JSON.stringify({ type: 'text_chunk', text: finalText }));
                  } catch (e) { console.error('WS send final text_chunk error', e); }
 
-                 // Only generate TTS if the remaining text is prosody-safe
-                 const endsWithPunct = /[.!?,;:]$/.test(finalText);
-                 const wordCount = finalText.split(/\s+/).filter(Boolean).length;
-                 if (endsWithPunct && wordCount >= 5) {
+                 // Always generate TTS for the final chunk if it has content
+                 if (finalText.length > 0) {
                    const audioTask = ttsService.generateSpeech(finalText, "Leda")
                      .then(audio => ({ text: finalText, audio }))
                      .catch(() => null);
@@ -281,11 +282,20 @@ ${finalContext}
 
                 // Signal completion with rich Metadata
                 sendQueue = sendQueue.then(() => {
+                  const isMissingKnowledge = fullTextAccumulated.includes('<MISSING_KNOWLEDGE>') || 
+                                           fullTextAccumulated.toLowerCase().includes("don't have knowledge about this") ||
+                                           fullTextAccumulated.toLowerCase().includes("i recommend checking with hr");
+                  
+                  if (isMissingKnowledge) {
+                    console.log("🚫 WS: Missing knowledge detected, clearing sources.");
+                  }
+
                   ws.send(JSON.stringify({ 
                     type: 'done',
                     metadata: {
-                      accessed_documents: documentSources || [],
-                      source_categories: categoryMap || {}
+                      accessed_documents: isMissingKnowledge ? [] : (documentSources || []),
+                      source_categories: isMissingKnowledge ? {} : (categoryMap || {}),
+                      missing_knowledge: isMissingKnowledge
                     }
                   }));
                 });

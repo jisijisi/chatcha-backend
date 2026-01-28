@@ -409,9 +409,14 @@ export const getCategories = async (req, res) => {
 
     // Paginated results
     const [categories] = await pool.execute(`
-      SELECT id, name, description FROM knowledge_categories 
+      SELECT 
+        kc.id, 
+        kc.name, 
+        kc.description,
+        (SELECT COUNT(*) FROM knowledge_subcategories ksc WHERE ksc.category_id = kc.id) as subcategory_count
+      FROM knowledge_categories kc
       ${whereClause}
-      ORDER BY name
+      ORDER BY kc.name
       LIMIT ${Number(limit)} OFFSET ${Number(offset)}
     `, params);
 

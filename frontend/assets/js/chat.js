@@ -204,9 +204,11 @@ export class ChatManager {
           }
             else if (msg.type === 'done') {
               console.log("✅ Stream Complete");
+              let missingKnowledge = false;
               if (msg.metadata) {
                 accessedDocuments = msg.metadata.accessed_documents || [];
                 sourceCategories = msg.metadata.source_categories || {};
+                missingKnowledge = msg.metadata.missing_knowledge || false;
               }
 
               // When done, ensure we resolve document IDs to human-friendly names
@@ -225,10 +227,10 @@ export class ChatManager {
                           resolvedDocs = fetched;
                         }
                       }
-                      await this.finalizeFdSession(question, fullTextAccumulator, botMessage, resolvedDocs, sourceCategories);
+                      await this.finalizeFdSession(question, fullTextAccumulator, botMessage, resolvedDocs, sourceCategories, missingKnowledge);
                     } catch (e) {
                       console.warn('Error finalizing fd session with resolved docs', e);
-                      try { await this.finalizeFdSession(question, fullTextAccumulator, botMessage, accessedDocuments, sourceCategories); } catch(_){}
+                      try { await this.finalizeFdSession(question, fullTextAccumulator, botMessage, accessedDocuments, sourceCategories, missingKnowledge); } catch(_){}
                     }
                   })();
                 }
@@ -329,7 +331,7 @@ export class ChatManager {
     });
   }
 
-  async finalizeFdSession(question, fullAnswer, botMessage, accessedDocuments, sourceCategories) {
+  async finalizeFdSession(question, fullAnswer, botMessage, accessedDocuments, sourceCategories, missingKnowledge = false) {
     // 1. Clean up UI
     const cursor = botMessage.querySelector('.typing-cursor');
     if (cursor) cursor.remove();
@@ -345,7 +347,7 @@ export class ChatManager {
     }
 
     // 2. Build Sources & Metadata
-    const answerWithSources = this.buildAnswerWithSources(fullAnswer, accessedDocuments, [], sourceCategories);
+    const answerWithSources = this.buildAnswerWithSources(fullAnswer, accessedDocuments, [], sourceCategories, missingKnowledge);
     
     // 3. Render Sources HTML
     const contentDiv = botMessage.querySelector('.message-content');
@@ -468,7 +470,7 @@ export class ChatManager {
     try {
       console.log('📤 Sending request to API...', { wasVoiceInput, question });
       
-      const { answer, accessed_documents, accessed_tools, source_categories } = await this.app.apiManager.getAIResponse(
+      const { answer, accessed_documents, accessed_tools, source_categories, missing_knowledge } = await this.app.apiManager.getAIResponse(
         question,
         this.app.hrKnowledgeBase,
         this.app.currentConversation,
@@ -499,7 +501,7 @@ export class ChatManager {
       cleanedAnswer = cleanedAnswer.replace(/\n{3,}/g, '\n\n'); 
       cleanedAnswer = cleanedAnswer.trim();
 
-      const answerWithSources = this.buildAnswerWithSources(cleanedAnswer, accessed_documents, accessed_tools, source_categories);
+      const answerWithSources = this.buildAnswerWithSources(cleanedAnswer, accessed_documents, accessed_tools, source_categories, missing_knowledge);
       const finalAnswer = wasVoiceInput ? this._sanitizePlainText(cleanedAnswer) : answerWithSources;
       
       const responseMessage = this.createMessageElement("bot", "");
@@ -839,7 +841,8 @@ export class ChatManager {
   
   debugJsonTableStructure(answer) {}
 
-  buildAnswerWithSources(answer, accessed_documents, accessed_tools, source_categories) {
+  buildAnswerWithSources(answer, accessed_documents, accessed_tools, source_categories, missingKnowledge = false) {
+    if (missingKnowledge) return answer;
     if (answer.includes('---\n\n**Sources**')) return answer;
     let sourcesSection = '\n\n---\n\n**Sources**\n\n';
     const sources = [];
@@ -1081,10 +1084,13 @@ export class ChatManager {
       li.textContent = text;
       list.appendChild(li);
     });
-    wrapper.appendChild(hr);
-    wrapper.appendChild(header);
-    wrapper.appendChild(list);
-    contentDiv.appendChild(wrapper);
+
+    if (items.length > 0) {
+      wrapper.appendChild(hr);
+      wrapper.appendChild(header);
+      wrapper.appendChild(list);
+      contentDiv.appendChild(wrapper);
+    }
   }
 
   async resolveDocumentMetadata(doc) {

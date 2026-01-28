@@ -433,6 +433,10 @@
           <span class="material-symbols-outlined nav-icon">hub</span>
           <span>Integration Hub</span>
         </a>
+        <a class="nav-item" data-view="speech">
+          <span class="material-symbols-outlined nav-icon">record_voice_over</span>
+          <span>Pronunciation</span>
+        </a>
         <a class="nav-item" data-view="settings">
           <span class="material-symbols-outlined nav-icon">settings</span>
           <span>Settings</span>
@@ -493,6 +497,91 @@
             <button class="timeframe-tab" data-timeframe="monthly">Monthly</button>
             <button class="timeframe-tab" data-timeframe="daily">Daily</button>
           </div>
+
+          <!-- SKELETON LOADER -->
+          <div id="dashboard-skeleton" style="display: none;">
+             <div class="stats-grid">
+              <div class="stat-card">
+                  <div class="skeleton" style="width: 48px; height: 48px; border-radius: 12px;"></div>
+                  <div class="stat-info" style="width: 100%;">
+                      <div class="skeleton" style="width: 60px; height: 32px; margin-bottom: 4px;"></div>
+                      <div class="skeleton" style="width: 100px; height: 14px;"></div>
+                  </div>
+              </div>
+              <div class="stat-card">
+                  <div class="skeleton" style="width: 48px; height: 48px; border-radius: 12px;"></div>
+                  <div class="stat-info" style="width: 100%;">
+                      <div class="skeleton" style="width: 60px; height: 32px; margin-bottom: 4px;"></div>
+                      <div class="skeleton" style="width: 100px; height: 14px;"></div>
+                  </div>
+              </div>
+              <div class="stat-card">
+                  <div class="skeleton" style="width: 48px; height: 48px; border-radius: 12px;"></div>
+                  <div class="stat-info" style="width: 100%;">
+                      <div class="skeleton" style="width: 60px; height: 32px; margin-bottom: 4px;"></div>
+                      <div class="skeleton" style="width: 100px; height: 14px;"></div>
+                  </div>
+              </div>
+              <div class="stat-card">
+                  <div class="skeleton" style="width: 48px; height: 48px; border-radius: 12px;"></div>
+                  <div class="stat-info" style="width: 100%;">
+                      <div class="skeleton" style="width: 60px; height: 32px; margin-bottom: 4px;"></div>
+                      <div class="skeleton" style="width: 100px; height: 14px;"></div>
+                  </div>
+              </div>
+            </div>
+            
+            <div class="chart-grid">
+              <div class="chart-card large">
+                  <div class="card-header"><div class="skeleton skeleton-title" style="margin: 0; width: 200px;"></div></div>
+                  <div class="card-body" style="padding: 20px;"><div class="skeleton" style="width: 100%; height: 100%; border-radius: 8px;"></div></div>
+              </div>
+              <div class="chart-card">
+                  <div class="card-header"><div class="skeleton skeleton-title" style="margin: 0; width: 150px;"></div></div>
+                  <div class="card-body" style="padding: 20px;"><div class="skeleton" style="width: 100%; height: 100%; border-radius: 8px;"></div></div>
+              </div>
+            </div>
+
+            <div class="chart-grid">
+              <div class="chart-card large">
+                  <div class="card-header"><div class="skeleton skeleton-title" style="margin: 0; width: 200px;"></div></div>
+                  <div class="card-body" style="padding: 20px;"><div class="skeleton" style="width: 100%; height: 100%; border-radius: 8px;"></div></div>
+              </div>
+              <div class="chart-card">
+                  <div class="card-header"><div class="skeleton skeleton-title" style="margin: 0; width: 150px;"></div></div>
+                  <div class="card-body" style="padding: 20px;"><div class="skeleton" style="width: 100%; height: 100%; border-radius: 8px;"></div></div>
+              </div>
+            </div>
+            
+            <div class="chart-grid single">
+               <div class="chart-card">
+                  <div class="card-header"><div class="skeleton skeleton-title" style="margin: 0; width: 200px;"></div></div>
+                  <div class="card-body" style="padding: 20px;"><div class="skeleton" style="width: 100%; height: 100%; border-radius: 8px;"></div></div>
+               </div>
+            </div>
+
+             <div class="table-grid">
+              <div class="data-table-card">
+                  <div class="card-header"><div class="skeleton skeleton-title" style="margin: 0; width: 150px;"></div></div>
+                  <div class="table-wrapper">
+                     <div class="skeleton-table-row" style="padding: 20px;"><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div></div>
+                     <div class="skeleton-table-row" style="padding: 20px;"><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div></div>
+                     <div class="skeleton-table-row" style="padding: 20px;"><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div></div>
+                  </div>
+              </div>
+              <div class="data-table-card">
+                  <div class="card-header"><div class="skeleton skeleton-title" style="margin: 0; width: 150px;"></div></div>
+                  <div class="table-wrapper">
+                     <div class="skeleton-table-row" style="padding: 20px;"><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div></div>
+                     <div class="skeleton-table-row" style="padding: 20px;"><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div></div>
+                     <div class="skeleton-table-row" style="padding: 20px;"><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div></div>
+                  </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- REAL CONTENT -->
+          <div id="dashboard-content">
           <div class="stats-grid">
             <div class="stat-card">
               <div class="stat-icon-wrapper red">
@@ -534,26 +623,71 @@
             <div class="data-table-card"><div class="card-header"><h3>Recent Activity</h3></div><div class="table-wrapper"><table class="data-table"><thead><tr><th>User</th><th>Message</th><th>Time</th></tr></thead><tbody id="recentActivityTable"><tr><td colspan="3" class="loading-cell">Loading...</td></tr></tbody></table></div></div>
             <div class="data-table-card"><div class="card-header"><h3>Most Active Users</h3></div><div class="table-wrapper"><table class="data-table"><thead><tr><th>User</th><th>Email</th><th>Messages</th></tr></thead><tbody id="mostActiveUsersTable"><tr><td colspan="3" class="loading-cell">Loading...</td></tr></tbody></table></div></div>
           </div>
+          </div>
         </section>
 
         <section class="view-section" id="knowledge-view">
-          <div class="alert alert-warning" id="cache-alert"><strong>⚠️ Cache Update Needed:</strong> The Knowledge Base has been modified. Please regenerate the embeddings cache.</div>
-          <div class="cache-status-card">
-            <div class="cache-status-item"><div id="cache-status-indicator" class="status-indicator"><div class="status-dot"></div><span class="status-text">Checking...</span></div></div>
-            <div class="cache-status-item"><div class="stat-value" id="cache-files-count">-</div><div class="stat-label">Files</div></div>
-            <div class="cache-status-item"><div class="stat-value" id="cache-chunks-count">-</div><div class="stat-label">Chunks</div></div>
-            <div class="cache-status-item"><div class="stat-value small" id="cache-last-updated">-</div><div class="stat-label">Last Updated</div></div>
-            <div class="cache-status-item">
-                <button class="btn btn-primary" id="regenerate-cache-btn" type="button">
-                    <span class="btn-text" style="display: flex; align-items: center; gap: 6px;">
-                        <span class="material-symbols-outlined" style="font-size: 16px;">bolt</span> 
-                        Regenerate Cache
-                    </span>
-                    <span class="btn-loading">Processing...</span>
-                </button>
+          <!-- SKELETON LOADER -->
+          <div id="knowledge-skeleton" style="display: none;">
+            <!-- Cache Skeleton -->
+            <div class="cache-status-card" style="margin-bottom: 24px; pointer-events: none;">
+               <div class="cache-status-item"><div class="skeleton" style="width: 140px; height: 28px; border-radius: 20px;"></div></div>
+               <div class="cache-status-item"><div class="skeleton" style="width: 40px; height: 32px; margin-bottom: 5px;"></div><div class="skeleton" style="width: 30px; height: 14px;"></div></div>
+               <div class="cache-status-item"><div class="skeleton" style="width: 40px; height: 32px; margin-bottom: 5px;"></div><div class="skeleton" style="width: 40px; height: 14px;"></div></div>
+               <div class="cache-status-item"><div class="skeleton" style="width: 100px; height: 20px; margin-bottom: 5px;"></div><div class="skeleton" style="width: 80px; height: 14px;"></div></div>
+               <div class="cache-status-item"><div class="skeleton" style="width: 160px; height: 40px; border-radius: 8px;"></div></div>
+            </div>
+            <div class="kb-tabs">
+              <div class="skeleton" style="width: 120px; height: 40px; border-radius: 8px;"></div>
+              <div class="skeleton" style="width: 120px; height: 40px; border-radius: 8px;"></div>
+              <div class="skeleton" style="width: 150px; height: 40px; border-radius: 8px;"></div>
+            </div>
+            <div class="data-table-card">
+              <div class="card-header">
+                 <div class="skeleton skeleton-title" style="margin: 0; width: 200px;"></div>
+                 <div class="header-actions">
+                    <div class="skeleton skeleton-button" style="width: 200px;"></div>
+                    <div class="skeleton skeleton-button" style="width: 120px;"></div>
+                 </div>
+              </div>
+              <div class="table-wrapper">
+                 <div class="skeleton-table-row" style="padding: 20px;">
+                    <div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div>
+                 </div>
+                 <div class="skeleton-table-row" style="padding: 20px;">
+                    <div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div>
+                 </div>
+                 <div class="skeleton-table-row" style="padding: 20px;">
+                    <div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div>
+                 </div>
+                 <div class="skeleton-table-row" style="padding: 20px;">
+                    <div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div>
+                 </div>
+                 <div class="skeleton-table-row" style="padding: 20px;">
+                    <div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div>
+                 </div>
+              </div>
             </div>
           </div>
-          <div id="cache-progress-container" class="progress-container"><div class="progress-info"><span id="cache-progress-text">Processing...</span><span id="cache-progress-percent"></span></div><div class="progress-bar"><div id="cache-progress-fill" class="progress-fill"></div></div></div>
+
+          <div id="knowledge-content">
+            <div class="alert alert-warning" id="cache-alert"><strong>⚠️ Cache Update Needed:</strong> The Knowledge Base has been modified. Please regenerate the embeddings cache.</div>
+            <div class="cache-status-card">
+              <div class="cache-status-item"><div id="cache-status-indicator" class="status-indicator"><div class="status-dot"></div><span class="status-text">Checking...</span></div></div>
+              <div class="cache-status-item"><div class="stat-value" id="cache-files-count">-</div><div class="stat-label">Files</div></div>
+              <div class="cache-status-item"><div class="stat-value" id="cache-chunks-count">-</div><div class="stat-label">Chunks</div></div>
+              <div class="cache-status-item"><div class="stat-value small" id="cache-last-updated">-</div><div class="stat-label">Last Updated</div></div>
+              <div class="cache-status-item">
+                  <button class="btn btn-primary" id="regenerate-cache-btn" type="button">
+                      <span class="btn-text" style="display: flex; align-items: center; gap: 6px;">
+                          <span class="material-symbols-outlined" style="font-size: 16px;">bolt</span> 
+                          Regenerate Cache
+                      </span>
+                      <span class="btn-loading">Processing...</span>
+                  </button>
+              </div>
+            </div>
+            <div id="cache-progress-container" class="progress-container"><div class="progress-info"><span id="cache-progress-text">Processing...</span><span id="cache-progress-percent"></span></div><div class="progress-bar"><div id="cache-progress-fill" class="progress-fill"></div></div></div>
           <div class="kb-tabs">
             <button class="kb-tab active" data-kb-tab="documents">
                 <span class="material-symbols-outlined tab-icon">description</span>
@@ -616,10 +750,41 @@
   </div>
 </div>
 </div></div>
+          </div>
         </section>
 
         <section class="view-section" id="users-view">
-           <div class="data-table-card"><div class="card-header"><h3>User List</h3><div class="header-actions"><input type="text" id="user-search" placeholder="Search name or email..." class="search-input" autocomplete="off"><button class="btn btn-excel" id="bulk-user-btn"><span class="material-symbols-outlined" style="font-size: 18px;">table_view</span> Upload Excel</button><button class="btn btn-primary" id="add-user-btn"><span class="material-symbols-outlined" style="font-size: 18px;">person_add</span> Add User</button></div></div><div class="table-wrapper"><table class="data-table"><thead><tr><th>Name / Email</th><th><select id="user-dept-filter" class="th-select"><option value="">Department (All)</option></select></th><th>Role</th><th>Status</th><th>Activity</th><th>Actions</th></tr></thead><tbody id="users-table-body"><tr><td colspan="6" class="loading-cell">Loading users...</td></tr></tbody></table></div>
+           <!-- SKELETON LOADER -->
+           <div id="users-skeleton" style="display: none;">
+            <div class="data-table-card">
+              <div class="card-header">
+                 <div class="skeleton skeleton-title" style="margin: 0; width: 150px;"></div>
+                 <div class="header-actions">
+                    <div class="skeleton skeleton-button" style="width: 200px;"></div>
+                 </div>
+              </div>
+              <div class="table-wrapper">
+                 <div class="skeleton-table-row" style="padding: 20px;">
+                    <div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div>
+                 </div>
+                 <div class="skeleton-table-row" style="padding: 20px;">
+                    <div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div>
+                 </div>
+                 <div class="skeleton-table-row" style="padding: 20px;">
+                    <div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div>
+                 </div>
+                 <div class="skeleton-table-row" style="padding: 20px;">
+                    <div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div>
+                 </div>
+                 <div class="skeleton-table-row" style="padding: 20px;">
+                    <div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div>
+                 </div>
+              </div>
+            </div>
+           </div>
+
+           <div id="users-content">
+           <div class="data-table-card"><div class="card-header"><h3>User List</h3><div class="header-actions"><input type="text" id="user-search" placeholder="Search name or email..." class="search-input" autocomplete="off"></div></div><div class="table-wrapper"><table class="data-table"><thead><tr><th>Name / Email</th><th><select id="user-dept-filter" class="th-select"><option value="">Department (All)</option></select></th><th>Role</th><th>Status</th><th>Activity</th><th>Actions</th></tr></thead><tbody id="users-table-body"><tr><td colspan="6" class="loading-cell">Loading users...</td></tr></tbody></table></div>
            <div class="pagination-controls" id="user-pagination" style="display: none;">
   <div class="pagination-info">
     Showing <span id="user-start-record">0</span> - <span id="user-end-record">0</span> of <span id="user-total-records">0</span>
@@ -635,9 +800,40 @@
   </div>
 </div>
            </div>
+           </div>
         </section>
 
         <section class="view-section" id="permissions-view">
+           <!-- SKELETON LOADER -->
+           <div id="permissions-skeleton" style="display: none;">
+            <div class="data-table-card">
+              <div class="card-header">
+                 <div class="skeleton skeleton-title" style="margin: 0; width: 180px;"></div>
+                 <div class="header-actions">
+                    <div class="skeleton skeleton-button" style="width: 200px;"></div>
+                 </div>
+              </div>
+              <div class="table-wrapper">
+                 <div class="skeleton-table-row" style="padding: 20px;">
+                    <div class="skeleton skeleton-table-cell" style="width: 40px;"></div><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div>
+                 </div>
+                 <div class="skeleton-table-row" style="padding: 20px;">
+                    <div class="skeleton skeleton-table-cell" style="width: 40px;"></div><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div>
+                 </div>
+                 <div class="skeleton-table-row" style="padding: 20px;">
+                    <div class="skeleton skeleton-table-cell" style="width: 40px;"></div><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div>
+                 </div>
+                 <div class="skeleton-table-row" style="padding: 20px;">
+                    <div class="skeleton skeleton-table-cell" style="width: 40px;"></div><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div>
+                 </div>
+                 <div class="skeleton-table-row" style="padding: 20px;">
+                    <div class="skeleton skeleton-table-cell" style="width: 40px;"></div><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div>
+                 </div>
+              </div>
+            </div>
+           </div>
+
+           <div id="permissions-content">
            <div class="data-table-card"><div class="card-header"><h3>Access Permissions</h3><div id="perm-bulk-actions" class="bulk-actions"><span class="bulk-count"><span id="perm-selected-count">0</span> Selected</span><button class="btn btn-success" onclick="openBulkPermModal()"><span class="material-symbols-outlined" style="font-size: 18px;">lock_open</span> Grant Access</button></div><div class="header-actions"><input type="text" id="perm-search" placeholder="Search user..." class="search-input" autocomplete="off"></div></div><div class="table-wrapper"><table class="data-table"><thead><tr><th style="width: 40px;"><input type="checkbox" id="perm-select-all" onchange="toggleSelectAllPerms(this)"></th><th>User</th><th><select id="perm-dept-filter" class="th-select"><option value="">Department (All)</option></select></th><th>Access Level</th><th>Actions</th></tr></thead><tbody id="permissions-table-body"><tr><td colspan="5" class="loading-cell">Loading...</td></tr></tbody></table></div>
            <div class="pagination-controls" id="perm-pagination" style="display: none;">
   <div class="pagination-info">
@@ -669,6 +865,38 @@
             </div>
             
             <div class="chat-tab-content active" id="chat-history-tab">
+                <!-- SKELETON LOADER -->
+                <div id="chats-skeleton" style="display: none;">
+                    <div class="data-table-card">
+                    <div class="card-header">
+                        <div class="skeleton skeleton-title" style="margin: 0; width: 180px;"></div>
+                        <div class="header-actions">
+                            <div class="skeleton skeleton-button" style="width: 200px;"></div>
+                            <div class="skeleton skeleton-button" style="width: 200px;"></div>
+                            <div class="skeleton skeleton-button" style="width: 120px;"></div>
+                        </div>
+                    </div>
+                    <div class="table-wrapper">
+                        <div class="skeleton-table-row" style="padding: 20px;">
+                            <div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div>
+                        </div>
+                        <div class="skeleton-table-row" style="padding: 20px;">
+                            <div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div>
+                        </div>
+                        <div class="skeleton-table-row" style="padding: 20px;">
+                            <div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div>
+                        </div>
+                        <div class="skeleton-table-row" style="padding: 20px;">
+                            <div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div>
+                        </div>
+                        <div class="skeleton-table-row" style="padding: 20px;">
+                            <div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div>
+                        </div>
+                    </div>
+                    </div>
+                </div>
+
+                <div id="chats-content">
                 <div class="data-table-card">
                     <div class="card-header">
                         <h3>Chat Sessions</h3>
@@ -714,9 +942,53 @@
   </div>
 </div>
                 </div>
+                </div>
             </div>
 
             <div class="chat-tab-content" id="chat-analytics-tab">
+                <!-- SKELETON LOADER -->
+                <div id="chat-analytics-skeleton" style="display: none;">
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="skeleton" style="width: 48px; height: 48px; border-radius: 12px;"></div>
+                            <div class="stat-info" style="width: 100%;">
+                                <div class="skeleton" style="width: 60px; height: 32px; margin-bottom: 4px;"></div>
+                                <div class="skeleton" style="width: 100px; height: 14px;"></div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="skeleton" style="width: 48px; height: 48px; border-radius: 12px;"></div>
+                            <div class="stat-info" style="width: 100%;">
+                                <div class="skeleton" style="width: 60px; height: 32px; margin-bottom: 4px;"></div>
+                                <div class="skeleton" style="width: 100px; height: 14px;"></div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="skeleton" style="width: 48px; height: 48px; border-radius: 12px;"></div>
+                            <div class="stat-info" style="width: 100%;">
+                                <div class="skeleton" style="width: 60px; height: 32px; margin-bottom: 4px;"></div>
+                                <div class="skeleton" style="width: 100px; height: 14px;"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="chart-grid">
+                        <div class="chart-card large">
+                            <div class="card-header"><div class="skeleton skeleton-title" style="margin: 0; width: 250px;"></div></div>
+                            <div class="card-body" style="padding: 20px;">
+                                <div class="skeleton" style="width: 100%; height: 250px; border-radius: 8px;"></div>
+                            </div>
+                        </div>
+                        <div class="chart-card">
+                            <div class="card-header"><div class="skeleton skeleton-title" style="margin: 0; width: 200px;"></div></div>
+                            <div class="card-body" style="padding: 20px;">
+                                <div class="skeleton" style="width: 100%; height: 250px; border-radius: 8px;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="chat-analytics-content">
                 <div class="stats-grid">
                     <div class="stat-card">
                         <div class="stat-icon-wrapper blue" style="background-color: rgba(66, 133, 244, 0.1); color: #4285F4;">
@@ -759,10 +1031,80 @@
                         <div class="card-body"><canvas id="employeeSessionsChart" height="200"></canvas></div>
                     </div>
                 </div>
+                </div> <!-- Close chat-analytics-content -->
             </div>
         </section>
         
         <section class="view-section" id="integrations-view">
+           <!-- SKELETON LOADER -->
+           <div id="integrations-skeleton" style="display: none;">
+               <div class="integration-grid">
+                   <div class="integration-card">
+                       <div class="int-header">
+                           <div class="skeleton" style="width: 48px; height: 48px; border-radius: 8px;"></div>
+                           <div class="skeleton" style="width: 80px; height: 24px; border-radius: 12px;"></div>
+                       </div>
+                       <div class="int-body">
+                           <div class="skeleton" style="width: 120px; height: 24px; margin-bottom: 10px;"></div>
+                           <div class="skeleton" style="width: 100%; height: 16px; margin-bottom: 5px;"></div>
+                           <div class="skeleton" style="width: 80%; height: 16px;"></div>
+                       </div>
+                       <div class="int-footer">
+                           <div class="skeleton" style="width: 100%; height: 36px; border-radius: 6px;"></div>
+                       </div>
+                   </div>
+                   <div class="integration-card">
+                       <div class="int-header">
+                           <div class="skeleton" style="width: 48px; height: 48px; border-radius: 8px;"></div>
+                           <div class="skeleton" style="width: 80px; height: 24px; border-radius: 12px;"></div>
+                       </div>
+                       <div class="int-body">
+                           <div class="skeleton" style="width: 120px; height: 24px; margin-bottom: 10px;"></div>
+                           <div class="skeleton" style="width: 100%; height: 16px; margin-bottom: 5px;"></div>
+                           <div class="skeleton" style="width: 80%; height: 16px;"></div>
+                       </div>
+                       <div class="int-footer">
+                           <div class="skeleton" style="width: 100%; height: 36px; border-radius: 6px;"></div>
+                       </div>
+                   </div>
+                   <div class="integration-card">
+                       <div class="int-header">
+                           <div class="skeleton" style="width: 48px; height: 48px; border-radius: 8px;"></div>
+                           <div class="skeleton" style="width: 80px; height: 24px; border-radius: 12px;"></div>
+                       </div>
+                       <div class="int-body">
+                           <div class="skeleton" style="width: 120px; height: 24px; margin-bottom: 10px;"></div>
+                           <div class="skeleton" style="width: 100%; height: 16px; margin-bottom: 5px;"></div>
+                           <div class="skeleton" style="width: 80%; height: 16px;"></div>
+                       </div>
+                       <div class="int-footer">
+                           <div class="skeleton" style="width: 100%; height: 36px; border-radius: 6px;"></div>
+                       </div>
+                   </div>
+               </div>
+
+               <div class="data-table-card" style="margin-top: 30px;">
+                   <div class="card-header">
+                       <div class="skeleton skeleton-title" style="margin: 0; width: 180px;"></div>
+                       <div class="header-actions">
+                           <div class="skeleton skeleton-button" style="width: 200px;"></div>
+                       </div>
+                   </div>
+                   <div class="table-wrapper">
+                       <div class="skeleton-table-row" style="padding: 20px;">
+                           <div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div>
+                       </div>
+                       <div class="skeleton-table-row" style="padding: 20px;">
+                           <div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div>
+                       </div>
+                       <div class="skeleton-table-row" style="padding: 20px;">
+                           <div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div>
+                       </div>
+                   </div>
+               </div>
+           </div>
+
+           <div id="integrations-content">
           <div class="integration-grid">
             <div class="integration-card">
               <div class="int-header">
@@ -885,9 +1227,41 @@
               </table>
             </div>
           </div>
+          </div> <!-- Close integrations-content -->
         </section>
 
         <section class="view-section" id="settings-view">
+           <!-- SKELETON LOADER -->
+           <div id="settings-skeleton" style="display: none;">
+               <div class="settings-grid">
+                   <div class="settings-card">
+                       <div class="settings-header">
+                           <div class="skeleton" style="width: 40px; height: 40px; border-radius: 8px;"></div>
+                           <div class="skeleton" style="width: 150px; height: 28px; border-radius: 6px;"></div>
+                       </div>
+                       <div class="settings-body">
+                           <div class="skeleton" style="width: 100%; height: 40px; margin-bottom: 20px;"></div>
+                           <div class="skeleton" style="width: 100%; height: 40px; margin-bottom: 20px;"></div>
+                           <div class="skeleton" style="width: 100%; height: 40px; margin-bottom: 20px;"></div>
+                           <div class="skeleton" style="width: 60%; height: 40px;"></div>
+                       </div>
+                   </div>
+                   <div class="settings-card">
+                       <div class="settings-header">
+                           <div class="skeleton" style="width: 40px; height: 40px; border-radius: 8px;"></div>
+                           <div class="skeleton" style="width: 150px; height: 28px; border-radius: 6px;"></div>
+                       </div>
+                       <div class="settings-body">
+                           <div class="skeleton" style="width: 100%; height: 30px; margin-bottom: 15px;"></div>
+                           <div class="skeleton" style="width: 100%; height: 30px; margin-bottom: 15px;"></div>
+                           <div class="skeleton" style="width: 100%; height: 30px; margin-bottom: 15px;"></div>
+                           <div class="skeleton" style="width: 100%; height: 30px;"></div>
+                       </div>
+                   </div>
+               </div>
+           </div>
+
+           <div id="settings-content">
            <div class="settings-grid">
              <div class="settings-card">
                <div class="settings-header">
@@ -986,6 +1360,58 @@
              </div>
            </div>
         </section>
+
+        <section class="view-section" id="speech-view">
+           <!-- SKELETON LOADER -->
+           <div id="speech-skeleton" style="display: none;">
+            <div class="data-table-card">
+              <div class="card-header">
+                 <div class="skeleton skeleton-title" style="margin: 0; width: 200px;"></div>
+                 <div class="header-actions">
+                    <div class="skeleton skeleton-button" style="width: 150px;"></div>
+                 </div>
+              </div>
+              <div class="table-wrapper">
+                 <div class="skeleton-table-row" style="padding: 20px;">
+                    <div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div>
+                 </div>
+                 <div class="skeleton-table-row" style="padding: 20px;">
+                    <div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div>
+                 </div>
+              </div>
+            </div>
+           </div>
+
+           <div id="speech-content">
+           <div class="data-table-card">
+             <div class="card-header">
+              <h3>Pronunciation List</h3>
+              <div class="header-actions">
+                 <input type="text" id="speech-search" placeholder="Search rules..." class="search-input" autocomplete="off">
+                 <button class="btn btn-primary" id="add-rule-btn">
+                   <span class="material-symbols-outlined" style="font-size: 18px;">add</span> Add Rule
+                 </button>
+               </div>
+             </div>
+             <div class="table-wrapper">
+               <table class="data-table">
+                 <thead>
+                   <tr>
+                     <th>Pattern / Word</th>
+                     <th>Replacement (Spoken)</th>
+                     <th>Type</th>
+                     <th>Description</th>
+                     <th>Actions</th>
+                   </tr>
+                 </thead>
+                 <tbody id="speech-table-body">
+                   <tr><td colspan="5" class="loading-cell">Loading rules...</td></tr>
+                 </tbody>
+               </table>
+             </div>
+           </div>
+           </div>
+        </section>
       </div>
     </main>
   </div>
@@ -1012,30 +1438,7 @@
     </div>
   </div>
 
-  <div class="modal" id="bulk-upload-modal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3>Bulk Upload Users</h3>
-        <button class="modal-close" id="bulk-upload-close" type="button">✕</button>
-      </div>
-      <div class="modal-body">
-        <div class="file-upload-section">
-          <div class="upload-controls">
-            <input type="file" id="bulk-excel-upload" class="form-control" accept=".xlsx, .xls, .csv">
-          </div>
-          <div class="upload-hint">Upload an Excel (.xlsx) file with columns: <strong>Name</strong>, <strong>Email</strong>, <strong>Department</strong>, <strong>Position</strong>.</div>
-        </div>
-        <div id="bulk-upload-status"></div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-secondary" id="bulk-upload-cancel" type="button">Cancel</button>
-        <button class="btn btn-primary" id="bulk-upload-save" type="button">
-          <span class="btn-text">Start Upload</span>
-          <span class="btn-loading">Uploading...</span>
-        </button>
-      </div>
-    </div>
-  </div>
+
   
   <div class="modal" id="document-editor-modal">
     <div class="modal-content large">
@@ -1862,6 +2265,52 @@
       </div>
       <div class="modal-footer" id="conversion-footer" style="display: none;">
         <button class="btn btn-primary" id="conversion-close-btn" type="button">Close & View JSON</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="speech-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="speech-modal-title">Add Pronunciation Rule</h3>
+        <button class="modal-close" id="speech-modal-close" type="button">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Pattern / Word *</label>
+          <input type="text" id="speech-pattern" class="form-control" placeholder="e.g. SQL, API, Dept." required autocomplete="off">
+          <small style="color: #64748b; font-size: 0.8rem;">The text you want to replace in the speech output.</small>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Replacement (Spoken) *</label>
+          <div style="display: flex; gap: 8px;">
+            <input type="text" id="speech-replacement" class="form-control" placeholder="e.g. Sequel, A-P-I, Department" required autocomplete="off" style="margin-bottom: 0;">
+            <button type="button" id="speech-test-btn" class="btn btn-secondary" title="Test Pronunciation" style="padding: 0 12px;">
+              <span class="material-symbols-outlined">volume_up</span>
+            </button>
+          </div>
+          <small style="color: #64748b; font-size: 0.8rem; display: block; margin-top: 4px;">How it should be pronounced.</small>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Type</label>
+          <select id="speech-type" class="form-control">
+            <option value="general">General</option>
+            <option value="acronym">Acronym</option>
+            <option value="brand">Brand Name</option>
+            <option value="unit">Unit of Measure</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Description</label>
+          <textarea id="speech-description" class="form-control" rows="2" placeholder="Optional notes..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="speech-modal-cancel" type="button">Cancel</button>
+        <button class="btn btn-primary" id="speech-modal-save" type="button">
+          <span class="btn-text">Save Rule</span>
+          <span class="btn-loading">Saving...</span>
+        </button>
       </div>
     </div>
   </div>

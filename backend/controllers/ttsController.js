@@ -13,7 +13,7 @@ export const speak = async (req, res) => {
       return res.status(400).json({ error: "Text content is required." });
     }
 
-    const selectedVoice = voice || "Kore";
+    const selectedVoice = voice || "Leda";
     const { data: audioBase64, mimeType } = await ttsService.generateSpeech(text, selectedVoice);
 
     if (!audioBase64 || audioBase64.length === 0) {

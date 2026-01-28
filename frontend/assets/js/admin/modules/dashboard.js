@@ -107,14 +107,29 @@ async function loadDashboard() {
 
 // Loading state management
 function setDashboardLoading(isLoading) {
-  const statValues = document.querySelectorAll('.stat-value');
-  const activityBody = document.getElementById('recentActivityTable');
-  const usersBody = document.getElementById('mostActiveUsersTable');
+  const dashboardContent = document.getElementById('dashboard-content');
+  const dashboardSkeleton = document.getElementById('dashboard-skeleton');
+  
+  // Fallback for older HTML structure if IDs don't exist
+  if (!dashboardContent || !dashboardSkeleton) {
+    const statValues = document.querySelectorAll('.stat-value');
+    const activityBody = document.getElementById('recentActivityTable');
+    const usersBody = document.getElementById('mostActiveUsersTable');
+
+    if (isLoading) {
+      statValues.forEach(el => el.textContent = '...');
+      if (activityBody) activityBody.innerHTML = `<tr><td colspan="3" style="text-align: center; padding: 40px;">Loading...</td></tr>`;
+      if (usersBody) usersBody.innerHTML = `<tr><td colspan="3" style="text-align: center; padding: 40px;">Loading...</td></tr>`;
+    }
+    return;
+  }
 
   if (isLoading) {
-    statValues.forEach(el => el.textContent = '...');
-    activityBody.innerHTML = `<tr><td colspan="3" style="text-align: center; padding: 40px;">Loading...</td></tr>`;
-    usersBody.innerHTML = `<tr><td colspan="3" style="text-align: center; padding: 40px;">Loading...</td></tr>`;
+    dashboardContent.style.display = 'none';
+    dashboardSkeleton.style.display = 'block';
+  } else {
+    dashboardContent.style.display = 'block';
+    dashboardSkeleton.style.display = 'none';
   }
 }
 

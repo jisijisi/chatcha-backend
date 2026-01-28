@@ -942,3 +942,72 @@ export class MultiFolderSemanticRAG {
 // Initialize services
 export const databaseCacheManager = new DatabaseCacheManager(pool);
 export const ragSystem = new MultiFolderSemanticRAG();
+
+// Helper function to get user permissions from database
+export async function getUserPermissions(userEmail) {
+    if (!userEmail) {
+        console.log("⚠️ No user email provided - GUEST USER MODE");
+        // Return null for guest users (NO ACCESS to internal documents)
+        return null;
+    }
+
+    try {
+        // Get employee ID
+        const [employee] = await pool.execute(
+            'SELECT id FROM employees WHERE email = ? AND is_active = TRUE',
+            [userEmail]
+        );
+        
+        if (employee.length === 0) {
+            console.log(`⚠️ No active employee found for ${userEmail} - treating as GUEST`);
+            // Return null for unrecognized emails (NO ACCESS)
+            return null;
+        }
+        
+        const employeeId = employee[0].id;
+        
+        // Get permissions - CRITICAL: Include full access detection
+        const [permissions] = await pool.execute(`
+            SELECT 
+                category_id, 
+                subcategory_id, 
+                source_id,
+                -- Detect full access: when all IDs are null
+                (category_id IS NULL AND subcategory_id IS NULL AND source_id IS NULL) as has_full_access
+            FROM employee_access_permissions 
+            WHERE employee_id = ?
+        `, [employeeId]);
+        
+        console.log(`🔐 Loaded ${permissions.length} permissions for ${userEmail} (Employee ID: ${employeeId})`);
+        
+        // Check for full access permission
+        const hasFullAccess = permissions.some(p => p.has_full_access);
+        
+        if (hasFullAccess) {
+            console.log("   ✅ User has FULL ACCESS to all documents");
+            // Return special marker for full access
+            return 'FULL_ACCESS';
+        }
+        
+        // Log permission details for debugging
+        if (permissions.length > 0) {
+            const categoryPerms = permissions.filter(p => p.category_id && !p.subcategory_id);
+            const subcategoryPerms = permissions.filter(p => p.subcategory_id);
+            const sourcePerms = permissions.filter(p => p.source_id);
+            
+            console.log(`   📁 Category-level permissions: ${categoryPerms.length}`);
+            console.log(`   📂 Subcategory-level permissions: ${subcategoryPerms.length}`);
+            console.log(`   🔧 Source-level permissions: ${sourcePerms.length}`);
+        } else {
+            console.log("   ⚠️ No permissions assigned - user will have NO ACCESS to internal documents");
+            return []; // Empty array = no permissions
+        }
+        
+        return permissions;
+        
+    } catch (error) {
+        console.error('❌ Error loading user permissions:', error);
+        // On error, return null (NO ACCESS)
+        return null;
+    }
+}

@@ -21,7 +21,7 @@ export const CONFIG = {
   // Core Endpoints
   API_URL: `${API_BASE}/ask`,
   HISTORY_API_URL_BASE: `${API_BASE}/chats`,
-  TTS_VOICE_NAME: "leda",
+  TTS_VOICE_NAME: "Leda",
   ENABLE_LIVE_TTS: false,
   LIVE_TTS_SAMPLE_RATE: 24000,
   LIVE_TTS_JITTER_MS: 50,

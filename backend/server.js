@@ -25,6 +25,7 @@ import adminRoutes from "./routes/admin.routes.js";
 import integrationRoutes from "./routes/integration.routes.js";
 import ragRoutes from "./routes/rag.routes.js";
 import ttsRoutes from "./routes/tts.routes.js";
+import speechRoutes from "./routes/speech.routes.js";
 import notificationRoutes from "./routes/notification.routes.js";
 import attachFullDuplexWS from "./ws/full_duplex_ws.js";
  
@@ -110,6 +111,7 @@ app.use(adminRoutes);
 app.use(integrationRoutes);
 app.use(ragRoutes);
 app.use("/tts", ttsRoutes);
+app.use("/api/speech", speechRoutes);
 app.use("/api/notifications", notificationRoutes);
 
 // User Profile Routes
