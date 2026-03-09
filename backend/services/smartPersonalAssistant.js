@@ -28,19 +28,19 @@ export class SmartPersonalAssistant {
     static async getActiveModel() {
         try {
             const [settings] = await pool.execute("SELECT ai_model FROM system_settings WHERE id = 1");
-            return settings.length > 0 ? settings[0].ai_model : "gemini-2.0-flash-exp";
+            return settings.length > 0 ? settings[0].ai_model : "gemini-flash-latest";
         } catch (e) {
             console.warn("Using default model in Smart Assistant (DB error):", e.message);
-            return "gemini-2.0-flash-exp";
+            return "gemini-flash-latest";
         }
     }
 
     /**
      * Main entry point - Process user request with LLM intelligence
      */
-    static async processRequest(userEmail, prompt, conversationHistory = []) {
+    static async processRequest(userEmail, prompt, conversationHistory = [], translatedPrompt = null) {
         try {
-            console.log(`🧠 Smart Assistant processing request from ${userEmail}: "${prompt}"`);
+            console.log(`🧠 Smart Assistant processing request from ${userEmail}: "${prompt}" (Translated: "${translatedPrompt}")`);
             
             // 1. Get or create session
             let session = userSessions.get(userEmail) || this.createNewSession(userEmail);
@@ -54,7 +54,8 @@ export class SmartPersonalAssistant {
                 prompt,
                 conversationHistory,
                 session,
-                userContext
+                userContext,
+                translatedPrompt
             );
             
             // 4. Update session with analysis
@@ -154,7 +155,7 @@ export class SmartPersonalAssistant {
     /**
      * LLM analyzes the user request with full context
      */
-    static async analyzeRequestWithLLM(userEmail, prompt, history, session, userContext) {
+    static async analyzeRequestWithLLM(userEmail, prompt, history, session, userContext, translatedPrompt = null) {
         // 🔥 USE DYNAMIC MODEL
         const activeModel = await this.getActiveModel();
         
@@ -206,12 +207,19 @@ export class SmartPersonalAssistant {
         ${formattedHistory || 'No recent history'}
         
         ## USER'S NEW REQUEST:
-        "${prompt}"
+        - Original: "${prompt}"
+        - English Translation: "${translatedPrompt || prompt}"
         
         ## AVAILABLE TOOLS:
         ${JSON.stringify(toolDescriptions, null, 2)}
         
         ## YOUR TASKS:
+
+        **🧠 REASONING & TRANSLATION PROCESS (CRITICAL):**
+        1. **Grounding:** Use the \`English Translation\` to find the most accurate facts and actions.
+        2. **Internal Reasoning:** Formulate your response in English first to ensure technical accuracy and avoid hallucinations.
+        3. **Final Output:** Translate your accurate English response back into the user's original language while adhering to the **STRICT LANGUAGE RULE** below.
+        4. **Nuance:** Ensure the Tagalog/Taglish translation feels natural and corporate.
 
         **STRICT LANGUAGE RULE:**
         - **Scenario 1 (Full English):** If the user speaks in full English, you MUST respond in full English.

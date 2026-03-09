@@ -214,6 +214,9 @@ class ChatApp {
   }
 
   async loadInitialData() {
+      // Load Theme First
+      await this.loadTheme();
+
       if (!this.authManager.isAuthenticated()) {
           console.warn('Skipping data load: User not authenticated');
           this.chats = [];
@@ -252,6 +255,90 @@ class ChatApp {
           localStorage.removeItem('chat_ui_active_index');
           sessionStorage.setItem('chat_tab_active', 'true');
       }
+  }
+
+  async loadTheme() {
+    const theme = await this.apiManager.getActiveTheme();
+    if (theme) {
+      // 1. Apply Colors
+      const config = theme.config || { colors: theme.colors };
+      const colors = config.colors || {};
+      
+      this.applyThemeColors(colors);
+
+      // 2. Apply Custom CSS (New AI System)
+      this.applyCustomCss(config.custom_css);
+
+      // 3. Apply Effects (Legacy Support)
+      this.applyThemeEffect(config.effect);
+
+      // 4. Apply Avatar Variant
+      if (config.custom_avatar) {
+          this.currentCustomAvatarUrl = config.custom_avatar;
+      }
+      this.applyAvatarVariant(config.avatar_variant);
+    }
+  }
+
+  applyThemeColors(colors) {
+    let css = '[data-theme="light"] {\n';
+    Object.keys(colors).forEach(key => {
+      // Remove inline style if it exists, to ensure our new style tag takes precedence
+      document.documentElement.style.removeProperty(key);
+      css += `  ${key}: ${colors[key]};\n`;
+    });
+    css += '}\n';
+
+    let styleTag = document.getElementById('theme-colors-styles');
+    if (!styleTag) {
+      styleTag = document.createElement('style');
+      styleTag.id = 'theme-colors-styles';
+      document.head.appendChild(styleTag);
+    }
+    styleTag.textContent = css;
+  }
+
+  applyCustomCss(css) {
+    let styleTag = document.getElementById('ai-generated-theme-styles');
+    if (!styleTag) {
+      styleTag = document.createElement('style');
+      styleTag.id = 'ai-generated-theme-styles';
+      document.head.appendChild(styleTag);
+    }
+    styleTag.textContent = css || '';
+  }
+
+  applyThemeEffect(effect) {
+    // Remove existing effects
+    document.body.classList.remove('effect-snow', 'effect-lights', 'effect-santa-flying', 'effect-snow-elements');
+    
+    if (effect && effect !== 'none') {
+        // Support multiple effects separated by space or comma if needed, but for now simple string
+        // The backend might return "snow santa_flying"
+        const effects = effect.split(/[ ,]+/);
+        effects.forEach(e => {
+            if (e) document.body.classList.add(`effect-${e}`);
+        });
+    }
+  }
+
+  applyAvatarVariant(variant) {
+    // This is a simple implementation assuming we want to add a class to a container
+    // or change the default avatar image path if we had one.
+    // For now, let's add a global class so CSS can target avatar frames.
+    
+    document.body.classList.remove('avatar-variant-christmas', 'avatar-variant-newyear', 'avatar-variant-custom');
+    
+    if (variant && variant !== 'default') {
+        document.body.classList.add(`avatar-variant-${variant}`);
+    }
+    
+    // For custom avatar, we might need to inject CSS variables if the URL is dynamic
+    if (variant === 'custom' && this.currentCustomAvatarUrl) {
+       document.documentElement.style.setProperty('--custom-avatar-url', `url('${this.currentCustomAvatarUrl}')`);
+    }
+    
+    this.currentAvatarVariant = variant || 'default';
   }
 
   async loadHRKnowledge() {
@@ -636,12 +723,14 @@ class ChatApp {
   }
   
   updateScrollButtonPosition() {
-    const scrollBtn = document.querySelector('.scroll-to-bottom');
-    const inputArea = this.elements.inputForm;
-    if (scrollBtn && inputArea) {
-      const inputHeight = inputArea.offsetHeight;
-      scrollBtn.style.bottom = `${inputHeight + 20}px`;
-    }
+    requestAnimationFrame(() => {
+      const scrollBtn = document.querySelector('.scroll-to-bottom');
+      const inputArea = this.elements.inputForm;
+      if (scrollBtn && inputArea) {
+        const inputHeight = inputArea.offsetHeight;
+        scrollBtn.style.bottom = `${inputHeight + 20}px`;
+      }
+    });
   }
 
   updateCharacterCount() {
@@ -813,6 +902,28 @@ class ChatApp {
     
     this.uiManager.setupUserContextMenu();
     
+    // Listen for Theme Updates (Live Preview)
+    window.addEventListener('message', (event) => {
+      if (event.data && event.data.type === 'UPDATE_THEME') {
+        const config = event.data.config || { colors: event.data.theme };
+        
+        // Colors
+        if (config.colors) {
+            this.applyThemeColors(config.colors);
+        }
+        
+        // Custom CSS
+        this.applyCustomCss(config.custom_css);
+
+        // Effects & Avatar
+        if (config.custom_avatar) {
+            this.currentCustomAvatarUrl = config.custom_avatar;
+        }
+        this.applyThemeEffect(config.effect);
+        this.applyAvatarVariant(config.avatar_variant);
+      }
+    });
+
     const historyToggle = document.querySelector('.history-toggle');
     const historyDropdown = document.getElementById('history-dropdown');
     

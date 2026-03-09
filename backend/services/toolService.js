@@ -21,6 +21,10 @@ export class ToolService {
 
             const functionDeclarations = [];
 
+            // 1.5 SYSTEM UTILITY TOOLS
+            functionDeclarations.push(this.getMissingKnowledgeDef());
+            functionDeclarations.push(this.getNoAccessKnowledgeDef());
+
             // 2. FETCH SYSTEM TOOLS (Efficient Single SQL Query)
             if (categoryFilter === 'ALL' || categoryFilter === 'LIVE_DATA') {
                 const query = `
@@ -143,6 +147,32 @@ export class ToolService {
     static getGmailListDef() { return { name: "user_gmail_list", description: "List emails. Use 'label:INBOX' query.", parameters: { type: "OBJECT", properties: { count: {type:"NUMBER"}, query: {type:"STRING"} } } }; }
     static getGmailSendDef() { return { name: "user_gmail_send", description: "Send email.", parameters: { type: "OBJECT", properties: { to: {type:"STRING"}, subject: {type:"STRING"}, body: {type:"STRING"} }, required: ["to", "subject", "body"] } }; }
     static getGmailReadDef() { return { name: "user_gmail_read", description: "Read full email body.", parameters: { type: "OBJECT", properties: { messageId: {type:"STRING"} }, required: ["messageId"] } }; }
+    static getMissingKnowledgeDef() {
+        return {
+            name: "signal_missing_knowledge",
+            description: "IMPORTANT: Call this tool if you cannot find the specific information requested in the retrieved context, especially for HR policies, procedures, or penalties. This flags the gap for administrators.",
+            parameters: {
+                type: "OBJECT",
+                properties: {
+                    missing_info: { type: "STRING", description: "Brief description of what was missing." }
+                },
+                required: ["missing_info"]
+            }
+        };
+    }
+    static getNoAccessKnowledgeDef() {
+        return {
+            name: "signal_no_access_knowledge",
+            description: "IMPORTANT: Call this tool if you identify that relevant information exists in the context but the user lacks specific permissions to view the full details. This flags the access gap for administrators.",
+            parameters: {
+                type: "OBJECT",
+                properties: {
+                    resource_info: { type: "STRING", description: "Brief description of what resource or document access is missing." }
+                },
+                required: ["resource_info"]
+            }
+        };
+    }
 
     // --- Execution Logic ---
     static async executeTool(functionName, args, userEmail) {
@@ -155,6 +185,24 @@ export class ToolService {
             if (users.length === 0) return { error: "User not found or inactive" };
             const employeeId = users[0].id;
             
+            // SYSTEM UTILITY: Signal Missing Knowledge
+            if (functionName === 'signal_missing_knowledge') {
+                return { 
+                    status: "success", 
+                    message: "Missing knowledge flagged internally.", 
+                    missing_knowledge_flag: true,
+                    info: args.missing_info 
+                };
+            }
+            if (functionName === 'signal_no_access_knowledge') {
+                return { 
+                    status: "success", 
+                    message: "Access gap flagged internally.", 
+                    no_access_flag: true,
+                    info: args.resource_info 
+                };
+            }
+
             async function hasToolAccess(toolId) {
                 const [rows] = await pool.execute(
                     `SELECT 1 FROM employee_access_permissions 

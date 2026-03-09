@@ -190,7 +190,20 @@ class LoginManager {
       this.elements.loginBtn.querySelector('span').textContent = originalText;
       
       if (data.success) {
-        this.showToast('OTP sent to your email', 'success');
+        if (data.dev_otp) {
+          // Dev Mode: Log to console only (Security)
+           console.log('🔑 Dev OTP:', data.dev_otp);
+           
+           if (data.dev_error) {
+             console.error('❌ Dev Email Error:', data.dev_error);
+             this.showToast(`Dev Mode: Email failed. Check console for OTP.`, 'warning');
+           } else {
+             this.showToast(`Dev Mode: OTP generated. Check console.`, 'info');
+           }
+           // Auto-fill removed for security
+        } else {
+          this.showToast(data.message || 'OTP sent to your email', 'success');
+        }
         this.showOtpView();
       } else {
         this.showToast(data.message || 'Failed to send OTP', 'error');
@@ -256,7 +269,8 @@ class LoginManager {
           authMethod: 'otp',
           userId: user.id,
           isNewUser: !!data.is_new_user,
-          loginTime: new Date().toISOString()
+          loginTime: new Date().toISOString(),
+          token: data.token
         });
         
         const successMsg = data.is_new_user 
@@ -299,16 +313,22 @@ class LoginManager {
       });
       const data = await res.json();
       
+      this.elements.resendBtn.disabled = false;
+      this.elements.resendBtn.textContent = originalText;
+      
       if (data.success) {
-        this.showToast('OTP resent', 'success');
-        // Restart timer
+        if (data.dev_otp) {
+           console.log('🔑 Dev OTP:', data.dev_otp);
+           this.showToast(`Dev Mode: OTP ${data.dev_otp}`, 'success');
+           if (this.elements.otpInput) this.elements.otpInput.value = data.dev_otp;
+        } else {
+           this.showToast(data.message || 'OTP sent again', 'success');
+        }
         this.startResendTimer();
       } else {
         this.showToast(data.message || 'Failed to resend OTP', 'error');
-        this.elements.resendBtn.disabled = false;
-        this.elements.resendBtn.textContent = originalText;
       }
-    } catch {
+    } catch (e) {
       this.showToast('Network error. Try again.', 'error');
       this.elements.resendBtn.disabled = false;
       this.elements.resendBtn.textContent = originalText;
@@ -552,16 +572,32 @@ class LoginManager {
       // Extract username from email
       const username = email.split('@')[0];
 
+      // Verify with backend
+      const res = await fetch(`${CONFIG.API_BASE}/auth/google-login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: credential })
+      });
+      
+      const data = await res.json();
+      
+      if (!data.success) {
+        throw new Error(data.message || 'Google login failed on server');
+      }
+      
+      const user = data.user;
+
       // Save session data
       this.saveSessionData({
-        userType: 'external', // Default safe state
-        email: email,
-        username: username,
-        name: name,
+        userType: user.type || 'external',
+        email: user.email,
+        username: user.name || username,
+        name: user.name || name,
         picture: picture,
         authMethod: 'google',
         emailVerified: true,
-        loginTime: new Date().toISOString()
+        loginTime: new Date().toISOString(),
+        token: data.token
       });
       
       this.showToast('✅ Login successful! Redirecting...', 'success');

@@ -10,9 +10,9 @@ export class IntentService {
   static async getActiveModel() {
       try {
           const [settings] = await pool.execute("SELECT ai_model FROM system_settings WHERE id = 1");
-          return settings.length > 0 ? settings[0].ai_model : "gemini-2.0-flash-exp";
+          return settings.length > 0 ? settings[0].ai_model : "gemini-flash-latest";
       } catch (e) {
-          return "gemini-2.0-flash-exp";
+          return "gemini-flash-latest";
       }
   }
 
@@ -52,11 +52,12 @@ export class IntentService {
       1. **RESOLVE AMBIGUITY:** Use CHAT HISTORY.
          - "The first one" -> "Select item 1"
          - "Yes" -> "Confirm [action]"
-      2. **SEARCH OPTIMIZATION (CRITICAL):** 
-         - **TRANSLATE TO ENGLISH:** If the query is in Tagalog or another language, the \`rewritten_query\` **MUST** be translated to English.
-         - **Example:** "Sino ang nagtatag?" -> "Who is the founder?"
-         - **Example:** "Paano mag-apply ng leave?" -> "How to apply for leave?"
-         - This is REQUIRED for the search engine to find the correct documents.
+      2. **SEARCH OPTIMIZATION & REASONING (CRITICAL):** 
+         - **TRANSLATE TO ENGLISH:** If the query is in Tagalog, Taglish, or any other language, the rewritten_query **MUST** be a high-quality, standalone English translation.
+         - **PRESERVE INTENT:** Do not just translate words; translate the *intent* and *entities*.
+         - **Example:** "Sino ang nagtatag?" -> "Who is the founder of the company?"
+         - **Example:** "Paano mag-apply ng leave?" -> "What is the procedure to apply for leave?"
+         - This English translation will be used for both RAG search and for the model's internal reasoning to prevent hallucinations.
 
       ### TASK 2: INTENT CLASSIFICATION (STRICT RULES)
       Classify into EXACTLY ONE category:
@@ -148,10 +149,11 @@ export class IntentService {
         User's current question: "${query}"
         Context from previous turn: "${lastMsg?.question || ''} -> ${lastMsg?.answer || ''}"
         
-        Task: Rewrite the current question to be a STANDALONE search query for a knowledge base. 
+        Task: Rewrite the current question to be a STANDALONE English search query for a knowledge base. 
+        - If the user's question is in Tagalog, Taglish, or any other language, TRANSLATE it to English.
         - Replace pronouns like "it", "that", "he", "they" with the specific nouns they refer to from the context.
         - Remove conversational fluff ("can you tell me", "what about").
-        - Keep it concise.
+        - Keep it concise and optimized for keyword search.
         
         Return ONLY the rewritten string.
         `;

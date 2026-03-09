@@ -8,7 +8,13 @@ export class SystemEmailService {
         const senderEmail = process.env.GOOGLE_SENDER_EMAIL;
 
         if (!clientId || !clientSecret || !refreshToken || !senderEmail) {
-            throw new Error('Missing Gmail OAuth configuration: set GOOGLE_SENDER_EMAIL, GOOGLE_SENDER_REFRESH_TOKEN, GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET (or their SENDER_ variants)');
+            const missing = [];
+            if (!clientId) missing.push('GOOGLE_CLIENT_ID');
+            if (!clientSecret) missing.push('GOOGLE_CLIENT_SECRET');
+            if (!refreshToken) missing.push('GOOGLE_SENDER_REFRESH_TOKEN');
+            if (!senderEmail) missing.push('GOOGLE_SENDER_EMAIL');
+            console.error('Missing Email Config:', missing.join(', '));
+            throw new Error(`Missing Gmail OAuth configuration: ${missing.join(', ')}`);
         }
 
         const oauth2Client = new google.auth.OAuth2(clientId, clientSecret);

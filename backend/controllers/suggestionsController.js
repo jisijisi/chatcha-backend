@@ -3,6 +3,19 @@ import { pool } from '../config/database.js';
 import fetch from 'node-fetch';
 
 /**
+ * Helper to get active AI model from system settings
+ */
+async function getActiveModel() {
+    try {
+        const [rows] = await pool.execute("SELECT ai_model FROM system_settings WHERE id = 1");
+        return rows.length > 0 && rows[0].ai_model ? rows[0].ai_model : "gemini-flash-latest";
+    } catch (error) {
+        console.error('⚠️ Failed to fetch active model from settings:', error.message);
+        return "gemini-flash-latest"; // Fallback
+    }
+}
+
+/**
  * Generate a suggested question based on user's enabled knowledge
  * Called on first login or when admin updates access control
  */
@@ -312,7 +325,8 @@ Example outputs:
 - "What is our vacation leave policy?"
 - "What are CDO's main products?"`;
 
-        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`;
+        const activeModel = await getActiveModel();
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${activeModel}:generateContent?key=${process.env.GEMINI_API_KEY}`;
         console.log(`📤 Calling Gemini API: ${apiUrl.substring(0, 60)}...`);
 
         const response = await fetch(apiUrl, {
@@ -324,7 +338,7 @@ Example outputs:
                 }],
                 generationConfig: {
                     temperature: 0.7,
-                    maxOutputTokens: 100
+                    maxOutputTokens: 1024
                 }
             })
         });

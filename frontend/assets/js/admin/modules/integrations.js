@@ -718,6 +718,45 @@ function setupIntegrationsView() {
           renderSourcesTable();
       });
   }
+
+  // ==========================================
+  // 6. INTEGRATION HUB TABS
+  // ==========================================
+  const intTabs = document.querySelectorAll('.kb-tab[data-int-tab]');
+  const savedIntTab = localStorage.getItem('adminIntTab') || 'sources';
+
+  const activateIntTab = (tabId) => {
+    // Update tab buttons
+    intTabs.forEach(t => {
+      if (t.getAttribute('data-int-tab') === tabId) {
+        t.classList.add('active');
+      } else {
+        t.classList.remove('active');
+      }
+    });
+    
+    // Update tab content
+    document.querySelectorAll('.kb-tab-content').forEach(content => {
+      if (content.id === `${tabId}-tab`) {
+        content.classList.add('active');
+      } else if (content.id === 'sources-tab' || content.id === 'flags-tab') {
+        content.classList.remove('active');
+      }
+    });
+    
+    localStorage.setItem('adminIntTab', tabId);
+  };
+
+  // Set initial tab
+  activateIntTab(savedIntTab);
+
+  intTabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+        const tabId = tab.getAttribute('data-int-tab');
+        activateIntTab(tabId);
+    });
+  });
+
   updateSortHeaders();
 }
 
@@ -1099,14 +1138,14 @@ function addSapParameterRow(param = {}) {
 }
 
 // Load integration data
-async function loadIntegrationData() {
+async function loadIntegrationData(showSkeleton = true) {
   const liveTbody = document.getElementById('live-sources-table-body');
   const flagsTbody = document.getElementById('internal-flags-table-body');
   const skeleton = document.getElementById('integrations-skeleton');
   const content = document.getElementById('integrations-content');
 
   // Show Skeleton
-  if (skeleton && content) {
+  if (showSkeleton && skeleton && content) {
     content.style.display = 'none';
     skeleton.style.display = 'block';
   }
@@ -1122,7 +1161,7 @@ async function loadIntegrationData() {
     if (flagsTbody) flagsTbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:red;">Failed to load system flags.</td></tr>';
   } finally {
       // Hide Skeleton
-      if (skeleton && content) {
+      if (showSkeleton && skeleton && content) {
           content.style.display = 'block';
           skeleton.style.display = 'none';
       }
@@ -1133,9 +1172,11 @@ function renderSourcesTable() {
     const tbody = document.getElementById('live-sources-table-body');
     const search = document.getElementById('source-search').value.toLowerCase();
     const type = document.getElementById('source-type-filter').value;
+    const badgeSources = document.getElementById('badge-sources');
 
     if (!allSources || allSources.length === 0) {
         tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:30px; color:#999;">No live data sources connected.</td></tr>';
+        if (badgeSources) badgeSources.textContent = '0';
         return;
     }
 
@@ -1145,6 +1186,17 @@ function renderSourcesTable() {
         const matchesType = type ? s.source_type === type : true;
         return isLiveType && matchesSearch && matchesType;
     });
+
+    if (badgeSources) {
+        // Count all live sources regardless of filters for the tab badge
+        const totalLive = allSources.filter(s => 
+            s.source_type === 'google_sheet' || 
+            s.source_type === 'external_api' || 
+            s.source_type === 'database' || 
+            s.source_type === 'sap_bapi'
+        ).length;
+        badgeSources.textContent = totalLive;
+    }
 
     if (sortField) {
         filtered.sort((a, b) => {
@@ -1210,12 +1262,18 @@ function renderInternalFlagsTable() {
     const tbody = document.getElementById('internal-flags-table-body');
     if (!tbody) return;
     const search = document.getElementById('source-search').value.toLowerCase();
+    const badgeFlags = document.getElementById('badge-flags');
 
     const flags = (allSources || []).filter(s => {
         const isFlag = s.source_type === 'internal_flag';
         const matchesSearch = s.name.toLowerCase().includes(search) || s.description.toLowerCase().includes(search);
         return isFlag && matchesSearch;
     });
+
+    if (badgeFlags) {
+        const totalFlags = (allSources || []).filter(s => s.source_type === 'internal_flag').length;
+        badgeFlags.textContent = totalFlags;
+    }
 
     if (flags.length === 0) {
         tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px;">No system flags found.</td></tr>';

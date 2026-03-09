@@ -68,6 +68,34 @@ document.addEventListener('DOMContentLoaded', async () => {
   try {
     console.log('Admin panel initializing...');
     
+    // Determine if this is a fresh open or a refresh using sessionStorage
+    // sessionStorage persists through refreshes but is cleared when the tab/window is closed
+    const isRefresh = sessionStorage.getItem('adminSessionActive');
+    let initialView = 'dashboard';
+
+    if (!isRefresh) {
+      // Freshly opened - Reset all session state to defaults
+      console.log('Fresh session detected. Resetting state.');
+      sessionStorage.setItem('adminSessionActive', 'true');
+      
+      localStorage.removeItem('adminCurrentView');
+      localStorage.setItem('adminDashboardTimeframe', 'overall');
+      localStorage.setItem('adminKBTab', 'documents');
+      localStorage.setItem('adminIntTab', 'sources');
+    } else {
+      // Page refresh - Restore the last viewed page
+      console.log('Refresh detected. Restoring last view.');
+      const savedView = localStorage.getItem('adminCurrentView');
+      if (savedView) {
+        initialView = savedView;
+      }
+    }
+
+    // Clear hash to prevent routing issues
+    if (window.location.hash) {
+      window.history.replaceState(null, null, window.location.pathname);
+    }
+
     // Check authentication
     if (!checkAuth()) return;
     
@@ -84,8 +112,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Initialize all modules
     await initializeModules();
     
-    // Load initial view
-    await switchView('dashboard');
+    // Update active state in sidebar for the initial view
+    document.querySelectorAll('.nav-item').forEach(item => {
+      if (item.dataset.view === initialView) {
+        item.classList.add('active');
+      } else {
+        item.classList.remove('active');
+      }
+    });
+
+    await switchView(initialView);
 
     console.log('Admin panel initialized successfully');
 

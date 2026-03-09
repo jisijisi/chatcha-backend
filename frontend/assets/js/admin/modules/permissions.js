@@ -260,8 +260,10 @@ function handleToggleAllClick() {
 }
 
 // Load permission users
-async function loadPermissionUsers() {
-  setPermissionsLoading(true);
+async function loadPermissionUsers(showSkeleton = true) {
+  if (showSkeleton) {
+    setPermissionsLoading(true);
+  }
   try {
     const search = document.getElementById('perm-search')?.value || '';
     const dept = document.getElementById('perm-dept-filter')?.value || '';
@@ -303,7 +305,9 @@ async function loadPermissionUsers() {
     console.error('❌ Error loading users for permissions:', error);
     showToast('Failed to load users', 'error');
   } finally {
-    setPermissionsLoading(false);
+    if (showSkeleton) {
+      setPermissionsLoading(false);
+    }
   }
 }
 
@@ -498,7 +502,7 @@ async function openPermModal(userId = null, userName = '') {
     return;
   }
   
-  container.innerHTML = '<div style="text-align: center; padding: 20px;">Loading permissions...</div>';
+  renderPermissionSkeleton();
   if (fullAccessCheck) fullAccessCheck.checked = false;
   
   const treeContainer = document.getElementById('perm-tree-container');
@@ -579,6 +583,38 @@ async function openPermModal(userId = null, userName = '') {
       container.innerHTML = '<p style="color: red; text-align: center;">Failed to load permission structure.</p>';
     }
   }
+}
+// Render permission skeleton
+function renderPermissionSkeleton() {
+  const container = document.getElementById('perm-tree-container');
+  if (!container) return;
+  
+  const skeletonHtml = `
+    <div class="perm-section-wrapper" style="margin-bottom: 20px; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
+      <div style="padding: 16px 20px; background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+        <div class="skeleton skeleton-title" style="width: 150px; margin-bottom: 8px;"></div>
+        <div class="skeleton skeleton-text" style="width: 300px;"></div>
+      </div>
+      <div style="padding: 12px;">
+        <div class="skeleton" style="height: 44px; margin-bottom: 8px; border-radius: 6px;"></div>
+        <div class="skeleton" style="height: 44px; margin-bottom: 8px; border-radius: 6px;"></div>
+        <div class="skeleton" style="height: 44px; margin-bottom: 8px; border-radius: 6px;"></div>
+      </div>
+    </div>
+    
+    <div class="perm-section-wrapper" style="margin-bottom: 20px; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
+      <div style="padding: 16px 20px; background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+        <div class="skeleton skeleton-title" style="width: 150px; margin-bottom: 8px;"></div>
+        <div class="skeleton skeleton-text" style="width: 300px;"></div>
+      </div>
+      <div style="padding: 12px;">
+        <div class="skeleton" style="height: 44px; margin-bottom: 8px; border-radius: 6px;"></div>
+        <div class="skeleton" style="height: 44px; margin-bottom: 8px; border-radius: 6px;"></div>
+      </div>
+    </div>
+  `;
+  
+  container.innerHTML = skeletonHtml;
 }
 
 // Render permission tree

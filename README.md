@@ -1,6 +1,37 @@
 # ChatCHA - CDO Assistant
 
-ChatCHA is a full-stack AI assistant application featuring a Node.js backend and a vanilla JavaScript frontend. It integrates with Google Gemini for AI capabilities, supports RAG (Retrieval-Augmented Generation), and includes administrative features.
+ChatCHA (v2.1-optimized) is a full-stack AI assistant application featuring a Node.js backend and a vanilla JavaScript frontend. It integrates with Google Gemini for advanced AI capabilities, supports **High-Performance RAG** (Retrieval-Augmented Generation) using **LanceDB**, offers **Real-time Streaming** responses, full-duplex voice interaction, and includes comprehensive administrative features.
+
+## 🚀 Key Optimization Updates
+
+### Phase 1: Real-Time Streaming
+- **Server-Sent Events (SSE)**: Implemented for `/ask-stream` endpoint to deliver AI responses token-by-token.
+- **Low Latency**: Drastically reduced Time-to-First-Byte (TTFB) for better user experience.
+- **Frontend**: Updated `ChatUI.js` to handle incremental markdown rendering and stream decoding.
+
+### Phase 2: Vector Search Optimization (LanceDB)
+- **Vector Database**: Migrated from in-memory cosine similarity arrays to **LanceDB** (via `vectordb`) for scalable, persistent vector storage.
+- **Performance**: High-speed nearest neighbor search with efficient filtering.
+- **Persistence**: Embeddings are now stored in `.cache/lancedb`, reducing startup time and memory overhead.
+
+---
+
+## Features
+
+- **Advanced AI Chat**: Powered by Google Gemini (supporting latest models).
+- **RAG System**: Retrieval-Augmented Generation using **LanceDB** for context-aware answers based on your documents.
+- **Real-Time Streaming**: Instant response feedback via SSE.
+- **Full-Duplex Voice Interaction**: Real-time, low-latency voice chat using WebSockets (`/ws/full-duplex`).
+- **Text-to-Speech (TTS)**: High-quality speech synthesis using Gemini's TTS models with SSML support.
+- **Speech-to-Text (STT)**: Accurate voice recognition for hands-free operation.
+- **Smart Capabilities**:
+  - **Smart Data Analyst**: Analyzes structured data.
+  - **Smart Personal Assistant**: Manages schedules and personal tasks.
+- **Admin Dashboard**: Comprehensive user management, system settings, knowledge base management, and analytics.
+- **Theme Customization**: Dynamic theme switching and persistence.
+- **Notification System**: Real-time in-app notifications for users and admins.
+- **Integrations**: Google Sheets, external APIs, and email services.
+- **Production Ready**: Built-in keep-alive mechanism and health checks.
 
 ## Setup & Installation
 
@@ -10,8 +41,6 @@ Ensure you have the following installed on your system:
   - Verify with: `node -v`
 - **MySQL Database**
   - Verify with: `mysql --version`
-- **SAP NWRFC SDK** (Optional, for SAP integration)
-  - Required for `node-rfc`. See `SAP_INSTALL_GUIDE.md` for details.
 
 ### 2. Project Setup
 1. **Clone the repository** to your local machine.
@@ -27,21 +56,22 @@ This project relies on several Node.js packages. Install them using npm:
 npm install
 ```
 
-**Note:** If you encounter errors related to `node-rfc`, ensure you have the SAP SDK installed or remove `node-rfc` from `package.json` if you don't need SAP integration.
-
-#### Main Dependencies:
-- **Core**: `express`, `cors`, `dotenv`
-- **Database**: `mysql2`, `mssql`, `pg`, `alasql`
-- **AI & Integrations**: `@google/generative-ai`, `googleapis`, `node-fetch`, `node-rfc`
-- **Utilities**: `ws`, `multer`, `xlsx`
+#### Key Dependencies:
+- **Core**: `express`, `cors`, `dotenv`, `ws` (WebSockets)
+- **Database**: `mysql2`, `alasql`
+- **Vector Search**: `vectordb` (LanceDB client), `apache-arrow`
+- **AI & Integrations**: `@google/generative-ai`, `googleapis`, `node-fetch`
+- **Document Processing**: `mammoth` (DOCX), `adm-zip`, `xlsx`, `xml2js`
+- **Security**: `jsonwebtoken` (JWT Auth)
 
 ### 4. Configuration
-Create a `.env` file in the `backend` directory with the following variables:
+Create a `.env` file in the `backend` directory. You can copy the structure below:
 
 ```env
 # Server
 PORT=3000
 NODE_ENV=development
+RENDER_EXTERNAL_URL=https://your-app-url.com # Optional: For keep-alive on Render
 
 # Database
 DB_HOST=your_db_host
@@ -58,7 +88,7 @@ GOOGLE_CLIENT_ID=your_google_client_id
 GOOGLE_CLIENT_SECRET=your_google_client_secret
 GOOGLE_REDIRECT_URI=http://localhost:3000/auth/google/callback
 
-# Google Email Service (for System Emails)
+# Google Email Service (for System Emails & OTP)
 GOOGLE_SENDER_EMAIL=your_sender_email
 GOOGLE_SENDER_CLIENT_ID=your_sender_client_id
 GOOGLE_SENDER_CLIENT_SECRET=your_sender_client_secret
@@ -82,25 +112,41 @@ COMPANY_EMAIL_DOMAIN=cdo.com.ph
   npm run dev
   ```
 
+- **Health Check**: `GET /health`
+- **RAG Warmup**: `GET /warmup` (Triggers background RAG initialization)
+
 ## Project Structure
 
 ### Backend (`backend/`)
-- `server.js`: Main entry point.
-- `routes/`: API route definitions.
-- `controllers/`: Request handlers.
-- `services/`: Business logic (AI, Chat, RAG, etc.).
+- `server.js`: Main entry point, server configuration, and WebSocket upgrade handling.
+- `routes/`: API route definitions (Chat, Admin, RAG, Speech, TTS, Theme, etc.).
+- `controllers/`: Request handlers for each route.
+- `services/`: Business logic (AI, RAG, TTS, Email, Smart Assistants).
 - `config/`: Configuration files (DB, CORS).
-- `scripts/`: Utility scripts.
+- `middleware/`: Auth, Error Handling, Maintenance Mode.
+- `models/`: Database models/schemas.
+- `ws/`: WebSocket logic for full-duplex communication.
+- `scripts/`: Utility and maintenance scripts.
 
 ### Frontend (`frontend/`)
 - `index.html`: Main chat interface.
-- `assets/js/app.js`: Main application logic.
-- `assets/css/`: Stylesheets.
 - `admin.html`: Admin dashboard.
+- `login.html`: User login page.
+- `assets/js/`:
+  - `app.js`: Main application entry.
+  - `modules/`: Feature-specific logic (ChatUI, VoiceManager, etc.).
+  - `admin/`: Admin panel modules (Dashboard, Users, Knowledge Base).
+- `assets/css/`: Modular stylesheets.
 
-## Features
-- **AI Chat**: Powered by Google Gemini.
-- **RAG System**: Retrieval-Augmented Generation for context-aware answers.
-- **Voice Support**: Text-to-Speech and Speech-to-Text.
-- **Admin Dashboard**: User management, analytics, and system settings.
-- **Integrations**: Google Sheets and external APIs.
+## Utility Scripts (`backend/scripts/`)
+
+The `backend/scripts` directory contains helper scripts for database maintenance and setup:
+- `create_prompts_table.js`: Sets up the prompts table.
+- `create_speech_table.js`: Sets up speech configuration tables.
+- `migrate_theme_config.js`: Migrates theme settings.
+- `test_email.js`: Verifies email configuration.
+- `trigger_otp.js`: Tests OTP generation.
+
+## API Documentation
+
+For detailed API documentation and integration guides, please refer to [API_INTEGRATION.md](API_INTEGRATION.md).

@@ -60,6 +60,12 @@ const VIEW_CONFIG = {
     loader: () => import('../modules/speech.js').then(module => {
       module.setupSpeechManagement();
     })
+  },
+  theme: {
+    title: 'UI Theme Editor',
+    loader: () => import('../modules/theme.js').then(module => {
+      module.loadThemeModule();
+    })
   }
 };
 
@@ -110,6 +116,9 @@ async function switchView(view) {
   document.getElementById('pageTitle').textContent = VIEW_CONFIG[view].title;
   currentView = view;
   
+  // Persist current view for refresh persistence
+  localStorage.setItem('adminCurrentView', view);
+  
   // Load view-specific data
   try {
     await VIEW_CONFIG[view].loader();
@@ -125,8 +134,14 @@ function setupMobileMenu() {
   const overlay = document.getElementById('sidebarOverlay');
   const sidebar = document.getElementById('adminSidebar');
 
+  const closeSidebar = () => {
+    if (sidebar) sidebar.classList.remove('active');
+    if (overlay) overlay.classList.remove('active');
+  };
+
   if (mobileToggle) {
-    mobileToggle.addEventListener('click', () => {
+    mobileToggle.addEventListener('click', (e) => {
+      e.stopPropagation();
       if (sidebar) {
         sidebar.classList.toggle('active');
         if (overlay) overlay.classList.toggle('active');
@@ -135,11 +150,22 @@ function setupMobileMenu() {
   }
 
   if (overlay) {
-    overlay.addEventListener('click', () => {
-      if (sidebar) sidebar.classList.remove('active');
-      overlay.classList.remove('active');
-    });
+    overlay.addEventListener('click', closeSidebar);
   }
+
+  // Close sidebar when clicking outside
+  document.addEventListener('click', (e) => {
+    if (sidebar && sidebar.classList.contains('active')) {
+      if (!sidebar.contains(e.target) && !mobileToggle?.contains(e.target)) {
+        closeSidebar();
+      }
+    }
+  });
+
+  // Close sidebar when pressing Escape
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeSidebar();
+  });
 }
 
 // Get current view

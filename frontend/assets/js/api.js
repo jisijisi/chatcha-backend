@@ -37,6 +37,9 @@ export class APIManager {
     // 2. Handle LOGGED IN Users (Employee OR External)
     // If they have a valid email, we identify them.
     if (session && session.email) {
+      if (session.token) {
+        headers['Authorization'] = `Bearer ${session.token}`;
+      }
       headers['X-User-Email'] = session.email; 
       return headers;
     }
@@ -94,6 +97,70 @@ export class APIManager {
       }
       console.error("API Error:", error);
       throw error;
+    }
+  }
+
+  async getAIResponseStream(question, hrKnowledgeBase, history, userName, callbacks) {
+    this.abortController = new AbortController();
+    const { signal } = this.abortController;
+
+    const payload = {
+      prompt: question,
+      behavior_context: {
+        conversation_history: history.slice(-10),
+        user_name: userName,
+        identity: { role: 'Company Assistant' }
+      }
+    };
+
+    try {
+      const response = await fetch(`${CONFIG.API_BASE}/ask-stream`, {
+        method: "POST",
+        headers: this._getAuthHeaders(),
+        body: JSON.stringify(payload),
+        signal
+      });
+
+      if (!response.ok) {
+        if (response.status === 503) throw new Error('Maintenance Mode');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Server Error: ${response.status}`);
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n\n');
+        buffer = lines.pop(); // Keep incomplete line in buffer
+
+        for (const line of lines) {
+            if (line.startsWith('data: ')) {
+                const jsonStr = line.slice(6);
+                try {
+                    const data = JSON.parse(jsonStr);
+                    if (data.type === 'meta') {
+                        if (callbacks.onMeta) callbacks.onMeta(data);
+                    } else if (data.type === 'content') {
+                        if (callbacks.onChunk) callbacks.onChunk(data.text);
+                    } else if (data.type === 'done') {
+                        if (callbacks.onDone) callbacks.onDone(data);
+                    } else if (data.type === 'error') {
+                        if (callbacks.onError) callbacks.onError(new Error(data.message));
+                    }
+                } catch (e) {
+                    console.error('Error parsing SSE:', e);
+                }
+            }
+        }
+      }
+    } catch (error) {
+       if (callbacks.onError) callbacks.onError(error);
     }
   }
 
@@ -164,6 +231,21 @@ export class APIManager {
     }
   }
 
+  async loadSessionMessages(sessionId, offset = 0, limit = 20) {
+    try {
+      const response = await fetch(`${CONFIG.API_BASE}/chats/${sessionId}/messages?offset=${offset}&limit=${limit}`, {
+        method: "GET",
+        headers: this._getAuthHeaders()
+      });
+
+      if (!response.ok) throw new Error("Failed to load messages");
+      return await response.json();
+    } catch (error) {
+      console.error("Load Messages Error:", error);
+      return { conversation: [] };
+    }
+  }
+
   async saveChatHistory(data, userEmail) {
     try {
       const payload = {
@@ -210,6 +292,11 @@ export class APIManager {
   
   async hasKbSettingsAccess() {
       const res = await fetch(`${CONFIG.API_BASE}/features/kb-settings/access`, { headers: this._getAuthHeaders() });
+      return await res.json();
+  }
+
+  async hasSpeechSettingsAccess() {
+      const res = await fetch(`${CONFIG.API_BASE}/features/speech-settings/access`, { headers: this._getAuthHeaders() });
       return await res.json();
   }
   
@@ -333,6 +420,41 @@ export class APIManager {
   }
 
   // ==========================================================
+  // 🎙️ SPEECH RULES (USER ACCESSIBLE)
+  // ==========================================================
+
+  async getSpeechRules() {
+      const res = await fetch(`${CONFIG.API_BASE}/api/speech/rules`, { headers: this._getAuthHeaders() });
+      return await res.json();
+  }
+
+  async createSpeechRule(data) {
+      const res = await fetch(`${CONFIG.API_BASE}/api/speech/rules`, {
+          method: 'POST',
+          headers: this._getAuthHeaders(),
+          body: JSON.stringify(data)
+      });
+      return await res.json();
+  }
+
+  async updateSpeechRule(id, data) {
+      const res = await fetch(`${CONFIG.API_BASE}/api/speech/rules/${id}`, {
+          method: 'PUT',
+          headers: this._getAuthHeaders(),
+          body: JSON.stringify(data)
+      });
+      return await res.json();
+  }
+
+  async deleteSpeechRule(id) {
+      const res = await fetch(`${CONFIG.API_BASE}/api/speech/rules/${id}`, {
+          method: 'DELETE',
+          headers: this._getAuthHeaders()
+      });
+      return await res.json();
+  }
+
+  // ==========================================================
   // 🎙️ GEMINI TTS
   // ==========================================================
 
@@ -380,6 +502,17 @@ export class APIManager {
   async getSystemHealth() {
       const res = await fetch(`${CONFIG.API_BASE}/admin/system/health`, { headers: this._getAuthHeaders() });
       return await res.json();
+  }
+
+  async getActiveTheme() {
+    try {
+      const res = await fetch(`${CONFIG.API_BASE}/api/theme/active`);
+      if (!res.ok) throw new Error('Failed to load theme');
+      return await res.json();
+    } catch (error) {
+      console.warn('Theme load error:', error);
+      return null;
+    }
   }
 
   async updateUserName(email, newName) {

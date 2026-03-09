@@ -49,7 +49,7 @@ export const AI_BEHAVIOR = {
     
     // LLM Configuration
     llmConfig: {
-      model: "gemini-2.0-flash-exp",
+      model: "gemini-flash-latest",
       temperature: 0.2, // Lower for more consistent decision-making
       maxTokens: 2048,
       topP: 0.95,

@@ -325,6 +325,9 @@ export class UIManager {
       document.body.classList.add('conversation-active');
     }
     this.updateScrollButton();
+    if (this.app && this.app.updateScrollButtonPosition) {
+      this.app.updateScrollButtonPosition();
+    }
   }
 
   updateWelcomeMessage() {

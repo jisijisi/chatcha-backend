@@ -8,12 +8,20 @@ export const ALLOWED_ORIGINS = [
     'https://chatcha-cdo.netlify.app',
     // Fix: Added port 5501 matching your Error 400 origin
     'http://127.0.0.1:5501',
-    'http://localhost:5501'
+    'http://localhost:5501',
+    'http://localhost:3000',
+    'http://localhost:5173'
 ];
 
 export const corsOptions = {
     origin: (origin, callback) => {
-        if (!origin || ALLOWED_ORIGINS.includes(origin) || origin.startsWith('http://localhost') || origin.includes('netlify.app')) {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+        
+        if (ALLOWED_ORIGINS.includes(origin) || 
+            origin.startsWith('http://localhost') || 
+            origin.includes('netlify.app') ||
+            origin.includes('vercel.app')) { // Added Vercel for potential deployments
             callback(null, true);
         } else {
             console.warn('CORS blocked origin:', origin);

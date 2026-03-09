@@ -3,7 +3,8 @@ import { pool } from '../config/database.js';
 import { broadcastDashboardUpdate } from './adminController.js';
 
 export const loadChats = async (req, res) => {
-    const userEmail = req.header('X-User-Email') || req.query.email;
+    // Prefer JWT user email, fallback to header/query for backward compatibility (during migration)
+    const userEmail = req.user ? req.user.email : (req.header('X-User-Email') || req.query.email);
     if (!userEmail) {
         return res.status(400).json({ error: "Email header or query missing" });
     }
@@ -47,16 +48,26 @@ export const loadChats = async (req, res) => {
         const chats = [];
         let currentConversation = [];
         let activeChatIndex = null;
+        
+        // 1. Get ALL sessions first
         for (let i = 0; i < sessionRows.length; i++) {
             const sessionId = sessionRows[i].session_id;
-            const [messageRows] = await pool.execute(`
-                SELECT user_message, ai_response, message_timestamp, accessed_categories
-                FROM user_chats 
-                WHERE employee_id = ? AND session_id = ?
-                ORDER BY message_timestamp ASC
-            `, [employeeId, sessionId]);
-            if (messageRows.length > 0) {
-                const conversation = messageRows.map(row => {
+            let conversation = [];
+            let title = customTitles[sessionId];
+
+            // 2. Optimization: Only load full messages for the MOST RECENT session (active one)
+            // For others, we keep it empty and load on demand.
+            if (i === 0) {
+                const [recentMessages] = await pool.execute(`
+                    SELECT user_message, ai_response, message_timestamp, accessed_categories
+                    FROM user_chats 
+                    WHERE employee_id = ? AND session_id = ?
+                    ORDER BY message_timestamp DESC
+                    LIMIT 20
+                `, [employeeId, sessionId]);
+                
+                // Reverse to get chronological order (Oldest -> Newest)
+                conversation = recentMessages.reverse().map(row => {
                     const categories = row.accessed_categories || {};
                     return {
                         question: row.user_message,
@@ -67,26 +78,45 @@ export const loadChats = async (req, res) => {
                         source_categories: categories || {}
                     };
                 });
-                let title;
-                if (customTitles[sessionId]) {
-                    title = customTitles[sessionId];
+            }
+
+            // 3. Title Generation (if missing)
+            if (!title) {
+                // If we have conversation loaded, use first question
+                if (conversation.length > 0) {
+                    const firstQuestion = conversation[0].question || "Unknown";
+                    title = firstQuestion.length > 30 ? firstQuestion.substring(0, 30) + "..." : firstQuestion;
                 } else {
-                    const firstQuestion = conversation[0]?.question || "Unknown";
-                    title = firstQuestion.length > 30 
-                        ? firstQuestion.substring(0, 30) + "..." 
-                        : firstQuestion;
+                    // If not loaded, fetch JUST the first message to generate title
+                    const [firstMsg] = await pool.execute(`
+                        SELECT user_message 
+                        FROM user_chats 
+                        WHERE employee_id = ? AND session_id = ?
+                        ORDER BY message_timestamp ASC
+                        LIMIT 1
+                    `, [employeeId, sessionId]);
+                    
+                    if (firstMsg.length > 0) {
+                        const q = firstMsg[0].user_message || "Unknown";
+                        title = q.length > 30 ? q.substring(0, 30) + "..." : q;
+                    } else {
+                        title = "Untitled Chat";
+                    }
                 }
-                const chat = {
-                    title: title,
-                    conversation: conversation,
-                    timestamp: sessionRows[i].latest_timestamp,
-                    sessionId: sessionId
-                };
-                chats.push(chat);
-                if (i === 0) {
-                    currentConversation = conversation;
-                    activeChatIndex = 0;
-                }
+            }
+
+            const chat = {
+                title: title,
+                conversation: conversation, // Empty for non-active chats
+                timestamp: sessionRows[i].latest_timestamp,
+                sessionId: sessionId,
+                loaded: i === 0 // Flag to indicate if messages are loaded
+            };
+            chats.push(chat);
+            
+            if (i === 0) {
+                currentConversation = conversation;
+                activeChatIndex = 0;
             }
         }
         res.json({
@@ -109,7 +139,7 @@ export const loadChats = async (req, res) => {
 };
 
 export const saveChats = async (req, res) => {
-    const userEmail = req.header('X-User-Email') || req.body.email;
+    const userEmail = req.user ? req.user.email : (req.header('X-User-Email') || req.body.email);
     if (!userEmail) {
         return res.status(400).json({ error: "Email header or body missing" });
     }
@@ -207,6 +237,53 @@ export const saveChats = async (req, res) => {
     }
 };
 
+export const loadSessionMessages = async (req, res) => {
+    const userEmail = req.user ? req.user.email : (req.header('X-User-Email') || req.query.email);
+    const { sessionId } = req.params;
+    const limit = parseInt(req.query.limit) || 20;
+    const offset = parseInt(req.query.offset) || 0;
+
+    if (!userEmail) {
+        return res.status(400).json({ error: "Email header or query missing" });
+    }
+
+    try {
+        const [employeeRows] = await pool.execute(
+            "SELECT id FROM employees WHERE email = ? AND is_active = TRUE",
+            [userEmail]
+        );
+        if (employeeRows.length === 0) {
+            return res.status(404).json({ error: "Employee not found" });
+        }
+        const employeeId = employeeRows[0].id;
+
+        const [messages] = await pool.execute(`
+            SELECT user_message, ai_response, message_timestamp, accessed_categories
+            FROM user_chats 
+            WHERE employee_id = ? AND session_id = ?
+            ORDER BY message_timestamp DESC
+            LIMIT ? OFFSET ?
+        `, [employeeId, sessionId, limit.toString(), offset.toString()]);
+
+        const conversation = messages.reverse().map(row => {
+            const categories = row.accessed_categories || {};
+            return {
+                question: row.user_message,
+                answer: row.ai_response,
+                timestamp: row.message_timestamp,
+                accessed_documents: categories.documents || [],
+                accessed_tools: categories.tools || [],
+                source_categories: categories || {}
+            };
+        });
+
+        res.json({ conversation });
+    } catch (err) {
+        console.error('❌ Error loading session messages:', err);
+        res.status(500).json({ error: "Failed to load messages", details: err.message });
+    }
+};
+
 export const deleteChat = async (req, res) => {
     const userEmail = req.header('X-User-Email') || req.body.email;
     const { sessionId } = req.body;
@@ -249,7 +326,7 @@ export const deleteChat = async (req, res) => {
 };
 
 export const renameChat = async (req, res) => {
-    const userEmail = req.header('X-User-Email') || req.body.email;
+    const userEmail = req.user ? req.user.email : (req.header('X-User-Email') || req.body.email);
     const { sessionId, newTitle } = req.body;
     if (!userEmail || !sessionId || !newTitle) {
         return res.status(400).json({ error: "Email, sessionId, and newTitle required" });

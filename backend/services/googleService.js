@@ -39,7 +39,7 @@ export class GoogleService {
     // --- NEW: Helper for Retry Logic ---
     static async generateContentWithRetry(model, prompt, retries = 3, delay = 2000) {
         // Fallback models to try if the primary model fails with 404/Not Found
-        const fallbackModels = ["gemini-1.5-flash", "gemini-1.5-flash-latest", "gemini-pro"];
+        const fallbackModels = ["gemini-flash-latest", "gemini-pro-latest", "gemini-2.5-flash"];
         let currentModel = model;
 
         for (let i = 0; i < retries; i++) {
@@ -835,7 +835,7 @@ export class GoogleService {
             `;
 
             // Fetch active model from database
-            let activeModel = "gemini-2.0-flash-exp";
+            let activeModel = "gemini-flash-latest";
             try {
                 const [settings] = await pool.execute("SELECT ai_model FROM system_settings WHERE id = 1");
                 if (settings.length > 0 && settings[0].ai_model) {
@@ -1076,7 +1076,7 @@ export class GoogleService {
             `;
 
             // Fetch active model from database
-            let activeModel = "gemini-2.0-flash-exp";
+            let activeModel = "gemini-flash-latest";
             try {
                 const [settings] = await pool.execute("SELECT ai_model FROM system_settings WHERE id = 1");
                 if (settings.length > 0 && settings[0].ai_model) {

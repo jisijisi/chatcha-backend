@@ -41,7 +41,7 @@ function pcm16ToWav(pcmBuffer, sampleRate = 24000, numChannels = 1) {
 }
 
 export default function attachFullDuplexWS(server) {
-  const wss = new WebSocketServer({ server, path: '/ws/full-duplex' });
+  const wss = new WebSocketServer({ noServer: true });
 
   wss.on('connection', (ws) => {
     console.log('⚡ Full-duplex client connected');
@@ -176,8 +176,14 @@ ${finalContext}
                 const { chunks, remaining } = extractProsodySafeChunks(sentenceBuffer);
                 sentenceBuffer = remaining;
 
-                for (const fullSentence of chunks) {
-                  if (!fullSentence || fullSentence.length === 0) continue;
+                for (const rawSentence of chunks) {
+                  if (!rawSentence || rawSentence.length === 0) continue;
+
+                  // Clean internal tags from the sentence before processing
+                  const missingKnowledgeRegex = /<MISSING_KNOWLEDGE>|<MISS[ING_KNOWLEDGE]*$/gi;
+                  const fullSentence = rawSentence.replace(missingKnowledgeRegex, '').trim();
+                  
+                  if (fullSentence.length === 0) continue;
 
                   // Send text immediately to client (no waiting for TTS)
                   try {
@@ -212,23 +218,25 @@ ${finalContext}
 
               // Flush whatever is left in the buffer
               if (sentenceBuffer.trim().length > 0) {
-                 const finalText = sentenceBuffer.trim();
+                 // Clean internal tags from the final chunk before sending to client or TTS
+                 const missingKnowledgeRegex = /<MISSING_KNOWLEDGE>|<MISS[ING_KNOWLEDGE]*$/gi;
+                 const finalText = sentenceBuffer.trim().replace(missingKnowledgeRegex, '').trim();
 
-                 // Send remaining text immediately
-                 try {
-                   ws.send(JSON.stringify({ type: 'text_chunk', text: finalText }));
-                 } catch (e) { console.error('WS send final text_chunk error', e); }
-
-                 // Always generate TTS for the final chunk if it has content
+                 // Send remaining text immediately (only if content remains after cleaning)
                  if (finalText.length > 0) {
-                   const audioTask = ttsService.generateSpeech(finalText, "Leda")
-                     .then(audio => ({ text: finalText, audio }))
-                     .catch(() => null);
+                    try {
+                      ws.send(JSON.stringify({ type: 'text_chunk', text: finalText }));
+                    } catch (e) { console.error('WS send final text_chunk error', e); }
 
-                   sendQueue = sendQueue.then(async () => {
-                     const result = await audioTask;
-                     if (result) await sendToClient(ws, result.text, result.audio);
-                   }).catch(err => console.error('Final TTS delivery error', err));
+                    // Always generate TTS for the final chunk
+                    const audioTask = ttsService.generateSpeech(finalText, "Leda")
+                      .then(audio => ({ text: finalText, audio }))
+                      .catch(() => null);
+
+                    sendQueue = sendQueue.then(async () => {
+                      const result = await audioTask;
+                      if (result) await sendToClient(ws, result.text, result.audio);
+                    }).catch(err => console.error('Final TTS delivery error', err));
                  }
               }
 
@@ -282,7 +290,8 @@ ${finalContext}
 
                 // Signal completion with rich Metadata
                 sendQueue = sendQueue.then(() => {
-                  const isMissingKnowledge = fullTextAccumulated.includes('<MISSING_KNOWLEDGE>') || 
+                  const missingKnowledgeRegex = /<MISSING_KNOWLEDGE>|<MISS[ING_KNOWLEDGE]*$/gi;
+                  const isMissingKnowledge = missingKnowledgeRegex.test(fullTextAccumulated) || 
                                            fullTextAccumulated.toLowerCase().includes("don't have knowledge about this") ||
                                            fullTextAccumulated.toLowerCase().includes("i recommend checking with hr");
                   

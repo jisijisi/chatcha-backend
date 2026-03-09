@@ -34,8 +34,14 @@ export async function getEnhancedContext(question, ragSystem, topK = 20, userEma
     }
     
     // === Get RAG context with permissions filtering ===
-    const { contextString: ragContext, documentIds: ragDocIds, sourceMap: ragSourceMap, categoryMap: ragCategoryMap } = 
-        await ragSystem.getContext(question, topK, userPermissions);
+    const { 
+        contextString: ragContext, 
+        documentIds: ragDocIds, 
+        sourceMap: ragSourceMap, 
+        categoryMap: ragCategoryMap,
+        isMissingKnowledge,
+        isAccessDenied
+    } = await ragSystem.getContext(question, topK, userPermissions);
     
     let finalContext = ragContext;
     let finalSourceMap = ragSourceMap;
@@ -91,6 +97,8 @@ Last Updated: ${companyInfo.timestamp}
         documentIds: ragDocIds,
         sourceMap: finalSourceMap,
         categoryMap: finalCategoryMap,
-        accessDenied
+        accessDenied,
+        isMissingKnowledge,
+        isAccessDenied
     };
 }

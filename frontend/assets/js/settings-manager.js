@@ -33,6 +33,7 @@ export class SettingsManager {
   init() {
     this.modal = document.getElementById('settings-modal-overlay');
     this.kbModal = document.getElementById('kb-full-modal-overlay');
+    this.speechFullModal = document.getElementById('speech-full-modal-overlay');
     
     if (!this.modal) return;
 
@@ -40,6 +41,19 @@ export class SettingsManager {
     this.setupCacheProgressModalHandlers();
     this.setupMobileDetection();
     this.applyStoredSettings();
+    this.checkSpeechSettings();
+  }
+
+  async checkSpeechSettings() {
+      try {
+          const res = await this.app.apiManager.hasSpeechSettingsAccess();
+          const speechOption = document.getElementById('speech-option');
+          if (res && res.allowed && speechOption) {
+              speechOption.style.display = 'flex';
+          }
+      } catch (e) {
+          console.error("Failed to check speech settings access", e);
+      }
   }
 
   setupMobileDetection() {
@@ -258,6 +272,53 @@ export class SettingsManager {
             this.saveSubcategory();
         };
     }
+
+    // 10. Speech Settings Actions
+    const speechOptionBtn = document.getElementById('speech-option');
+    if (speechOptionBtn) {
+        speechOptionBtn.addEventListener('click', async () => {
+            const contextMenu = document.getElementById('user-context-menu');
+            if (contextMenu) contextMenu.classList.remove('show');
+
+            const access = await this.app.apiManager.hasSpeechSettingsAccess().catch(() => ({ allowed: false }));
+            if (!access || access.allowed !== true) {
+              const t = TRANSLATIONS[this.app.currentLang] || TRANSLATIONS.en;
+              this.app.showToast('You do not have access to Pronunciation settings', 'warning');
+              return;
+            }
+
+            this.openSpeechFullModal();
+        });
+    }
+
+    const speechFullClose = document.getElementById('speech-full-close');
+    if (speechFullClose) speechFullClose.addEventListener('click', () => this.closeSpeechFullModal());
+    
+    const speechRefresh = document.getElementById('speech-refresh-btn');
+    if (speechRefresh) speechRefresh.addEventListener('click', () => this.loadSpeechRules());
+    
+    const speechSearch = document.getElementById('speech-search-input');
+    if (speechSearch) speechSearch.addEventListener('input', (e) => this.filterSpeechRules(e.target.value));
+
+    const btnAddRule = document.getElementById('btn-add-speech-rule');
+    if (btnAddRule) btnAddRule.addEventListener('click', () => this.openSpeechModal());
+
+    const speechClose = document.getElementById('user-speech-close');
+    const speechCancel = document.getElementById('user-speech-cancel');
+    const speechSave = document.getElementById('user-speech-save');
+
+    if (speechClose) speechClose.addEventListener('click', () => closeModal('user-speech-modal'));
+    if (speechCancel) speechCancel.addEventListener('click', () => closeModal('user-speech-modal'));
+    if (speechSave) speechSave.addEventListener('click', () => this.saveSpeechRule());
+
+    // Speech Delete Modal
+    const speechDelClose = document.getElementById('user-speech-delete-close');
+    const speechDelCancel = document.getElementById('user-speech-delete-cancel');
+    const speechDelConfirm = document.getElementById('user-speech-delete-confirm');
+
+    if (speechDelClose) speechDelClose.addEventListener('click', () => closeModal('user-speech-delete-modal'));
+    if (speechDelCancel) speechDelCancel.addEventListener('click', () => closeModal('user-speech-delete-modal'));
+    if (speechDelConfirm) speechDelConfirm.addEventListener('click', () => this.confirmDeleteSpeechRule());
   }
 
   async handleSendOtp() {
@@ -1459,13 +1520,18 @@ export class SettingsManager {
     const closeBtn = document.getElementById('cache-progress-close');
     const cancelBtn = document.getElementById('cache-progress-cancel');
     const finishBtn = document.getElementById('cache-progress-finish');
-    const fill = document.getElementById('cache-progress-fill-modal');
+    
+    // Magic Animation Elements
+    const stream = document.getElementById('cache-magic-stream-bar');
+    const targetIcon = document.getElementById('cache-magic-target-icon');
+    
     const text = document.getElementById('cache-progress-text-modal');
-    const bar = document.getElementById('cache-progressbar');
     const msg = document.getElementById('cache-status-message');
     const sub = document.getElementById('cache-status-subtext');
+    
     this.setupCacheProgressModalHandlers();
     openModal('cache-progress-modal');
+    
     requestAnimationFrame(() => {
       if (title) title.textContent = 'Regenerating Cache...';
       if (loading) loading.style.display = 'block';
@@ -1473,9 +1539,12 @@ export class SettingsManager {
       if (closeBtn) closeBtn.style.display = 'none';
       if (cancelBtn) cancelBtn.style.display = 'inline-block';
       if (finishBtn) finishBtn.style.display = 'none';
-      if (fill) fill.style.width = '0%';
+      
+      // Reset Magic Animation
+      if (stream) stream.style.width = '0%';
+      if (targetIcon) targetIcon.classList.remove('active');
+      
       if (text) text.textContent = '0% Complete';
-      if (bar) bar.setAttribute('aria-valuenow', '0');
       if (msg) msg.textContent = 'Starting embedding process...';
       if (sub) sub.textContent = 'This operation may take several minutes depending on the volume of knowledge data.';
     });
@@ -1493,12 +1562,13 @@ export class SettingsManager {
     this._lastProgressUpdate = Date.now();
     
     requestAnimationFrame(() => {
-        const progressFill = document.getElementById('cache-progress-fill-modal');
+        const streamFill = document.getElementById('cache-magic-stream-bar');
+        const targetIcon = document.getElementById('cache-magic-target-icon');
         const progressText = document.getElementById('cache-progress-text-modal');
-        const bar = document.getElementById('cache-progressbar');
-        if (progressFill) { progressFill.style.width = progress + '%'; }
+        
+        if (streamFill) { streamFill.style.width = progress + '%'; }
+        if (targetIcon && progress >= 80) { targetIcon.classList.add('active'); }
         if (progressText) { progressText.textContent = `${progress}% Complete`; }
-        if (bar) { bar.setAttribute('aria-valuenow', String(progress)); }
     });
   }
 
@@ -1552,7 +1622,11 @@ export class SettingsManager {
 
   connectToCacheProgressStream() {
     if (this.progressEventSource) { this.progressEventSource.close(); this.progressEventSource = null; }
-    const streamUrl = `${CONFIG.API_BASE}/cache/progress-stream`;
+    
+    const session = this.app.authManager.getSession();
+    const token = session ? session.token : '';
+    
+    const streamUrl = `${CONFIG.API_BASE}/cache/progress-stream?token=${token}`;
     this.progressEventSource = new EventSource(streamUrl);
     this.progressEventSource.onmessage = (event) => {
       try { const data = JSON.parse(event.data); this.handleCacheProgressUpdate(data); } catch (_) {}
@@ -1600,5 +1674,216 @@ export class SettingsManager {
         if (btn) setButtonLoading(btn, false);
         break;
     }
+  }
+
+  // =========================================================================
+  // SPEECH / PRONUNCIATION SETTINGS
+  // =========================================================================
+
+  openSpeechFullModal() {
+      if (this.speechFullModal) {
+          this.speechFullModal.style.display = 'flex';
+          requestAnimationFrame(() => {
+              this.speechFullModal.classList.add('active');
+              document.body.style.overflow = 'hidden';
+          });
+          this.loadSpeechRules();
+      }
+  }
+
+  closeSpeechFullModal() {
+      if (this.speechFullModal) {
+          this.speechFullModal.classList.remove('active');
+          setTimeout(() => {
+              if (!this.speechFullModal.classList.contains('active')) {
+                  this.speechFullModal.style.display = 'none';
+              }
+          }, 300);
+          document.body.style.overflow = '';
+      }
+  }
+
+  filterSpeechRules(query) {
+      const tbody = document.getElementById('speech-rules-list-body');
+      if (!tbody) return;
+      
+      const lowerQuery = query.toLowerCase();
+      const rows = tbody.querySelectorAll('tr');
+
+      rows.forEach(row => {
+          const text = row.textContent.toLowerCase();
+          row.style.display = text.includes(lowerQuery) ? '' : 'none';
+      });
+  }
+
+  async loadSpeechRules() {
+      const tbody = document.getElementById('speech-rules-list-body');
+      if (!tbody) return;
+
+      tbody.innerHTML = `<tr><td colspan="5" style="padding: 20px; text-align: center; color: var(--text-muted);">Loading rules...</td></tr>`;
+
+      try {
+          const res = await this.app.apiManager.getSpeechRules();
+          
+          if (Array.isArray(res)) {
+              this.renderSpeechRules(res);
+          } else if (res && res.success && Array.isArray(res.data)) {
+              this.renderSpeechRules(res.data);
+          } else {
+              tbody.innerHTML = `<tr><td colspan="5" style="padding: 20px; text-align: center; color: red;">Failed to load rules.</td></tr>`;
+          }
+      } catch (e) {
+          console.error("Error loading speech rules:", e);
+          tbody.innerHTML = `<tr><td colspan="5" style="padding: 20px; text-align: center; color: red;">Error loading rules.</td></tr>`;
+      }
+  }
+
+  getBadgeColor(type) {
+      switch (type) {
+          case 'acronym': return 'draft';
+          case 'brand': return 'published';
+          case 'unit': return 'published';
+          default: return 'archived';
+      }
+  }
+
+  renderSpeechRules(rules) {
+      const tbody = document.getElementById('speech-rules-list-body');
+      if (!tbody) return;
+
+      if (rules.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="5" style="padding: 20px; text-align: center; color: var(--text-muted);">No pronunciation rules defined yet.</td></tr>`;
+          return;
+      }
+
+      // Store rules map for easy access
+      this.speechRulesMap = rules.reduce((acc, rule) => {
+        acc[rule.id] = rule;
+        return acc;
+      }, {});
+
+      tbody.innerHTML = rules.map(rule => `
+          <tr>
+              <td data-label="Pattern / Word"><strong>${escapeHtml(rule.pattern)}</strong></td>
+              <td data-label="Replacement" style="font-family: monospace; color: var(--primary-color);">${escapeHtml(rule.replacement)}</td>
+              <td data-label="Type"><span class="kb-badge ${this.getBadgeColor(rule.type)}">${rule.type}</span></td>
+              <td data-label="Description">${escapeHtml(rule.description || '-')}</td>
+              <td data-label="Actions" style="text-align:right;">
+                  <div class="kb-actions-cell">
+                      <button class="kb-action-btn edit action-btn-edit" data-id="${rule.id}" title="Edit">
+                          <span class="material-symbols-outlined" style="font-size: 18px;">edit</span>
+                      </button>
+                      <button class="kb-action-btn delete" onclick="window.chatApp.settingsManager.deleteSpeechRule('${rule.id}')" title="Delete">
+                          <span class="material-symbols-outlined" style="font-size: 18px;">delete</span>
+                      </button>
+                  </div>
+              </td>
+          </tr>
+      `).join('');
+
+      // Add event listeners for edit buttons to avoid inline JS quoting hell
+      tbody.querySelectorAll('.action-btn-edit').forEach(btn => {
+          btn.addEventListener('click', () => {
+              const id = btn.dataset.id;
+              const rule = this.speechRulesMap[id];
+              if (rule) {
+                  this.editSpeechRule(rule.id, rule.pattern, rule.replacement, rule.type, rule.description, rule.is_active);
+              }
+          });
+      });
+  }
+
+  openSpeechModal(id = null, pattern = '', replacement = '', type = 'general', description = '', is_active = true) {
+      this.editingSpeechRuleId = id;
+      this.editingSpeechRuleIsActive = is_active;
+      
+      const title = document.getElementById('user-speech-modal-title');
+      if (title) title.textContent = id ? 'Edit Pronunciation Rule' : 'Add Pronunciation Rule';
+
+      const pInput = document.getElementById('user-speech-pattern');
+      const rInput = document.getElementById('user-speech-replacement');
+      const tInput = document.getElementById('user-speech-type');
+      const dInput = document.getElementById('user-speech-description');
+
+      if (pInput) pInput.value = pattern;
+      if (rInput) rInput.value = replacement;
+      if (tInput) tInput.value = type;
+      if (dInput) dInput.value = description;
+
+      openModal('user-speech-modal');
+  }
+
+  editSpeechRule(id, pattern, replacement, type, description, is_active) {
+      this.openSpeechModal(id, pattern, replacement, type, description, is_active);
+  }
+
+  async saveSpeechRule() {
+      const pattern = document.getElementById('user-speech-pattern').value.trim();
+      const replacement = document.getElementById('user-speech-replacement').value.trim();
+      const type = document.getElementById('user-speech-type').value;
+      const description = document.getElementById('user-speech-description').value.trim();
+      const btn = document.getElementById('user-speech-save');
+
+      if (!pattern || !replacement) {
+          this.app.showToast('Pattern and Replacement are required', 'warning');
+          return;
+      }
+
+      setButtonLoading(btn, true);
+
+      try {
+          let res;
+          const data = { pattern, replacement, type, description };
+          
+          if (this.editingSpeechRuleId) {
+              data.is_active = this.editingSpeechRuleIsActive !== undefined ? this.editingSpeechRuleIsActive : true;
+              res = await this.app.apiManager.updateSpeechRule(this.editingSpeechRuleId, data);
+          } else {
+              res = await this.app.apiManager.createSpeechRule(data);
+          }
+
+          if (res && !res.error) {
+              this.app.showToast('Rule saved successfully', 'success');
+              closeModal('user-speech-modal');
+              this.loadSpeechRules();
+          } else {
+              this.app.showToast(res.error || 'Failed to save rule', 'error');
+          }
+      } catch (e) {
+          console.error("Save Speech Rule Error:", e);
+          this.app.showToast('Error saving rule', 'error');
+      } finally {
+          setButtonLoading(btn, false);
+      }
+  }
+
+  async deleteSpeechRule(id) {
+      this.deleteSpeechRuleId = id;
+      openModal('user-speech-delete-modal');
+  }
+
+  async confirmDeleteSpeechRule() {
+      if (!this.deleteSpeechRuleId) return;
+      
+      const id = this.deleteSpeechRuleId;
+      const btn = document.getElementById('user-speech-delete-confirm');
+      setButtonLoading(btn, true);
+
+      try {
+          const res = await this.app.apiManager.deleteSpeechRule(id);
+          if (res && !res.error) {
+              this.app.showToast('Rule deleted', 'success');
+              this.loadSpeechRules();
+              closeModal('user-speech-delete-modal');
+          } else {
+              this.app.showToast(res.error || 'Failed to delete rule', 'error');
+          }
+      } catch (e) {
+          console.error("Delete Speech Rule Error:", e);
+          this.app.showToast('Error deleting rule', 'error');
+      } finally {
+          setButtonLoading(btn, false);
+          this.deleteSpeechRuleId = null;
+      }
   }
 }

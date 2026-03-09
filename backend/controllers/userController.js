@@ -1,20 +1,19 @@
 
 import { pool } from '../config/database.js';
+import { User } from '../models/User.js';
+import { Permission } from '../models/Permission.js';
+import { Chat } from '../models/Chat.js';
 
 export const getUserProfile = async (req, res) => {
   const email = req.query.email || req.header('X-User-Email');
   if (!email) return res.status(400).json({ error: 'Email required' });
   try {
-    const [rows] = await pool.execute(
-      'SELECT id, name, email, department, position, is_active FROM employees WHERE email = ?',
-      [email]
-    );
-    if (rows.length === 0) {
+    const user = await User.findByEmail(email);
+    if (!user) {
       return res.json({ exists: false, user: null });
     }
     
     // Check for missing critical fields
-    const user = rows[0];
     const isIncomplete = !user.name || (!user.department && !user.position);
     
     return res.json({ exists: true, user, isIncomplete });
@@ -33,51 +32,30 @@ export const upsertUserProfile = async (req, res) => {
     const conn = await pool.getConnection();
     try {
       await conn.beginTransaction();
-      const [existing] = await conn.execute('SELECT id FROM employees WHERE email = ?', [email]);
-      if (existing.length === 0) {
+      const existing = await User.findByEmail(email, conn);
+      
+      if (!existing) {
         // Create New User
-        // Default to NULL department/position to trigger Onboarding Modal if not provided
-        // Use 'External' / 'Guest' as fallbacks only if explicitly desired, but here we want the modal.
-        // However, if the request comes from Admin Panel (manual creation), they might provide dept.
-        
         const safeDept = department; // Can be null
         const safePos = position;    // Can be null
 
-        const [result] = await conn.execute(
-          `INSERT INTO employees (name, email, department, position, is_active, created_at, updated_at)
-           VALUES (?, ?, ?, ?, ?, NOW(), NOW())`,
-          [name, email, safeDept, safePos, activate ? 1 : 0]
-        );
-        
-        const newUserId = result.insertId;
+        const newUserId = await User.create({
+            name,
+            email,
+            department: safeDept,
+            position: safePos,
+            is_active: activate ? 1 : 0
+        }, conn);
         
         // Default Permissions: EXTERNAL
-        // We do NOT grant full access by default anymore. 
-        // User must validate Employee ID to get full access.
-        const [categories] = await conn.execute(
-            `SELECT id FROM knowledge_categories 
-             WHERE LOWER(name) LIKE 'company-general%' 
-                OR LOWER(name) LIKE 'company general%'
-                OR LOWER(name) LIKE 'wikipedia%' 
-                OR LOWER(name) LIKE 'wikepedia%'`
-        );
-        if (categories.length > 0) {
-            const values = categories.map(cat => [newUserId, cat.id, null, null, 'read', null]);
-            const placeholders = values.map(() => '(?, ?, ?, ?, ?, ?)').join(', ');
-            const flatValues = values.flat();
-            await conn.execute(
-                `INSERT INTO employee_access_permissions (employee_id, category_id, subcategory_id, source_id, access_level, granted_by)
-                 VALUES ${placeholders}`,
-                flatValues
-            );
-        }
+        await Permission.grantDefaultExternal(newUserId, conn);
       } else {
-        await conn.execute(
-          `UPDATE employees 
-             SET name = ?, department = COALESCE(?, department), position = COALESCE(?, position), is_active = ?, updated_at = NOW()
-           WHERE email = ?`,
-          [name, department, position, activate ? 1 : 0, email]
-        );
+        await User.updateProfile(email, {
+            name,
+            department: department || existing.department,
+            position: position || existing.position,
+            is_active: activate ? 1 : 0
+        }, conn);
       }
       await conn.commit();
       res.json({ success: true, message: "Profile updated" });
@@ -103,24 +81,20 @@ export const updateUserProfile = async (req, res) => {
     return res.status(400).json({ error: 'Email and Name are required' });
   }
   try {
-    const [rows] = await pool.execute(
-      `SELECT department, position FROM employees WHERE email = ?`,
-      [email]
-    );
-    if (rows.length === 0) {
+    const current = await User.findByEmail(email);
+    if (!current) {
       return res.status(404).json({ error: 'User not found' });
     }
-    const current = rows[0];
+    
     const newDepartment = hasDepartment ? department : current.department;
     const newPosition = hasPosition ? position : current.position;
 
-    const [result] = await pool.execute(
-      `UPDATE employees SET name = ?, department = ?, position = ?, updated_at = NOW() WHERE email = ?`,
-      [name, newDepartment, newPosition, email]
-    );
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ error: 'User not found or no changes made' });
-    }
+    await User.updateProfile(email, {
+        name,
+        department: newDepartment,
+        position: newPosition
+    });
+    
     res.json({ success: true });
   } catch (error) {
     console.error('❌ Update profile error:', error);
@@ -137,31 +111,28 @@ export const deleteAccount = async (req, res) => {
     const conn = await pool.getConnection();
     try {
       await conn.beginTransaction();
-      const [users] = await conn.execute(
-        'SELECT id FROM employees WHERE email = ? AND is_active = TRUE',
-        [email]
-      );
-      if (users.length === 0) {
+      const user = await User.findByEmail(email, conn);
+      
+      if (!user) { // Assuming inactive users should also be deletable if found
+         // The original query checked for is_active = TRUE, let's respect that logic if needed
+         // But usually deletion should work regardless. Original code:
+         // SELECT id FROM employees WHERE email = ? AND is_active = TRUE
+         // If user is inactive, findByEmail returns it, but we might want to fail?
+         // Let's assume finding the user is enough, but check active status if critical.
+         // Original code returned 404 if inactive.
+      }
+
+      if (!user || !user.is_active) {
         await conn.rollback();
         return res.status(404).json({ success: false, error: 'Active user not found' });
       }
-      const employeeId = users[0].id;
-      await conn.execute(
-        'DELETE FROM employee_access_permissions WHERE employee_id = ?',
-        [employeeId]
-      );
-      await conn.execute(
-        'DELETE FROM user_chats WHERE employee_id = ?',
-        [employeeId]
-      );
-      await conn.execute(
-        'DELETE FROM chat_sessions WHERE employee_id = ?',
-        [employeeId]
-      );
-      await conn.execute(
-        'DELETE FROM employees WHERE id = ?',
-        [employeeId]
-      );
+
+      const employeeId = user.id;
+      
+      await Permission.revokeAll(employeeId, conn);
+      await Chat.deleteAllForUser(employeeId, conn);
+      await User.delete(employeeId, conn);
+      
       await conn.commit();
       res.json({ success: true, message: 'Account deleted' });
     } catch (e) {

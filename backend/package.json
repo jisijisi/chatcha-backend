@@ -4,26 +4,25 @@
   "type": "module",
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js",
-    "cache:regenerate": "node scripts/regenerate-cache.js",
-    "cache:status": "node scripts/cache-status.js",
-    "cache:clear": "node scripts/clear-cache.js"
+    "dev": "node server.js"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
     "adm-zip": "^0.5.9",
-    "mammoth": "^1.4.20",
-    "xml2js": "^0.4.23",
     "alasql": "^4.11.0",
     "cors": "^2.8.5",
     "dotenv": "^16.6.1",
     "express": "^4.22.1",
     "googleapis": "^166.0.0",
+    "jsonwebtoken": "^9.0.3",
+    "mammoth": "^1.4.20",
     "multer": "^2.0.2",
     "mysql2": "^3.16.0",
     "node-fetch": "^3.3.2",
+    "vectordb": "^0.21.2",
     "ws": "^8.18.0",
-    "xlsx": "^0.18.5"
+    "xlsx": "^0.18.5",
+    "xml2js": "^0.4.23"
   },
   "engines": {
     "node": ">=18.0.0"

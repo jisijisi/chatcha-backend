@@ -403,7 +403,7 @@ export const analyzeDatabase = async (req, res) => {
             console.log(`🤖 Analyzing DB Schema...`);
             
             // Fetch active model
-            let activeModel = "gemini-2.0-flash-exp";
+            let activeModel = "gemini-flash-latest";
             try {
                 const [settings] = await pool.execute("SELECT ai_model FROM system_settings WHERE id = 1");
                 if (settings.length > 0 && settings[0].ai_model) {

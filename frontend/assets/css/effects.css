@@ -1,0 +1,142 @@
+/* Snow Effect */
+.effect-snow {
+  position: relative;
+  overflow-x: hidden;
+}
+
+.effect-snow::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  background-image: 
+    radial-gradient(4px 4px at 10% 10%, #fff, transparent),
+    radial-gradient(6px 6px at 20% 30%, #fff, transparent),
+    radial-gradient(3px 3px at 30% 10%, #fff, transparent),
+    radial-gradient(4px 4px at 40% 40%, #fff, transparent),
+    radial-gradient(6px 6px at 50% 20%, #fff, transparent),
+    radial-gradient(3px 3px at 60% 30%, #fff, transparent),
+    radial-gradient(4px 4px at 70% 50%, #fff, transparent),
+    radial-gradient(6px 6px at 80% 20%, #fff, transparent),
+    radial-gradient(3px 3px at 90% 40%, #fff, transparent);
+  background-size: 400px 400px;
+  animation: snow 4s linear infinite;
+  z-index: 9999;
+  opacity: 0.8;
+}
+
+@keyframes snow {
+  0% { background-position: 0 0, 0 0, 0 0; }
+  100% { background-position: 0 400px, 0 400px, 0 400px; }
+}
+
+/* Christmas Lights Top Bar */
+.effect-lights::after {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 10px;
+  background: repeating-linear-gradient(90deg, 
+    #ff0000 0 20px, 
+    #00ff00 20px 40px, 
+    #ffff00 40px 60px, 
+    #0000ff 60px 80px
+  );
+  z-index: 10000;
+  animation: lights 1s infinite alternate;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+}
+
+@keyframes lights {
+  from { filter: brightness(0.8); }
+  to { filter: brightness(1.5); }
+}
+
+/* Avatar Decorations */
+.avatar-frame-christmas {
+  position: relative;
+}
+
+.avatar-frame-christmas::before {
+  content: "🎅";
+  position: absolute;
+  top: -10px;
+  left: -10px;
+  font-size: 24px;
+  z-index: 10;
+  transform: rotate(-15deg);
+}
+
+.avatar-frame-newyear::before {
+  content: "🎉";
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  font-size: 24px;
+  z-index: 10;
+}
+
+/* Custom Avatar Overrides */
+body.avatar-variant-custom .welcome-avatar,
+body.avatar-variant-custom .welcome-avatar-hover {
+  content: var(--custom-avatar-url, none);
+  object-fit: cover;
+}
+
+/* Flying Santa Animation */
+.effect-santa-flying::after {
+  content: "🎅🦌🦌";
+  position: fixed;
+  top: 10%;
+  left: -20%;
+  font-size: 40px;
+  z-index: 10001;
+  animation: santa-fly 15s linear infinite;
+  white-space: nowrap;
+  pointer-events: none;
+  filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.3));
+}
+
+@keyframes santa-fly {
+  0% { left: -20%; transform: translateY(0) rotate(5deg); }
+  25% { transform: translateY(20px) rotate(0deg); }
+  50% { transform: translateY(0) rotate(-5deg); }
+  75% { transform: translateY(-20px) rotate(0deg); }
+  100% { left: 120%; transform: translateY(0) rotate(5deg); }
+}
+
+/* Snowy Input Fields */
+.effect-snow-elements input,
+.effect-snow-elements textarea,
+.effect-snow-elements .chat-input-container {
+  background-image: radial-gradient(circle at top, rgba(255, 255, 255, 0.8), transparent 70%);
+  border: 1px solid #e0f2f1 !important;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.5), inset 0 2px 5px rgba(255, 255, 255, 0.8);
+  position: relative;
+}
+
+/* Add a little snowdrift on top of the input container */
+.effect-snow-elements .input-area::before {
+  content: "";
+  position: absolute;
+  top: -5px;
+  left: 0;
+  width: 100%;
+  height: 10px;
+  background: radial-gradient(10px 5px at 10px 5px, white 90%, transparent),
+              radial-gradient(10px 5px at 30px 5px, white 90%, transparent),
+              radial-gradient(10px 5px at 50px 5px, white 90%, transparent),
+              radial-gradient(10px 5px at 70px 5px, white 90%, transparent),
+              radial-gradient(10px 5px at 90px 5px, white 90%, transparent);
+  background-size: 40px 10px;
+  background-repeat: repeat-x;
+  z-index: 5;
+  opacity: 0.8;
+  pointer-events: none;
+}
+

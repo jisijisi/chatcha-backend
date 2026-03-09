@@ -25,7 +25,7 @@ export const pool = mysql.createPool({
   connectTimeout: 60000,
   acquireTimeout: 60000,
   timeout: 60000,
-  timezone: '+08:00',
+  timezone: 'Z',
 });
 
 // Enhanced connection test

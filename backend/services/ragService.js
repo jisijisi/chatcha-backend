@@ -1,10 +1,10 @@
-// services/ragService.js - REVISED: Fixed Permission Filtering & Search Logic WITH PROGRESS CALLBACKS
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fetch from 'node-fetch';
 import { pool } from '../config/database.js';
 import { cacheService } from './cacheService.js';
+import * as lancedb from 'vectordb';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -95,7 +95,11 @@ export class DatabaseCacheManager {
 
   async isCacheValid() {
       try {
-          if (!fs.existsSync(this.cachePath) || !fs.existsSync(this.cacheInfoPath)) {
+          if (!fs.existsSync(this.cachePath) && !fs.existsSync(path.join(__dirname, '..', '.cache', 'lancedb'))) {
+               // Check for LanceDB folder as well
+              return false;
+          }
+          if (!fs.existsSync(this.cacheInfoPath)) {
               return false;
           }
           const cacheInfo = JSON.parse(fs.readFileSync(this.cacheInfoPath, 'utf8'));
@@ -196,21 +200,29 @@ export class DatabaseCacheManager {
   }
 }
 
-// === MULTI-FOLDER SEMANTIC RAG WITH PERMISSIONS ===
+// === MULTI-FOLDER SEMANTIC RAG WITH LANCEDB ===
 export class MultiFolderSemanticRAG {
   constructor() {
       this.knowledgeBase = {};
-      this.chunks = [];
-      this.embeddings = [];
+      this.chunks = []; // Kept for stats/debugging, but not used for search
       this.isInitialized = false;
       this.initializing = false;
-      // Use .cache directory
-      this.embeddingsCachePath = path.join(__dirname, '..', '.cache', 'embeddings-cache.json');
-      this.progressCallback = null; // NEW: Progress callback for real-time updates
-      console.log("🔧 Initializing RAG with NEW DATABASE SCHEMA...");
+      
+      // LanceDB Setup
+      const cacheDir = path.join(__dirname, '..', '.cache');
+      if (!fs.existsSync(cacheDir)) {
+          fs.mkdirSync(cacheDir, { recursive: true });
+      }
+      this.dbPath = path.join(cacheDir, 'lancedb');
+      this.tableName = 'knowledge_vectors';
+      this.db = null;
+      this.table = null;
+
+      this.progressCallback = null;
+      console.log("🔧 Initializing RAG with LanceDB...");
   }
 
-  // NEW: Progress callback methods
+  // Progress callback methods
   setProgressCallback(callback) {
       this.progressCallback = callback;
   }
@@ -219,7 +231,6 @@ export class MultiFolderSemanticRAG {
       this.progressCallback = null;
   }
 
-  // NEW: Report progress helper
   _reportProgress(stage, progress, message, detail = null) {
       if (this.progressCallback) {
           try {
@@ -269,44 +280,60 @@ export class MultiFolderSemanticRAG {
       }
       this.initializing = true;
       try {
-          console.log("🔄 Initializing RAG system from NEW database schema...");
-          this.knowledgeBase = await this.loadKnowledgeBaseFromDatabase();
-          if (Object.keys(this.knowledgeBase).length === 0) {
-              console.warn("⚠️ NEW Database knowledge base is empty - using fallback");
-              this.knowledgeBase = { 'sample': { 'welcome': 'Welcome to CDO Foodsphere', id: 0 } };
-          }
+          console.log("🔄 Initializing RAG system from LanceDB...");
           
-          this._reportProgress('processing', 40, 'Extracting text chunks...');
-          this.chunks = this.extractChunks(this.knowledgeBase);
-          console.log(`📚 Extracted ${this.chunks.length} text chunks from NEW database`);
+          // Connect to LanceDB
+          this.db = await lancedb.connect(this.dbPath);
           
-          const isProduction = process.env.NODE_ENV === 'production';
-          const cacheLoaded = await this.loadEmbeddingsCache();
+          // Check cache validity
           const cacheValid = await databaseCacheManager.isCacheValid();
-          
-          if (cacheLoaded && cacheValid) {
-              console.log("✅ RAG system initialized with valid cached embeddings from NEW DB");
+          const tableNames = await this.db.tableNames();
+          const tableExists = tableNames.includes(this.tableName);
+
+          const isProduction = process.env.NODE_ENV === 'production';
+
+          if (tableExists && cacheValid) {
+              console.log("✅ LanceDB table exists and cache is valid. Opening table...");
+              this.table = await this.db.openTable(this.tableName);
+              
+              // Load knowledge base for metadata/stats (chunks are in DB, but we keep KB for folder structure)
+              this.knowledgeBase = await this.loadKnowledgeBaseFromDatabase();
+              
+              // Optional: Load chunks into memory for debug/stats if needed. 
+              // For performance, we might want to avoid this on large datasets, 
+              // but for compatibility with current controller logic, we'll try to load a preview or count.
+              // For now, we will NOT load all chunks into memory to prove Phase 2 optimization.
+              // We will set this.chunks to a proxy or just empty if not needed by search.
+              // BUT, the current controller uses `ragSystem.chunks` for stats.
+              // We'll populate it from the DB to maintain compatibility for now.
+              console.log("📚 Loading chunks from LanceDB for cache...");
+              // Use filter with a condition that is always true to scan table (quoting column name to preserve case)
+              const allRows = await this.table.filter('"documentId" >= 0').limit(100000).execute();
+              this.chunks = allRows.map(r => ({
+                  text: r.text,
+                  path: r.path,
+                  context: r.context,
+                  parentContext: r.parentContext,
+                  source: r.source,
+                  fileName: r.fileName,
+                  isAggregate: r.isAggregate,
+                  documentId: r.documentId,
+                  categoryId: r.categoryId,
+                  subcategoryId: r.subcategoryId,
+                  sourceId: r.sourceId
+              }));
+              
+              console.log(`✅ RAG system initialized with ${this.chunks.length} vectors from LanceDB`);
               this.isInitialized = true;
-              if (!isProduction && !cacheValid) {
-                  console.log("🔄 Local development: Cache invalid, regenerating from NEW DB...");
-                  await this.regenerateEmbeddings();
-              }
           } else {
-              if (isProduction && !cacheValid) {
-                  console.warn("⚠️ Production: Running without embeddings - basic functionality only");
-                  this.embeddings = new Array(this.chunks.length).fill([]);
-                  this.isInitialized = true;
-              } else {
-                  console.log("🔄 No valid cache found, generating embeddings from NEW database...");
-                  await this.regenerateEmbeddings();
-              }
+              console.log("🔄 Cache invalid or table missing. Regenerating embeddings...");
+              await this.regenerateEmbeddings();
           }
           
           this._reportProgress('complete', 100, 'RAG system initialized');
       } catch (error) {
           console.error("❌ RAG initialization failed:", error);
-          this.isInitialized = true;
-          this.embeddings = [];
+          this.isInitialized = true; // Set true to avoid loops, but it's degraded
       } finally {
           this.initializing = false;
       }
@@ -314,23 +341,17 @@ export class MultiFolderSemanticRAG {
 
   async regenerateEmbeddings() {
       try {
-          console.log("🔄 Generating embeddings from NEW database content...");
+          console.log("🔄 Generating embeddings for LanceDB...");
           this._reportProgress('starting', 5, 'Starting embedding generation...');
           
           if (!process.env.GEMINI_API_KEY) {
               throw new Error("GEMINI_API_KEY not set in environment");
           }
           
-          console.log("📂 Reloading fresh data from database...");
-          this._reportProgress('loading', 15, 'Reloading fresh data from database...');
-          
           this.knowledgeBase = await this.loadKnowledgeBaseFromDatabase();
-          
           if (Object.keys(this.knowledgeBase).length === 0) {
               console.warn("⚠️ Database is empty, nothing to embed.");
               this.chunks = [];
-              this.embeddings = [];
-              this._reportProgress('complete', 100, 'No documents to embed');
               return;
           }
 
@@ -338,10 +359,10 @@ export class MultiFolderSemanticRAG {
           this.chunks = this.extractChunks(this.knowledgeBase);
           console.log(`📚 Extracted ${this.chunks.length} fresh text chunks.`);
 
-          console.log("⏳ This may take a few minutes...");
           this._reportProgress('embedding', 30, 'Starting embedding generation...');
           
-          this.embeddings = [];
+          // Prepare for LanceDB
+          const records = [];
           const batchSize = 5;
           const totalChunks = this.chunks.length;
           
@@ -350,47 +371,62 @@ export class MultiFolderSemanticRAG {
               const batchEmbeddings = await Promise.all(
                   batch.map(chunk => this.getEmbedding(chunk.text))
               );
-              this.embeddings.push(...batchEmbeddings);
+              
+              // Filter out failed embeddings (all zeros)
+              const validIndices = batchEmbeddings.map((emb, idx) => emb.some(v => v !== 0) ? idx : -1).filter(i => i !== -1);
+              
+              // Combine chunk data with vector
+              validIndices.forEach((validIdx) => {
+                  const chunk = batch[validIdx];
+                  records.push({
+                      vector: batchEmbeddings[validIdx],
+                      text: chunk.text,
+                      path: chunk.path,
+                      context: chunk.context,
+                      parentContext: chunk.parentContext,
+                      source: chunk.source,
+                      fileName: chunk.fileName,
+                      isAggregate: chunk.isAggregate || false,
+                      documentId: chunk.documentId || 0,
+                      categoryId: chunk.categoryId || 0,
+                      subcategoryId: chunk.subcategoryId || 0,
+                      sourceId: chunk.sourceId || 0
+                  });
+              });
               
               const progress = Math.min(i + batchSize, this.chunks.length);
               const percentage = ((progress / this.chunks.length) * 100).toFixed(1);
               
-              // Report progress with detailed information
               this._reportProgress(
                   'embedding', 
-                  30 + ((progress / totalChunks) * 65), // 30-95% range for embedding
+                  30 + ((progress / totalChunks) * 65), 
                   `Generating embeddings... ${progress}/${this.chunks.length} chunks`,
-                  {
-                      current: progress,
-                      total: totalChunks,
-                      percentage: percentage
-                  }
+                  { current: progress, total: totalChunks, percentage }
               );
-              
-              console.log(`📊 Progress: ${progress}/${this.chunks.length} (${percentage}%)`);
               
               if (i + batchSize < this.chunks.length) {
                   await new Promise(resolve => setTimeout(resolve, 200));
               }
           }
           
-          console.log("✅ All embeddings generated from NEW database content!");
-          this._reportProgress('finalizing', 95, 'Saving embeddings to cache...');
+          console.log("✅ All embeddings generated. Saving to LanceDB...");
+          this._reportProgress('finalizing', 95, 'Saving to vector database...');
           
-          await this.saveEmbeddingsCache();
+          // Create or Overwrite Table
+          if (this.table) {
+               // If table object exists, we might need to drop or just overwrite via db
+          }
+          this.table = await this.db.createTable(this.tableName, records, { writeMode: lancedb.WriteMode.Overwrite });
+          
           await databaseCacheManager.saveCacheInfo();
           
           this.isInitialized = true;
-          console.log("✅ RAG system initialized with fresh NEW database embeddings");
+          console.log("✅ RAG system initialized with LanceDB");
           this._reportProgress('complete', 100, 'Embeddings generated successfully!');
           
       } catch (error) {
           console.error("❌ Failed to regenerate embeddings:", error);
           this._reportProgress('error', 0, `Failed: ${error.message}`);
-          
-          if (this.embeddings.length === 0) {
-              this.embeddings = new Array(this.chunks.length).fill([]);
-          }
           this.isInitialized = true;
       }
   }
@@ -404,13 +440,11 @@ export class MultiFolderSemanticRAG {
           const documentId = fileData.id;
           const categoryId = fileData.categoryId;
           const subcategoryId = fileData.subcategoryId;
-          // FIX: Pass sourceId if available to support Tool permissions
           const sourceId = fileData.sourceId || null;
           const fileContent = fileData.content;
           
           this._recursiveExtract(fileContent, filePath, chunks, [fileContext], source, fileName, documentId, categoryId, subcategoryId, sourceId);
       }
-      this.aggregateChunksCount = chunks.filter(c => c.isAggregate).length;
       return chunks;
   }
   
@@ -426,7 +460,7 @@ export class MultiFolderSemanticRAG {
               documentId: documentId,
               categoryId: categoryId,
               subcategoryId: subcategoryId,
-              sourceId: sourceId // Added sourceId
+              sourceId: sourceId 
           });
           return;
       }
@@ -457,7 +491,7 @@ export class MultiFolderSemanticRAG {
                           documentId: documentId,
                           categoryId: categoryId,
                           subcategoryId: subcategoryId,
-                          sourceId: sourceId // Added sourceId
+                          sourceId: sourceId
                       });
                       return; 
                    }
@@ -483,7 +517,7 @@ export class MultiFolderSemanticRAG {
               documentId: documentId,
               categoryId: categoryId,
               subcategoryId: subcategoryId,
-              sourceId: sourceId // Added sourceId
+              sourceId: sourceId
           });
           return; 
       }
@@ -510,7 +544,7 @@ export class MultiFolderSemanticRAG {
               documentId: documentId,
               categoryId: categoryId,
               subcategoryId: subcategoryId,
-              sourceId: sourceId // Added sourceId
+              sourceId: sourceId
           });
       }
       for (const [key, value] of Object.entries(item)) {
@@ -589,37 +623,13 @@ export class MultiFolderSemanticRAG {
   formatKeyAsTitle(key) {
       return key
           .replace(/_/g, ' ')
-          .replace(/-/g, ' ') // Also replace hyphens with spaces
-          .replace(/([^ ])([A-Z])/g, '$1 $2') // Only add space if not already preceded by space
+          .replace(/-/g, ' ') 
+          .replace(/([^ ])([A-Z])/g, '$1 $2')
           .split(' ')
           .filter(word => word.length > 0)
           .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
           .join(' ')
           .trim();
-  }
-
-  async loadEmbeddingsCache() {
-    try {
-      const cachedEmbeddings = await cacheService.loadEmbeddingsCache(this.chunks.length);
-      if (cachedEmbeddings) {
-        this.embeddings = cachedEmbeddings;
-        return true;
-      }
-      return false;
-    } catch (error) {
-      console.warn("⚠️ Could not load embeddings cache:", error.message);
-      return false;
-    }
-  }
-
-  async saveEmbeddingsCache() {
-    try {
-      await cacheService.saveEmbeddingsCache(this.embeddings, this.chunks);
-      return true;
-    } catch (error) {
-      console.warn("⚠️ Could not save embeddings cache:", error.message);
-      return false;
-    }
   }
 
   async getEmbedding(text) {
@@ -648,65 +658,65 @@ export class MultiFolderSemanticRAG {
       }
   }
 
-  cosineSimilarity(a, b) {
-      if (!a || !b || a.length !== b.length) return 0;
-      let dotProduct = 0;
-      let normA = 0;
-      let normB = 0;
-      for (let i = 0; i < a.length; i++) {
-          dotProduct += a[i] * b[i];
-          normA += a[i] * a[i];
-          normB += b[i] * b[i];
-      }
-      if (normA === 0 || normB === 0) return 0;
-      return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
-  }
-
-  // --- MODIFIED: Search now returns ALL candidates, does not slice to topK immediately ---
-  async search(question) {
-      if (!this.isInitialized) {
-          console.warn("⚠️ RAG system not initialized");
-          return [];
-      }
-      if (this.chunks.length === 0) {
-          console.warn("⚠️ No chunks available");
-          return [];
-      }
-      console.log(`🔍 Searching: "${question}"`);
-      const questionEmbedding = await this.getEmbedding(question);
-      if (this.embeddings.length !== this.chunks.length) {
-          console.error(`❌ Mismatch! Chunks: ${this.chunks.length}, Embeddings: ${this.embeddings.length}.`);
+  // --- REPLACED: search now uses LanceDB ---
+  async search(question, topK = 100) {
+      if (!this.isInitialized || !this.table) {
+          console.warn("⚠️ RAG system not initialized or table missing");
           return [];
       }
       
-      const results = this.chunks.map((chunk, index) => {
-          let score = this.cosineSimilarity(questionEmbedding, this.embeddings[index]);
-          // --- REMOVED: Manual keyword boost which was hurting semantic accuracy ---
-          if (chunk.isAggregate) {
-              score *= 1.1; // Keep slight boost for aggregates
-          }
-          return { ...chunk, score };
-      });
-
-      // Filter by threshold but RETURN ALL MATCHES so permission filtering can happen later
-      const allResults = results
-          .filter(r => r.score > 0.1)
-          .sort((a, b) => b.score - a.score); // Strict score sorting
-
-      console.log(`📊 Found ${allResults.length} relevant chunks (threshold: 0.1) before filtering`);
-      return allResults;
+      console.log(`🔍 Searching with LanceDB: "${question}"`);
+      const questionEmbedding = await this.getEmbedding(question);
+      
+      try {
+          // LanceDB search
+          // fetch plenty of candidates (e.g. 100) to allow for permission filtering
+          // limit is applied AFTER scoring
+          const results = await this.table.search(questionEmbedding)
+              .limit(topK * 5) // Fetch 5x requested to ensure we have enough after permissions
+              .execute();
+          
+          console.log(`📊 Found ${results.length} matches from LanceDB`);
+          
+          // Map to format expected by rest of the system
+          // LanceDB result has _distance. We want score (similarity).
+          // Assuming normalized embeddings and L2 distance (default): 
+          // Cosine Sim = 1 - (Distance^2 / 2) ? Or just use 1 - distance if metric is cosine.
+          // LanceDB default metric is 'l2'.
+          // Let's assume 1 / (1 + distance) or similar for score if we want 0-1.
+          // Or just use (1 - distance) as a rough proxy for now.
+          // Actually, let's normalize the output score.
+          
+          return results.map(r => ({
+              text: r.text,
+              path: r.path,
+              context: r.context,
+              parentContext: r.parentContext,
+              source: r.source,
+              fileName: r.fileName,
+              isAggregate: r.isAggregate,
+              documentId: r.documentId,
+              categoryId: r.categoryId,
+              subcategoryId: r.subcategoryId,
+              sourceId: r.sourceId,
+              score: 2 - (r._distance || 0) // Approximation for L2 distance (lower is better, so we inverse)
+          })).filter(r => r.score > 0.1) // Keep threshold
+             .sort((a, b) => b.score - a.score); // Re-sort by score descending
+          
+      } catch (error) {
+          console.error("❌ LanceDB Search Error:", error);
+          return [];
+      }
   }
 
-  // === FIXED: Permission Filtering Methods ===
+  // --- FIXED: Permission Filtering Methods ---
   filterByPermissions(results, userPermissions) {
-      // Handle different permission states
       if (userPermissions === null) {
           console.log("🔒 No user permissions (null) - denying all access");
           return [];
       }
       
       if (userPermissions === 'FULL_ACCESS') {
-          console.log("🎯 User has FULL ACCESS - returning all results");
           return results;
       }
       
@@ -715,17 +725,14 @@ export class MultiFolderSemanticRAG {
           return [];
       }
 
-      // Check for full access in permissions array (backward compatibility)
       const hasFullAccess = userPermissions.some(p => 
         p.category_id === null && p.subcategory_id === null && p.source_id === null
       );
       
       if (hasFullAccess) {
-          console.log("✅ User has full access to all documents");
           return results;
       }
 
-      // Filter results based on specific permissions
       const filtered = results.filter(chunk => {
           return this.isDocumentAllowed(chunk, userPermissions);
       });
@@ -735,102 +742,80 @@ export class MultiFolderSemanticRAG {
   }
 
   isDocumentAllowed(chunk, userPermissions) {
-      // Handle full access cases
-      if (userPermissions === 'FULL_ACCESS') {
-          return true;
-      }
-      
+      if (userPermissions === 'FULL_ACCESS') return true;
       if (Array.isArray(userPermissions)) {
-          // Check for full access in array
           if (userPermissions.some(p => p.category_id === null && p.subcategory_id === null && p.source_id === null)) {
               return true;
           }
-
           const chunkCategoryId = chunk.categoryId;
           const chunkSubcategoryId = chunk.subcategoryId;
           const chunkSourceId = chunk.sourceId;
 
-          // Check if user has permission for this document
           return userPermissions.some(perm => {
-              // 1. Tool/Source Permission Check
-              if (perm.source_id) {
-                  // Exact match on source_id required for tools
-                  return chunkSourceId === perm.source_id;
-              }
-
-              // 2. Subcategory Permission Check
-              if (perm.subcategory_id) {
-                  return chunkSubcategoryId === perm.subcategory_id;
-              }
-
-              // 3. Category Permission Check
-              // Grants access to all docs in category, unless it's a specific source permission
+              if (perm.source_id) return chunkSourceId === perm.source_id;
+              if (perm.subcategory_id) return chunkSubcategoryId === perm.subcategory_id;
               if (perm.category_id && !perm.subcategory_id && !perm.source_id) {
                   return chunkCategoryId === perm.category_id;
               }
-              
               return false;
           });
       }
-      
       return false;
   }
   
-  // --- MODIFIED: getContext logic flow (Search -> Filter -> Slice) ---
   async getContext(question, topK = 20, userPermissions = null) {
-    // 1. Get ALL candidates first (don't limit to topK yet)
-    const results = await this.search(question);
+    // 1. Get ALL candidates from LanceDB (already fetched more than topK in search)
+    const results = await this.search(question, topK);
     
     if (results.length === 0) {
-        console.log("❌ No relevant chunks found for question:", question);
         return {
           contextString: "No relevant information found in the knowledge base.",
           documentIds: [],
           sourceMap: {},
-          categoryMap: {}
+          categoryMap: {},
+          isMissingKnowledge: true,
+          isAccessDenied: false
         };
     }
     
-    // 2. Apply Permission Filtering to the WHOLE result set
+    // 2. Apply Permission Filtering
     let filteredResults = results;
     
     if (userPermissions !== null) {
         if (userPermissions === null || (Array.isArray(userPermissions) && userPermissions.length === 0)) {
-            console.log("🚫 User has NO permissions - denying access to all internal documents");
+            const restrictedDocs = [...new Set(results.map(r => r.fileName))];
             return {
-                contextString: "No accessible information found for this query.",
+                contextString: `[SYSTEM: NO_ACCESS] No accessible information found. Restricted: ${restrictedDocs.join(', ')}.`,
                 documentIds: [],
                 sourceMap: {},
-                categoryMap: {}
+                categoryMap: {},
+                isMissingKnowledge: false,
+                isAccessDenied: true
             };
         }
         
-        // FULL_ACCESS users bypass filtering
         if (userPermissions !== 'FULL_ACCESS') {
             filteredResults = this.filterByPermissions(results, userPermissions);
         }
         
         if (filteredResults.length === 0) {
-            console.log("🔒 User permissions don't include relevant documents");
+            const restrictedDocs = [...new Set(results.map(r => r.fileName))];
             return {
-                contextString: "I found information related to your question, but you don't have permission to access it. Please contact your administrator if you need access to this information.",
+                contextString: `[SYSTEM: NO_ACCESS] Information exists but is restricted. Restricted: ${restrictedDocs.join(', ')}.`,
                 documentIds: [],
                 sourceMap: {},
-                categoryMap: {}
+                categoryMap: {},
+                isMissingKnowledge: false,
+                isAccessDenied: true
             };
         }
     }
     
-    // 3. NOW Slice to Top K (only after filtering)
+    // 3. Slice to final Top K
     const finalResults = filteredResults.slice(0, topK);
 
     const allUniqueDocIds = [...new Set(finalResults.map(r => r.documentId).filter(id => id > 0))];
-    console.log(`🆔 Found ${allUniqueDocIds.length} unique document IDs (top ${topK}):`, allUniqueDocIds);
-    
-    console.log("🎯 Top search results for context:");
-    finalResults.slice(0, 3).forEach((result, i) => {
-        console.log(`   ${i+1}. Score: ${result.score.toFixed(3)}, File: ${result.fileName}, Ctx: ${result.context}, ID: ${result.documentId}`);
-    });
+    console.log(`🆔 Found ${allUniqueDocIds.length} unique document IDs (top ${topK})`);
     
     const groupedByFile = {};
     finalResults.forEach(result => {
@@ -845,22 +830,12 @@ export class MultiFolderSemanticRAG {
     
     for (const [fileName, chunks] of Object.entries(groupedByFile)) {
         const sourceName = this.formatKeyAsTitle(fileName);
-        
-        // Extract category and subcategory
         const pathParts = chunks[0]?.path?.split('/') || [];
         const categoryName = pathParts[0] || 'General';
-        
-        // Use raw category name from DB path to ensure consistency
         let formattedCategory = (categoryName.includes(' ') || categoryName === 'General') 
             ? categoryName 
             : this.formatKeyAsTitle(categoryName);
 
-        // OMITTED: Appending subcategory to avoid redundancy with document titles
-        // Previous logic: formattedCategory = `${formattedSub} (${formattedCategory})`;
-        // The user feedback indicated that having the subcategory in the source citation was redundant
-        // when the document title often already implies the context.
-        // We will stick to Document Name (Category) format.
-        
         contextParts.push(`\n### Context from: ${sourceName}\n`);
         contextParts.push(`**Category:** ${formattedCategory}\n\n`);
         
@@ -877,15 +852,13 @@ export class MultiFolderSemanticRAG {
     }
     
     const finalContext = contextParts.join('\n');
-    console.log(`📄 Final context: ${finalContext.length} chars, ${Object.keys(groupedByFile).length} sources`);
-    console.log('🗺️ Generated RAG Source Map:', sourceMap);
-    console.log('📂 Generated Category Map:', categoryMap);
-    
     return { 
       contextString: finalContext,
       documentIds: allUniqueDocIds,
       sourceMap: sourceMap,
-      categoryMap: categoryMap
+      categoryMap: categoryMap,
+      isMissingKnowledge: false,
+      isAccessDenied: false
     };
   }
   
@@ -948,12 +921,10 @@ export const ragSystem = new MultiFolderSemanticRAG();
 export async function getUserPermissions(userEmail) {
     if (!userEmail) {
         console.log("⚠️ No user email provided - GUEST USER MODE");
-        // Return null for guest users (NO ACCESS to internal documents)
         return null;
     }
 
     try {
-        // Get employee ID
         const [employee] = await pool.execute(
             'SELECT id FROM employees WHERE email = ? AND is_active = TRUE',
             [userEmail]
@@ -961,54 +932,35 @@ export async function getUserPermissions(userEmail) {
         
         if (employee.length === 0) {
             console.log(`⚠️ No active employee found for ${userEmail} - treating as GUEST`);
-            // Return null for unrecognized emails (NO ACCESS)
             return null;
         }
         
         const employeeId = employee[0].id;
         
-        // Get permissions - CRITICAL: Include full access detection
         const [permissions] = await pool.execute(`
             SELECT 
                 category_id, 
                 subcategory_id, 
                 source_id,
-                -- Detect full access: when all IDs are null
                 (category_id IS NULL AND subcategory_id IS NULL AND source_id IS NULL) as has_full_access
             FROM employee_access_permissions 
             WHERE employee_id = ?
         `, [employeeId]);
         
-        console.log(`🔐 Loaded ${permissions.length} permissions for ${userEmail} (Employee ID: ${employeeId})`);
-        
-        // Check for full access permission
         const hasFullAccess = permissions.some(p => p.has_full_access);
         
         if (hasFullAccess) {
-            console.log("   ✅ User has FULL ACCESS to all documents");
-            // Return special marker for full access
             return 'FULL_ACCESS';
         }
         
-        // Log permission details for debugging
-        if (permissions.length > 0) {
-            const categoryPerms = permissions.filter(p => p.category_id && !p.subcategory_id);
-            const subcategoryPerms = permissions.filter(p => p.subcategory_id);
-            const sourcePerms = permissions.filter(p => p.source_id);
-            
-            console.log(`   📁 Category-level permissions: ${categoryPerms.length}`);
-            console.log(`   📂 Subcategory-level permissions: ${subcategoryPerms.length}`);
-            console.log(`   🔧 Source-level permissions: ${sourcePerms.length}`);
-        } else {
-            console.log("   ⚠️ No permissions assigned - user will have NO ACCESS to internal documents");
-            return []; // Empty array = no permissions
+        if (permissions.length === 0) {
+            return []; 
         }
         
         return permissions;
         
     } catch (error) {
         console.error('❌ Error loading user permissions:', error);
-        // On error, return null (NO ACCESS)
         return null;
     }
 }

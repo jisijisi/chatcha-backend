@@ -27,7 +27,9 @@ import ragRoutes from "./routes/rag.routes.js";
 import ttsRoutes from "./routes/tts.routes.js";
 import speechRoutes from "./routes/speech.routes.js";
 import notificationRoutes from "./routes/notification.routes.js";
+import themeRoutes from "./routes/theme.routes.js";
 import attachFullDuplexWS from "./ws/full_duplex_ws.js";
+import { parse } from 'url';
  
 import * as userController from "./controllers/userController.js";
 
@@ -36,8 +38,22 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const server = http.createServer(app);
 
-// Attach full-duplex WebSocket endpoint
-attachFullDuplexWS(server);
+// Initialize WebSocket Servers
+const wssFullDuplex = attachFullDuplexWS(server);
+
+// Handle WebSocket upgrades manually to support multiple paths
+server.on('upgrade', (request, socket, head) => {
+    const baseURL = `http://${request.headers.host}`;
+    const { pathname } = new URL(request.url, baseURL);
+
+    if (pathname === '/ws/full-duplex') {
+        wssFullDuplex.handleUpgrade(request, socket, head, (ws) => {
+            wssFullDuplex.emit('connection', ws, request);
+        });
+    } else {
+        socket.destroy();
+    }
+});
 
 // 1. Security & Parsing
 app.disable('x-powered-by');
@@ -113,6 +129,7 @@ app.use(ragRoutes);
 app.use("/tts", ttsRoutes);
 app.use("/api/speech", speechRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use(themeRoutes);
 
 // User Profile Routes
 app.get("/api/user/profile", userController.getUserProfile);

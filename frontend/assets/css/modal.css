@@ -546,6 +546,17 @@
   z-index: 10100 !important; /* Higher than KB modal */
 }
 
+/* User Speech Modals - Highest Priority (above settings & KB) */
+#user-speech-modal,
+#user-speech-delete-modal {
+  z-index: 20000 !important;
+}
+
+/* Ensure Speech Full Modal (List) is lower than Add/Edit Modal */
+#speech-full-modal-overlay {
+  z-index: 10000 !important;
+}
+
 /* When these modals are active/showing */
 #kb-view-modal.active,
 #kb-delete-confirm-modal.active,
@@ -565,6 +576,20 @@
   /* Removed will-change to prevent excessive memory usage and layer promotion conflicts */
 }
 
+#user-speech-modal.active,
+#user-speech-delete-modal.active {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 20001 !important;
+}
+
 /* Modal content inside these modals */
 #kb-view-modal .modal-content,
 #kb-delete-confirm-modal .modal-content,
@@ -572,6 +597,212 @@
 #kb-conversion-status-modal .modal-content {
   z-index: 10102 !important;
   position: relative;
+}
+
+/* Styling for User Speech Modals (Add/Edit/Delete) */
+#user-speech-modal .modal,
+#user-speech-delete-modal .modal {
+  z-index: 20002 !important;
+  position: relative;
+  padding: 0;
+  border: none;
+  background: var(--bg-card);
+  border-radius: 16px; /* Matches settings modal */
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  color: var(--text-main);
+}
+
+/* Base styles for Speech Modals - Include flex alignment to prevent jump on close */
+#user-speech-modal,
+#user-speech-delete-modal {
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Specific Header Styling */
+#user-speech-modal .modal-header,
+#user-speech-delete-modal .modal-header {
+  background: linear-gradient(135deg, #D71921 0%, #a01419 100%);
+  padding: 20px 24px;
+  border-bottom: 4px solid #FFC700;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+#user-speech-modal .modal-header h3,
+#user-speech-delete-modal .modal-header h3 {
+  color: white;
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+/* Close Button */
+#user-speech-modal .modal-close,
+#user-speech-delete-modal .modal-close {
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  color: white;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+#user-speech-modal .modal-close:hover,
+#user-speech-delete-modal .modal-close:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Body */
+#user-speech-modal .modal-body,
+#user-speech-delete-modal .modal-body {
+  padding: 24px;
+  background: var(--bg-card);
+  color: var(--text-main);
+}
+
+/* Footer */
+#user-speech-modal .modal-footer,
+#user-speech-delete-modal .modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  background: var(--bg-secondary);
+}
+
+/* Form Styles */
+#user-speech-modal .form-group {
+  margin-bottom: 24px;
+}
+
+#user-speech-modal .form-label {
+  font-weight: 600;
+  color: var(--text-main);
+  margin-bottom: 6px;
+  display: block;
+  font-size: 0.9rem;
+}
+
+#user-speech-modal .form-control {
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-size: 0.95rem;
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--input-bg);
+  color: var(--input-text);
+}
+
+#user-speech-modal .form-control:focus {
+  border-color: #D71921;
+  box-shadow: 0 0 0 3px rgba(215, 25, 33, 0.1);
+  outline: none;
+}
+
+/* Mobile View for Speech Rules List - Ensure separation */
+@media (max-width: 768px) {
+  #speech-rules-list-body tr {
+    display: block;
+    margin-bottom: 16px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+  }
+
+  #speech-rules-list-body td {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 8px 0 !important;
+    border-bottom: 1px solid var(--border-color);
+    text-align: left !important;
+    color: var(--text-main);
+  }
+
+  #speech-rules-list-body td:last-child {
+    border-bottom: none;
+    padding-top: 12px !important;
+    flex-direction: row;
+    justify-content: flex-end;
+  }
+
+  #speech-rules-list-body td::before {
+    content: attr(data-label);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+  }
+
+  #speech-rules-list-body td[data-label="Actions"]::before {
+    display: none;
+  }
+}
+
+/* Helper text below inputs */
+#user-speech-modal small {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  display: block;
+  margin-top: 6px;
+  line-height: 1.4;
+}
+
+/* Buttons */
+#user-speech-modal .btn,
+#user-speech-delete-modal .btn {
+  padding: 10px 18px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  height: auto;
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#user-speech-modal .btn-secondary,
+#user-speech-delete-modal .btn-secondary {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+}
+
+#user-speech-modal .btn-secondary:hover,
+#user-speech-delete-modal .btn-secondary:hover {
+  background: var(--bg-hover);
+  border-color: var(--text-muted);
+  color: var(--text-main);
+}
+
+#user-speech-modal .btn-primary,
+#user-speech-delete-modal .btn-primary {
+  background: #D71921;
+  border: 1px solid #D71921;
+  color: white;
+}
+
+#user-speech-modal .btn-primary:hover,
+#user-speech-delete-modal .btn-primary:hover {
+  background: #b91c1c;
 }
 
 /* Override stacking for conversion status modal to ensure it is highest */
@@ -611,7 +842,9 @@
 #kb-subcat-modal,
 #kb-conversion-status-modal,
 #cache-progress-modal,
-#kb-doc-modal {
+#kb-doc-modal,
+#user-speech-modal,
+#user-speech-delete-modal {
   /* Ensure overlay is just a flat color, no filters */
   backdrop-filter: none !important;
   transition: none !important;
@@ -631,9 +864,11 @@
   left: 0 !important;
   background: rgba(0, 0, 0, 0.6) !important;
   z-index: 10101 !important; /* Ensure it's above KB modal immediately */
+  display: none; /* Hide by default */
 }
 
 /* The content inside these modals needs to be the actual box */
+/* Removed .modal-content styles as we use .modal directly now */
 #kb-view-modal .modal-content,
 #kb-delete-confirm-modal .modal-content,
 #kb-subcat-modal .modal-content,

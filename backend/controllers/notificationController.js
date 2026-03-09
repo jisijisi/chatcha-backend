@@ -103,7 +103,7 @@ export const deleteAllNotifications = async (req, res) => {
 export const createNotification = async (userId, message, type = 'info') => {
   try {
     await pool.execute(
-      `INSERT INTO notifications (user_id, message, type) VALUES (?, ?, ?)`,
+      `INSERT INTO notifications (user_id, message, type, created_at) VALUES (?, ?, ?, NOW())`,
       [userId, message, type]
     );
     return true;
@@ -117,7 +117,7 @@ export const createNotification = async (userId, message, type = 'info') => {
 export const notifyAdmins = async (message, type = 'warning') => {
   try {
     const [admins] = await pool.execute(
-      `SELECT id FROM employees WHERE role = 'admin' AND is_active = TRUE`
+      `SELECT id FROM employees WHERE LOWER(role) = 'admin' AND is_active = TRUE`
     );
 
     if (admins.length === 0) return false;
@@ -125,7 +125,7 @@ export const notifyAdmins = async (message, type = 'warning') => {
     // Use Promise.all for parallel insertion
     const queries = admins.map(admin => 
       pool.execute(
-        `INSERT INTO notifications (user_id, message, type) VALUES (?, ?, ?)`,
+        `INSERT INTO notifications (user_id, message, type, created_at) VALUES (?, ?, ?, NOW())`,
         [admin.id, message, type]
       )
     );

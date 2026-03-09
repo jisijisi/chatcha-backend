@@ -1,14 +1,17 @@
 // controllers/adminController.js
 import { pool } from '../config/database.js';
 import { databaseCacheManager, ragSystem } from '../services/ragService.js';
+import { PromptService } from '../services/promptService.js';
 import * as xlsx from 'xlsx'; 
 import os from 'os';
+import jwt from 'jsonwebtoken';
 
 // NOTE: If using Node.js < 18, uncomment the line below:
 // import fetch from 'node-fetch'; 
 
 const permissionClients = new Map();
 const dashboardClients = new Set();
+const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret_key_change_in_prod_12345';
 
 export const dashboardStream = async (req, res) => {
   res.setHeader('Content-Type', 'text/event-stream');
@@ -71,7 +74,19 @@ export const adminLogin = async (req, res) => {
     }
     
     const admin = adminRows[0];
-    const token = `admin_token_${Date.now()}_${admin.id}`;
+    
+    // Generate JWT Token
+    const token = jwt.sign(
+        { 
+            id: admin.id, 
+            email: admin.email, 
+            name: admin.name,
+            role: 'admin',
+            type: 'employee'
+        }, 
+        JWT_SECRET, 
+        { expiresIn: '24h' }
+    );
     
     console.log(`✅ Admin user logged in: ${admin.email} (ID: ${admin.id})`);
     
@@ -1403,6 +1418,43 @@ export const checkKbSettingsAccess = async (req, res) => {
   }
 };
 
+export const checkSpeechSettingsAccess = async (req, res) => {
+  try {
+    const userEmail = req.header('X-User-Email');
+    if (!userEmail) {
+      return res.json({ allowed: false });
+    }
+    const [employees] = await pool.execute(
+      'SELECT id FROM employees WHERE email = ? AND is_active = TRUE',
+      [userEmail]
+    );
+    if (employees.length === 0) {
+      return res.json({ allowed: false });
+    }
+    const employeeId = employees[0].id;
+    const [rows] = await pool.execute(
+      `SELECT 1 
+       FROM employee_access_permissions 
+       WHERE employee_id = ? 
+         AND (
+           -- Explicit Speech Settings flag
+           source_id IN (
+             SELECT id FROM live_data_sources 
+             WHERE source_type = 'internal_flag' AND name = 'SPEECH_SETTINGS_ACCESS'
+           )
+           -- OR Full Access permission (all NULLs)
+           OR (category_id IS NULL AND subcategory_id IS NULL AND source_id IS NULL)
+         )
+       LIMIT 1`,
+      [employeeId]
+    );
+    res.json({ allowed: rows.length > 0 });
+  } catch (error) {
+    console.error('❌ Speech Settings Access check error:', error);
+    res.json({ allowed: false });
+  }
+};
+
 export const permissionsStream = async (req, res) => {
   try {
     let userEmail = req.header('X-User-Email');
@@ -1658,7 +1710,7 @@ export const getSettings = async (req, res) => {
       `);
       settings = {
         systemName: 'ChatCDO',
-        aiModel: 'gemini-2.0-flash-exp',
+        aiModel: 'gemini-flash-latest',
         audioModel: 'gemini-2.5-flash-tts', // Default
         maxContext: 20,
         enableWebSearch: true,
@@ -1808,10 +1860,10 @@ export const getAvailableGeminiModels = async (req, res) => {
   const fallbackText = [
     { id: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash (Offline)' },
     { id: 'gemini-1.5-pro', label: 'Gemini 1.5 Pro (Offline)' },
-    { id: 'gemini-1.5-flash', label: 'Gemini 1.5 Flash (Offline)' }
+    { id: 'gemini-flash-latest', label: 'Gemini Flash (Offline)' }
   ];
   const fallbackAudio = [
-    { id: 'gemini-2.0-flash-exp', label: 'Gemini 2.0 Flash Audio (Offline)' },
+    { id: 'gemini-flash-latest', label: 'Gemini Flash (Stable)' },
     { id: 'gemini-2.5-flash-tts', label: 'Gemini 2.5 Flash TTS (Offline)' }
   ];
 
@@ -1886,6 +1938,101 @@ export const getAvailableGeminiModels = async (req, res) => {
     res.json({ 
         textModels: fallbackText,
         audioModels: fallbackAudio
+    });
+  }
+};
+
+export const testAIModel = async (req, res) => {
+  const { modelId, type, prompt } = req.body;
+  const apiKey = process.env.GEMINI_API_KEY;
+
+  if (!modelId) {
+    return res.status(400).json({ success: false, error: 'Model ID is required' });
+  }
+
+  if (!apiKey) {
+    return res.status(500).json({ success: false, error: 'GEMINI_API_KEY not configured' });
+  }
+
+  try {
+    let cleanModelId = modelId.trim();
+    if (cleanModelId.startsWith('models/')) {
+      cleanModelId = cleanModelId.replace('models/', '');
+    }
+
+    console.log(`🧪 Testing AI model: ${cleanModelId} (${type || 'text'}) with prompt: "${prompt || 'default'}"`);
+    
+    // Function to try a specific API version
+    const attemptTest = async (version) => {
+      return await fetch(
+        `https://generativelanguage.googleapis.com/${version}/models/${encodeURIComponent(cleanModelId)}:generateContent?key=${apiKey}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ 
+              role: "user", 
+              parts: [{ text: prompt || "Hello, this is a connection test. Please reply with exactly 'OK'." }] 
+            }],
+            generationConfig: { 
+              maxOutputTokens: 1024,
+              temperature: 0.7 
+            }
+          })
+        }
+      );
+    };
+
+    // Try v1beta first, then fallback to v1 if 404
+    let response = await attemptTest('v1beta');
+    let data = await response.json();
+
+    if (!response.ok && response.status === 404) {
+      console.log(`⚠️ v1beta failed for ${cleanModelId}, trying v1...`);
+      const v1Response = await attemptTest('v1');
+      const v1Data = await v1Response.json();
+      
+      // Update response and data regardless of success, 
+      // but prioritize success if it happens
+      if (v1Response.ok || v1Response.status !== 404) {
+        response = v1Response;
+        data = v1Data;
+      }
+    }
+
+    if (!response.ok) {
+      console.error('❌ Model test failed:', data);
+      
+      // Extract the most helpful error message
+      let errorMessage = 'Model test failed';
+      if (data.error) {
+        if (typeof data.error === 'object') {
+          errorMessage = data.error.message || JSON.stringify(data.error);
+        } else {
+          errorMessage = data.error;
+        }
+      }
+      
+      return res.status(response.status).json({ 
+        success: false, 
+        error: errorMessage,
+        details: data
+      });
+    }
+
+    console.log(`✅ Model test successful: ${cleanModelId}`);
+    res.json({ 
+      success: true, 
+      message: 'Connection successful!',
+      response: data.candidates?.[0]?.content?.parts?.[0]?.text
+    });
+
+  } catch (error) {
+    console.error('❌ Model test error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Server error during model test',
+      details: error.message
     });
   }
 };
@@ -2023,4 +2170,46 @@ export const clearAllSmartAssistantSessions = async (req, res) => {
             details: error.message 
         });
     }
+};
+
+// ==========================================
+// AI PROMPTS MANAGEMENT
+// ==========================================
+
+export const getPrompts = async (req, res) => {
+  try {
+    const prompts = await PromptService.getAllPrompts();
+    res.json({ success: true, prompts });
+  } catch (error) {
+    console.error('❌ Get Prompts Error:', error);
+    res.status(500).json({ error: 'Failed to load prompts' });
+  }
+};
+
+export const updatePrompt = async (req, res) => {
+  const { type } = req.params;
+  const { content } = req.body;
+  
+  if (!content) {
+    return res.status(400).json({ error: 'Content is required' });
+  }
+
+  try {
+    await PromptService.updatePrompt(type, content);
+    res.json({ success: true, message: 'Prompt updated successfully' });
+  } catch (error) {
+    console.error(`❌ Update Prompt Error (${type}):`, error);
+    res.status(500).json({ error: 'Failed to update prompt' });
+  }
+};
+
+export const resetPrompt = async (req, res) => {
+  const { type } = req.params;
+  try {
+    await PromptService.resetPrompt(type);
+    res.json({ success: true, message: 'Prompt reset to default' });
+  } catch (error) {
+    console.error(`❌ Reset Prompt Error (${type}):`, error);
+    res.status(500).json({ error: error.message });
+  }
 };

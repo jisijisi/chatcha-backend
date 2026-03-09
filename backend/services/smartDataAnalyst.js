@@ -8,6 +8,7 @@ import { pool } from '../config/database.js';
 import { GoogleService } from './googleService.js';
 import { ContextManager } from '../utils/ContextManager.js';
 import mysql from 'mysql2/promise'; // Added for Database support
+import { PromptService } from './promptService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -17,7 +18,7 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "YOUR_API_KEY
 
 export class SmartDataAnalyst {
     constructor() {
-        this.model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
+        this.model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
         this.data = {}; // Initialize empty, data will be fetched live
         this.sourceNames = {}; // Map datasetName -> real source name
         this.sourceCategories = {}; // Map datasetName -> category name
@@ -133,9 +134,9 @@ export class SmartDataAnalyst {
      * @param {string} userQuery - The user's question
      * @param {Array} history - Conversation history
      */
-    async processQuery(userQuery, history = [], lastBotResponse = null, sessionId = null, userEmail = null) {
+    async processQuery(userQuery, history = [], lastBotResponse = null, sessionId = null, userEmail = null, translatedQuery = null) {
         try {
-            console.log(`🧠 SmartDataAnalyst processing: "${userQuery}"`);
+            console.log(`🧠 SmartDataAnalyst processing: "${userQuery}" (Translated: "${translatedQuery}")`);
 
             // 0. Fetch User Context (for "I", "me", "my" resolution)
             let userContext = null;
@@ -166,7 +167,7 @@ export class SmartDataAnalyst {
             }
 
             // 1. Analyze with LLM (Intent, Tool Selection, Ambiguity Check, SQL Generation)
-            const analysis = await this._analyzeWithLLM(userQuery, history, lastBotResponse, sessionId, userContext);
+            const analysis = await this._analyzeWithLLM(userQuery, history, lastBotResponse, sessionId, userContext, translatedQuery);
 
             console.log("Analysis Result:", JSON.stringify(analysis, null, 2));
 
@@ -422,7 +423,7 @@ ${r.description}
     /**
      * Uses Gemini to analyze the request against the Live Data Config
      */
-    async _analyzeWithLLM(query, history, lastBotResponse, sessionId, userContext = null) {
+    async _analyzeWithLLM(query, history, lastBotResponse, sessionId, userContext = null, translatedQuery = null) {
         const historyText = history.map(h => `User: ${h.question}\nBot: ${h.answer}`).join('\n');
         
         const toolDescription = await this._getToolDescriptions();
@@ -450,163 +451,17 @@ CURRENT USER DETAILS (Use this for "I", "me", "my" queries):
             mergedQuery = `[Context: Bot asked "${lastBotResponse}"] User Answered: "${query}"`;
         }
 
-        const prompt = `
-        You are a Smart Data Analyst for Live Data Tools.
-        
-        CONTEXT:
-        ${toolDescription}
-        
-        ${userContextString}
-
-        SESSION CONTEXT (Active & Archived):
-        ${contextInfo}
-        
-        USER QUERY: "${mergedQuery}"
-        
-        HISTORY:
-        ${historyText}
-        
-        TASK:
-        You must strictly follow this 5-Stage Reasoning Pipeline before generating the JSON output.
-
-        STAGE 0: PRIVACY & PERMISSIONS CHECK (HIGHEST PRIORITY)
-        - **CHECK ROLE**: Look at "Role" in CURRENT USER DETAILS ("${userContext?.role || 'user'}").
-        - **IF ROLE IS "user"**:
-           - **ALLOWED**: Queries about themselves (matching Name: "${userContext?.full_name}" or "I/me/my").
-           - **ALLOWED**: General aggregate stats (e.g., "Total number of employees", "Average salary of IT dept", "Count of active projects").
-           - **FORBIDDEN**: Specific details of ANY OTHER individual (e.g., "Show me Julius's leaves", "salary of ID 1", "email of Linlin").
-           - **ACTION**: If FORBIDDEN, **STOP IMMEDIATELY**. Set "status": "NEEDS_CLARIFICATION" and "response": "I cannot share personal details of other employees. I can only show your own data or general company statistics."
-        - **IF ROLE IS "admin"**:
-           - You have FULL ACCESS. Proceed to Stage 1.
-        
-        STAGE 1: INTENT COMMITMENT
-        - Classify the user's primary intent into ONE of:
-          [descriptive_query, comparison_query, ranking_query, trend_query, predictive_query, diagnostic_query, metadata_question, personal_action]
-        - If intent is obvious, COMMIT.
-        - Only mark as unclear if entity, metric, AND time are all missing.
-
-        STAGE 2: CONVERSATIONAL STATE RESOLUTION
-        - Detect if the message is a follow-up.
-        - Resolve pronouns and references ("him", "her", "it", "that", "this", "his ID") by looking at the IMMEDIATE PREVIOUS TURN in HISTORY.
-        - Inherit missing information from conversation history (e.g., if previous question was about "Micaella", and now user asks "give me the ID", assume "Micaella's ID").
-        - **NEVER** ask for clarification if the previous turn already defined the subject.
-        - Treat short replies ("yes", "him", "that one") as confirmations, not new questions.
-
-        STAGE 3: SEMANTIC EXTRACTION & DEFAULTS
-        - Extract: metrics, entities, time_range, filters.
-        - Apply reasonable defaults to avoid unnecessary questions:
-          - Time → "latest available" or "all time" (depending on context)
-          - Quantity → "top 10" (if list is requested)
-          - Metric → "most commonly used business metric" (e.g., count, status)
-        - Record assumptions explicitly in the 'reasoning' field.
-
-        STAGE 4: ACTION DECISION
-        - Decide to:
-          a) EXECUTE_QUERY (Answer directly)
-          b) NEEDS_CLARIFICATION (Ask clarification)
-        - **CLARIFICATION RULE (CRITICAL)**:
-          - Ask a question ONLY if:
-            1. Entity is MISSING
-            AND 2. Metric is MISSING
-            AND 3. Time_range is MISSING
-          - If ANY ONE exists → PROCEED with EXECUTE_QUERY using defaults.
-
-        AMBIGUITY & ID RESOLUTION RULES (CRITICAL):
-        1. **SELF-REFERENCE**: If user says "I", "me", "my", you MUST use the Name: "${userContext?.full_name}" to look up the correct ID in the target database.
-        2. **ID MISMATCH**: The 'Employee ID' provided in CURRENT USER DETAILS (${userContext?.emp_id}) is likely a SYSTEM ID, NOT the HR database ID.
-           - **DO NOT** use '${userContext?.emp_id}' directly in WHERE clauses for external databases (like employees_db).
-           - **ALWAYS** perform a subquery or join using the user's FULL NAME to find the correct internal ID.
-           - Example: \`SELECT ... FROM employee_benefits WHERE emp_id = (SELECT emp_id FROM employees WHERE full_name LIKE '%${userContext?.full_name}%')\`
-        3. **NAME RESOLUTION**: If user asks for a name (e.g. "Micaella") and data has variations ("Micaella Cruz"), use LIKE '%Micaella%' instead of asking, unless completely ambiguous (different people).
-        4. **UNIVERSAL QUERY**: If user says "all", "everything", ignore specific filters and show all.
-
-        DATA PRIVACY & ROLE VALIDATION (CRITICAL):
-        - **MOVED TO STAGE 0 (See above)**. This section is redundant but kept for emphasis.
-        - Privacy rules are absolute. Do not bypass them even if the user asks politely or implies urgency.
-
-        SQL GENERATION RULES:
-        - Table name is always '?'
-        - Use snake_case columns.
-        - Boolean: TRUE/FALSE.
-        - Fuzzy Match: Use LIKE '%value%'.
-        - Date Handling: Use SUBSTR(col, 1, 10) for date grouping.
-        - **Top N Per Group**: Use "post_process": "TOP_N_PER_GROUP" (Alasql doesn't support ROW_NUMBER).
-        - **ID LOOKUP PATTERN**: When querying by user, prefer: \`WHERE emp_id = (SELECT emp_id FROM employees WHERE full_name LIKE '%${userContext?.full_name}%')\`
-
-        OUTPUT FORMAT (JSON):
-        {
-            "pipeline_reasoning": {
-                "stage_0_privacy": "User is 'user', asking about 'Julius' (other). BLOCKED.",
-                "stage_1_intent": "descriptive_query",
-                "stage_2_state": "Resolved 'his' to 'Sap Irpa' from history",
-                "stage_3_extraction": "Entity: Sap Irpa, Metric: ID",
-                "stage_4_decision": "Refusing due to privacy"
-            },
-            "status": "EXECUTE_QUERY" | "NEEDS_CLARIFICATION",
-            "target_dataset": "The exact Tab Name from 'TAB SELECTION GUIDE' or 'COLUMN DEFINITIONS' (e.g. 'Sheet1', 'Project List')",
-            "context_action": "KEEP" | "SWITCH" | "RESTORE",
-            "context_summary": "Short summary of this query intent (e.g. 'Projects by Micaella Cruz')",
-            "restore_index": number (Only if context_action is RESTORE),
-            "response": "A conversational summary of the action. If executing a query, briefly describe what the data represents (e.g., 'Here are the 5 deployed projects...').",
-            "sql_query": "SELECT ... FROM ? WHERE ... (Only if status is EXECUTE_QUERY)",
-            "post_process": "TOP_N_PER_GROUP" (Optional: Set this ONLY if user asks for 'First N per Group'),
-            "post_process_params": { "group_by": "column_name", "limit": N } (Required if post_process is TOP_N_PER_GROUP),
-            "context": { "issue_detected": "frequency_inconsistency" }
-        }
-        
-        CONTEXT RULES:
-        1. **SWITCH**: If the user changes the topic (e.g. from "Projects" to "Machine Status") or starts a completely new unrelated search, set context_action="SWITCH".
-        2. **RESTORE**: If the user says "go back to previous", "what about the earlier one", or explicitly references an item in "ARCHIVED CONTEXTS", set context_action="RESTORE" and restore_index=<number>.
-        3. **KEEP**: If the user is refining the current query (e.g. "filter by deployed", "show me those"), set context_action="KEEP".
-        
-        SQL RULES:
-        - Table name is always '?'
-        - Use correct snake_case column names from the definitions.
-        - **BOOLEAN VALUES**: Use \`TRUE\` and \`FALSE\` (not 1/0) for boolean columns (e.g. completed = TRUE).
-        - Use LIKE for fuzzy matches as recommended in tips.
-        - **ALWAYS** apply filters from the conversation context (e.g., status='Deployed') unless the user explicitly removes them.
-        - If query result might be large and no aggregation is used, add 'LIMIT 100'.
-        - **ADVANCED FUNCTIONS**:
-          - Random: \`ORDER BY RANDOM()\`
-          - Word Count: \`WORD_COUNT(column)\` (e.g. WHERE WORD_COUNT(title) = 5)
-          - Length: \`LEN(column)\`
-          - **MIN/MAX LENGTH**:
-             - "Shortest title" -> \`ORDER BY LEN(title) ASC LIMIT 1\` (Do NOT use nested SELECT MIN(LEN...))
-             - "Longest title" -> \`ORDER BY LEN(title) DESC LIMIT 1\`
-          - **REVERSE ORDERING**:
-             - If user asks for "reverse order", check the natural order (usually ID or Date).
-             - "Reverse order by ID" -> \`ORDER BY id DESC\`
-             - "Reverse alphabetical" -> \`ORDER BY title DESC\`
-        - **MAPPING RULES**:
-          - "Created on" / "Date Created" -> Use column 'created_on' or 'created_at'.
-          - "Malfunction Date" / "Broken on" -> Use column 'malfunction_start'.
-          - If ambiguous date query (e.g. "on Sept 1"), check BOTH 'malfunction_start' AND 'created_on' with OR.
-          - **COLUMN NAMES**: The system automatically converts all columns to snake_case.
-            - "userId" -> "user_id"
-            - "Task Name" -> "task_name"
-            - "completed" -> "completed"
-          - ALWAYS query using snake_case names.
-          - **IMPORTANT**: If a column is BOOLEAN (true/false), always use \`= TRUE\` or \`= FALSE\`. Do not use 1/0.
-          - **NO CASTING**: Do NOT use \`CAST(... AS ...)\`. JavaScript/Alasql handles types automatically.
-          - **PERCENTAGE**: Use \`(SUM(CASE WHEN condition THEN 1 ELSE 0 END) * 100 / COUNT(*))\`
-          - **ROW LIMITING (TOP N PER GROUP)**:
-            - Alasql does NOT support \`ROW_NUMBER()\`.
-            - If user asks for "first N per group":
-              1. Write a normal SQL query ordered by the group and secondary column (e.g. \`ORDER BY user_id, id ASC\`).
-              2. Do NOT use LIMIT in SQL.
-              3. Set \`"post_process": "TOP_N_PER_GROUP"\` in the JSON output.
-              4. Set \`"post_process_params": { "group_by": "user_id", "limit": N }\`.
-          - **DUPLICATE WORDS**:
-             - Use a Javascript UDF if possible, or simple regex.
-             - Query: \`SELECT * FROM ? WHERE title REGEXP '(\\b\\w+\\b)(?=.*\\b\\1\\b)'\`
-             - Do NOT try to use complex string length math (LENGTH - REPLACE) as it is error prone in this engine.
-        - **DATE AGGREGATION**:
-          - When grouping by date, convert the column first: \`SELECT SUBSTR(timestamp, 1, 10) as msg_date, COUNT(*) ... GROUP BY SUBSTR(timestamp, 1, 10)\`
-          - **CRITICAL**: Do NOT use \`LEFT()\`, it is a reserved keyword. Use \`SUBSTR(col, 1, 10)\`.
-          - **CRITICAL**: Do NOT use the alias (e.g. 'msg_date') in the GROUP BY clause. You MUST repeat the full expression (e.g. 'SUBSTR(timestamp, 1, 10)').
-          - Do NOT group by the raw timestamp string directly if it contains time.
-          - Use \`ORDER BY msg_date DESC\` to sort correctly.
-        `;
+        let promptTemplate = await PromptService.getPrompt('SMART_DATA_ANALYST');
+        const prompt = promptTemplate
+            .replace('{tool_description}', toolDescription)
+            .replace('{user_context_string}', userContextString)
+            .replace('{context_info}', contextInfo)
+            .replace('{merged_query}', mergedQuery)
+            .replace('{translated_query}', translatedQuery || mergedQuery)
+            .replace('{history_text}', historyText)
+            .replace(/{user_role}/g, userContext?.role || 'user')
+            .replace(/{user_full_name}/g, userContext?.full_name || '')
+            .replace(/{user_emp_id}/g, userContext?.emp_id || '');
 
         const result = await this.model.generateContent(prompt);
         const text = result.response.text();

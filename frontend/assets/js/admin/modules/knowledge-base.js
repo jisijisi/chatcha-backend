@@ -239,36 +239,38 @@ function closeCacheProgressModal() {
 
 // Update progress during cache regeneration
 function updateCacheProgress(stage, progress) {
-  const streamFill = document.getElementById('cache-magic-stream-bar');
-  const targetIcon = document.getElementById('cache-magic-target-icon');
-  const progressText = document.getElementById('cache-progress-text-modal');
-  const statusMessage = document.getElementById('cache-status-message');
+  requestAnimationFrame(() => {
+    const streamFill = document.getElementById('cache-magic-stream-bar');
+    const targetIcon = document.getElementById('cache-magic-target-icon');
+    const progressText = document.getElementById('cache-progress-text-modal');
+    const statusMessage = document.getElementById('cache-status-message');
 
-  if (streamFill) {
-    streamFill.style.width = progress + '%';
-  }
-  
-  if (targetIcon && progress >= 80) {
-    targetIcon.classList.add('active');
-  }
+    if (streamFill) {
+      streamFill.style.width = progress + '%';
+    }
+    
+    if (targetIcon && progress >= 80) {
+      targetIcon.classList.add('active');
+    }
 
-  if (progressText) {
-    progressText.textContent = `${progress}% Complete`;
-  }
+    if (progressText) {
+      progressText.textContent = `${progress}% Complete`;
+    }
 
-  if (statusMessage && !statusMessage.textContent.includes('(')) {
-    // Only update if not already updated by handleProgressUpdate
-    const messages = {
-      'starting': 'Initializing cache regeneration...',
-      'clearing': 'Clearing old cache data...',
-      'loading': 'Loading knowledge base documents...',
-      'processing': 'Processing and chunking content...',
-      'embedding': 'Generating AI embeddings...',
-      'finalizing': 'Finalizing cache generation...',
-      'complete': 'Cache regeneration complete!'
-    };
-    statusMessage.textContent = messages[stage] || 'Processing...';
-  }
+    if (statusMessage && !statusMessage.textContent.includes('(')) {
+      // Only update if not already updated by handleProgressUpdate
+      const messages = {
+        'starting': 'Initializing cache regeneration...',
+        'clearing': 'Clearing old cache data...',
+        'loading': 'Loading knowledge base documents...',
+        'processing': 'Processing and chunking content...',
+        'embedding': 'Generating AI embeddings...',
+        'finalizing': 'Finalizing cache generation...',
+        'complete': 'Cache regeneration complete!'
+      };
+      statusMessage.textContent = messages[stage] || 'Processing...';
+    }
+  });
 }
 
 // Show cache regeneration success
@@ -343,7 +345,11 @@ function connectToCacheProgressStream() {
     progressEventSource = null;
   }
   
-  const streamUrl = `${API_BASE}/cache/progress-stream`;
+  // Add authentication token to query parameter since EventSource doesn't support headers
+  const authHeader = getAuthToken();
+  const token = authHeader ? authHeader.split(' ')[1] : '';
+  const streamUrl = `${API_BASE}/cache/progress-stream?token=${token}`;
+  
   console.log('📡 Connecting to progress stream:', streamUrl);
   
   progressEventSource = new EventSource(streamUrl);
@@ -463,7 +469,12 @@ function handleProgressUpdate(data) {
 // Tab management
 function setupKBTabs() {
   console.log('Setting up KB tabs...');
-  document.querySelectorAll('.kb-tab').forEach(tab => {
+  const savedKBTab = localStorage.getItem('adminKBTab') || 'documents';
+  
+  // Initial activation
+  switchKBTab(savedKBTab);
+
+  document.querySelectorAll('.kb-tab[data-kb-tab]').forEach(tab => {
     tab.addEventListener('click', (e) => {
       e.preventDefault();
       const tabName = tab.dataset.kbTab;
@@ -476,33 +487,36 @@ function setupKBTabs() {
 function switchKBTab(tabName) {
   console.log('Switching KB tab to:', tabName);
   
-  // Update tabs
-  document.querySelectorAll('.kb-tab').forEach(t => t.classList.remove('active'));
+  // Update tabs - ONLY targeting KB tabs
+  document.querySelectorAll('.kb-tab[data-kb-tab]').forEach(t => t.classList.remove('active'));
   const activeTab = document.querySelector(`.kb-tab[data-kb-tab="${tabName}"]`);
   if (activeTab) activeTab.classList.add('active');
   
-  // Update content
-  document.querySelectorAll('.kb-tab-content').forEach(c => c.classList.remove('active'));
+  // Update content - ONLY targeting KB tab content
+  document.querySelectorAll('#knowledge-view .kb-tab-content').forEach(c => c.classList.remove('active'));
   const activeContent = document.getElementById(`${tabName}-tab`);
   if (activeContent) activeContent.classList.add('active');
   
   currentKBTab = tabName;
+  localStorage.setItem('adminKBTab', tabName);
   
   // Load data for the tab
-  if (tabName === 'documents') loadDocuments();
-  else if (tabName === 'categories') loadCategories();
-  else if (tabName === 'subcategories') loadSubcategories();
+  if (tabName === 'documents') loadDocuments(true);
+  else if (tabName === 'categories') loadCategories(true);
+  else if (tabName === 'subcategories') loadSubcategories(true);
 }
 
 // Main data loader
-async function loadKnowledgeBaseData() {
-  setKnowledgeLoading(true);
+async function loadKnowledgeBaseData(showSkeleton = true) {
+  if (showSkeleton) {
+    setKnowledgeLoading(true);
+  }
   try {
     // Load data concurrently
     await Promise.all([
-      loadDocuments(),
-      loadCategories(),
-      loadSubcategories()
+      loadDocuments(showSkeleton),
+      loadCategories(showSkeleton),
+      loadSubcategories(showSkeleton)
     ]);
     
     populateCategoryDropdowns();
@@ -511,7 +525,9 @@ async function loadKnowledgeBaseData() {
     console.error('❌ Error loading KB data:', error);
     showToast('Failed to load knowledge base data', 'error');
   } finally {
-    setKnowledgeLoading(false);
+    if (showSkeleton) {
+      setKnowledgeLoading(false);
+    }
   }
 }
 
@@ -529,9 +545,9 @@ function getSkeletonRows(cols = 5, rows = 5) {
 }
 
 // Document management
-async function loadDocuments() {
+async function loadDocuments(showSkeleton = true) {
   const tbody = document.getElementById('documents-table-body');
-  if (tbody) tbody.innerHTML = getSkeletonRows(5);
+  if (tbody && showSkeleton) tbody.innerHTML = getSkeletonRows(5);
 
   try {
     const search = document.getElementById('doc-search')?.value || '';
@@ -985,6 +1001,34 @@ function showConversionError(errorMessage) {
   document.getElementById('conversion-error-message').textContent = errorMessage;
 }
 
+// Render document editor skeleton
+function renderDocumentEditorSkeleton() {
+  const container = document.getElementById('doc-editor-skeleton');
+  if (!container) return;
+  
+  container.innerHTML = `
+    <div style="padding: 10px 0;">
+      <div class="skeleton" style="width: 100%; height: 80px; border-radius: 8px; margin-bottom: 20px;"></div>
+      <div class="skeleton skeleton-text" style="width: 30%; height: 16px; margin-bottom: 8px;"></div>
+      <div class="skeleton" style="width: 100%; height: 40px; border-radius: 6px; margin-bottom: 20px;"></div>
+      
+      <div style="display: flex; gap: 20px; margin-bottom: 20px;">
+        <div style="flex: 1;">
+          <div class="skeleton skeleton-text" style="width: 40%; height: 16px; margin-bottom: 8px;"></div>
+          <div class="skeleton" style="width: 100%; height: 40px; border-radius: 6px;"></div>
+        </div>
+        <div style="flex: 1;">
+          <div class="skeleton skeleton-text" style="width: 40%; height: 16px; margin-bottom: 8px;"></div>
+          <div class="skeleton" style="width: 100%; height: 40px; border-radius: 6px;"></div>
+        </div>
+      </div>
+      
+      <div class="skeleton skeleton-text" style="width: 20%; height: 16px; margin-bottom: 8px;"></div>
+      <div class="skeleton" style="width: 100%; height: 300px; border-radius: 8px;"></div>
+    </div>
+  `;
+}
+
 // Document CRUD operations
 async function openDocumentEditor(documentId = null) {
   const modal = document.getElementById('document-editor-modal');
@@ -992,9 +1036,19 @@ async function openDocumentEditor(documentId = null) {
   editingDocumentId = documentId;
   
   document.getElementById('ai-file-upload').value = '';
+  
+  const form = document.getElementById('doc-editor-form');
+  const skeleton = document.getElementById('doc-editor-skeleton');
 
   if (documentId) {
     title.textContent = 'Edit Document';
+    
+    if (form && skeleton) {
+      renderDocumentEditorSkeleton();
+      form.style.display = 'none';
+      skeleton.style.display = 'block';
+    }
+    
     try {
       const response = await apiFetch(`/admin/documents/${documentId}`);
       const doc = response.document;
@@ -1024,9 +1078,20 @@ async function openDocumentEditor(documentId = null) {
       setTimeout(() => validateJSON(document.getElementById('doc-content-input').value), 100);
     } catch (error) { 
       showToast('Failed to load document', 'error'); 
+    } finally {
+      if (form && skeleton) {
+        form.style.display = 'block';
+        skeleton.style.display = 'none';
+      }
     }
   } else {
     title.textContent = 'Add Document';
+    
+    if (form && skeleton) {
+      form.style.display = 'block';
+      skeleton.style.display = 'none';
+    }
+    
     document.getElementById('doc-title-input').value = '';
     document.getElementById('doc-category-select').value = '';
     document.getElementById('doc-subcategory-select').innerHTML = '<option value="">Select category first...</option>';
@@ -1139,9 +1204,9 @@ async function previewDocument(id) {
 }
 
 // Categories and Subcategories management
-async function loadCategories() {
+async function loadCategories(showSkeleton = true) {
   const tbody = document.getElementById('categories-table-body');
-  if (tbody) tbody.innerHTML = getSkeletonRows(4);
+  if (tbody && showSkeleton) tbody.innerHTML = getSkeletonRows(4);
 
   try {
     const params = new URLSearchParams();
@@ -1198,9 +1263,9 @@ function renderCategoriesTable() {
   }).join('');
 }
 
-async function loadSubcategories() {
+async function loadSubcategories(showSkeleton = true) {
   const tbody = document.getElementById('subcategories-table-body');
-  if (tbody) tbody.innerHTML = getSkeletonRows(4);
+  if (tbody && showSkeleton) tbody.innerHTML = getSkeletonRows(4);
 
   try {
     const filter = document.getElementById('subcat-category-filter')?.value || '';

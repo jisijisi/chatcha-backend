@@ -73,11 +73,11 @@ function renderRules(rules) {
 
     tableBody.innerHTML = rules.map(rule => `
         <tr>
-            <td style="font-weight: 600; color: #1e293b;">${escapeHtml(rule.pattern)}</td>
-            <td style="font-family: monospace; color: #d946ef;">${escapeHtml(rule.replacement)}</td>
-            <td><span class="badge badge-${getBadgeColor(rule.type)}">${rule.type}</span></td>
-            <td style="color: #64748b;">${escapeHtml(rule.description || '-')}</td>
-            <td>
+            <td data-label="Pattern / Word" style="font-weight: 600; color: #1e293b;">${escapeHtml(rule.pattern)}</td>
+            <td data-label="Replacement" style="font-family: monospace; color: #d946ef;">${escapeHtml(rule.replacement)}</td>
+            <td data-label="Type"><span class="badge badge-${getBadgeColor(rule.type)}">${rule.type}</span></td>
+            <td data-label="Description" style="color: #64748b;">${escapeHtml(rule.description || '-')}</td>
+            <td data-label="Actions">
                 <div class="action-buttons">
                     <button class="action-btn action-btn-edit" onclick="editSpeechRule(${rule.id})">
                         <span class="material-symbols-outlined">edit</span> Edit

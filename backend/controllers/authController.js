@@ -1,21 +1,28 @@
 
 import { pool } from '../config/database.js';
+import { User } from '../models/User.js';
+import { Permission } from '../models/Permission.js';
 import { UserGoogleService } from '../services/userGoogleService.js';
 import { SystemEmailService } from '../services/systemEmailService.js';
+import jwt from 'jsonwebtoken';
+import { google } from 'googleapis';
+
 const otpStore = new Map();
+const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret_key_change_in_prod_12345';
 
 /**
  * 1. Connect Google Account (Exchange Code)
+ * This is for linking a Google account to an existing user session
  */
 export const connectGoogle = async (req, res) => {
     const { code } = req.body;
     
-    // We trust the X-User-Email header because it's an internal tool, 
-    // but in production, you'd verify the session/JWT here.
-    const userEmail = req.header('X-User-Email'); 
+    // Use req.user from JWT middleware if available, otherwise fallback to header (for now)
+    // In a fully migrated system, we should rely only on req.user
+    const userEmail = req.user ? req.user.email : req.header('X-User-Email'); 
 
     if (!userEmail) {
-        return res.status(401).json({ error: "User email header missing" });
+        return res.status(401).json({ error: "User email missing" });
     }
 
     try {
@@ -40,15 +47,12 @@ export const checkGoogleStatus = async (req, res) => {
     }
 
     try {
-        const [rows] = await pool.execute(
-            "SELECT google_tokens FROM employees WHERE email = ?",
-            [userEmail]
-        );
+        const user = await User.findByEmail(userEmail);
 
-        if (rows.length > 0 && rows[0].google_tokens) {
-            const tokens = typeof rows[0].google_tokens === 'string' 
-                ? JSON.parse(rows[0].google_tokens) 
-                : rows[0].google_tokens;
+        if (user && user.google_tokens) {
+            const tokens = typeof user.google_tokens === 'string' 
+                ? JSON.parse(user.google_tokens) 
+                : user.google_tokens;
 
             // Check if tokens exist
             const hasTokens = tokens && Object.keys(tokens).length > 0;
@@ -78,10 +82,7 @@ export const disconnectGoogle = async (req, res) => {
     }
 
     try {
-        await pool.execute(
-            "UPDATE employees SET google_tokens = NULL WHERE email = ?",
-            [userEmail]
-        );
+        await User.updateGoogleTokens(userEmail, null);
         console.log(`🔌 Disconnected Google account for: ${userEmail}`);
         res.json({ success: true, message: "Disconnected successfully" });
     } catch (error) {
@@ -105,9 +106,15 @@ export const requestOtp = async (req, res) => {
         } catch (sendErr) {
             const msg = sendErr?.message || 'Failed to send OTP email';
             // Fallback for dev/testing if email fails
-            if (process.env.NODE_ENV === 'development') {
+            if (process.env.NODE_ENV === 'development' || !process.env.NODE_ENV) {
                 console.log(`[DEV] OTP for ${email}: ${code}`);
-                return res.json({ success: true, message: "OTP generated (Dev Mode)" });
+                console.error("OTP Email Error:", sendErr);
+                return res.json({ 
+                    success: true, 
+                    message: "OTP generated (Dev Mode)", 
+                    dev_otp: code,
+                    dev_error: sendErr.message
+                });
             }
             const isConfigError = msg.includes('Missing Gmail OAuth configuration');
             if (isConfigError) {
@@ -143,94 +150,85 @@ export const verifyOtp = async (req, res) => {
         }
         otpStore.delete(key);
         
-        // Check if user exists
-        const [existing] = await pool.execute(
-            `SELECT id, name, is_active, department FROM employees WHERE email = ?`,
-            [email]
-        );
-        
-        let userId = existing.length ? existing[0].id : null;
-        let userName = existing.length ? existing[0].name : null;
-        let isNewUser = false;
-        
-        const isCompanyEmail = email.toLowerCase().endsWith('@cdo.com.ph');
-        let userType = isCompanyEmail ? 'employee' : 'external';
+        const conn = await pool.getConnection();
+        try {
+            await conn.beginTransaction();
 
-        if (existing.length > 0) {
-            // Determine type based on DB record
-            if (existing[0].department && existing[0].department !== 'External') {
-                userType = 'employee';
-            }
-        }
-        
-        if (!userId) {
-            // Create New User
-            isNewUser = true;
-            userName = email.split('@')[0]; // Default name
+            // Check if user exists
+            const existing = await User.findByEmail(email, conn);
             
-            // Auto-set department and position for company emails
-            const defaultDept = isCompanyEmail ? 'General' : null; 
-            const defaultPos = isCompanyEmail ? 'Employee' : null;
+            let userId = existing ? existing.id : null;
+            let userName = existing ? existing.name : null;
+            let isNewUser = false;
+            
+            const isCompanyEmail = email.toLowerCase().endsWith('@cdo.com.ph');
+            let userType = isCompanyEmail ? 'employee' : 'external';
 
-            const [result] = await pool.execute(
-                `INSERT INTO employees (name, email, department, position, is_active, created_at, updated_at) 
-                 VALUES (?, ?, ?, ?, TRUE, NOW(), NOW())`,
-                [userName, email, defaultDept, defaultPos]
-            );
-            userId = result.insertId;
-            
-            // Set Permissions
-            if (isCompanyEmail) {
-                // AUTO-PROMOTE: Grant FULL access immediately for company users
-                const [allCategories] = await pool.execute('SELECT id FROM knowledge_categories');
-                if (allCategories.length > 0) {
-                    const values = allCategories.map(cat => [userId, cat.id, null, null, 'read', null]);
-                    const placeholders = values.map(() => '(?, ?, ?, ?, ?, ?)').join(', ');
-                    const flatValues = values.flat();
-                    await pool.execute(
-                        `INSERT INTO employee_access_permissions (employee_id, category_id, subcategory_id, source_id, access_level, granted_by)
-                         VALUES ${placeholders}`,
-                        flatValues
-                    );
-                }
-            } else {
-                // Default Permissions: EXTERNAL (Safe Default for non-company users)
-                const [categories] = await pool.execute(
-                    `SELECT id FROM knowledge_categories 
-                     WHERE LOWER(name) LIKE 'company-general%' 
-                        OR LOWER(name) LIKE 'company general%'
-                        OR LOWER(name) LIKE 'wikipedia%' 
-                        OR LOWER(name) LIKE 'wikepedia%'`
-                );
-                if (categories.length > 0) {
-                    const values = categories.map(cat => [userId, cat.id, null, null, 'read', null]);
-                    const placeholders = values.map(() => '(?, ?, ?, ?, ?, ?)').join(', ');
-                    const flatValues = values.flat();
-                    await pool.execute(
-                        `INSERT INTO employee_access_permissions (employee_id, category_id, subcategory_id, source_id, access_level, granted_by)
-                         VALUES ${placeholders}`,
-                        flatValues
-                    );
+            if (existing) {
+                // Determine type based on DB record
+                if (existing.department && existing.department !== 'External') {
+                    userType = 'employee';
                 }
             }
-        } else if (existing[0].is_active === 0) {
-            await pool.execute(
-                `UPDATE employees SET is_active = TRUE, updated_at = NOW() WHERE id = ?`,
-                [userId]
+            
+            if (!userId) {
+                // Create New User
+                isNewUser = true;
+                userName = email.split('@')[0]; // Default name
+                
+                // Auto-set department and position for company emails
+                const defaultDept = isCompanyEmail ? 'General' : null; 
+                const defaultPos = isCompanyEmail ? 'Employee' : null;
+
+                userId = await User.create({
+                    name: userName,
+                    email: email,
+                    department: defaultDept,
+                    position: defaultPos
+                }, conn);
+                
+                // Set Permissions
+                if (isCompanyEmail) {
+                    await Permission.grantAll(userId, conn);
+                } else {
+                    await Permission.grantDefaultExternal(userId, conn);
+                }
+            } else if (existing.is_active === 0) {
+                await User.activate(userId, conn);
+            }
+            
+            await conn.commit();
+
+            // Generate JWT Token
+            const token = jwt.sign(
+                { 
+                    id: userId, 
+                    email: email, 
+                    name: userName,
+                    type: userType 
+                }, 
+                JWT_SECRET, 
+                { expiresIn: '30d' }
             );
+
+            res.json({ 
+                success: true, 
+                message: "Verified", 
+                token: token,
+                user: { 
+                    id: userId, 
+                    email: email, 
+                    name: userName,
+                    type: userType 
+                }, 
+                is_new_user: isNewUser
+            });
+        } catch (e) {
+            await conn.rollback();
+            throw e;
+        } finally {
+            conn.release();
         }
-        
-        res.json({ 
-            success: true, 
-            message: "Verified", 
-            user: { 
-                id: userId, 
-                email: email, 
-                name: userName,
-                type: userType 
-            }, 
-            is_new_user: isNewUser
-        });
     } catch (error) {
         console.error(error);
         res.status(500).json({ success: false, message: "Verification failed" });
@@ -293,21 +291,20 @@ export const registerEmployee = async (req, res) => {
     try {
         await conn.beginTransaction();
 
-        // 1. Verify User Exists (Allow for creation if not found, but it should exist from login)
-        const [users] = await conn.execute("SELECT id FROM employees WHERE email = ?", [userEmail]);
+        // 1. Verify User Exists
+        let user = await User.findByEmail(userEmail, conn);
         let userId;
 
-        if (users.length === 0) {
+        if (!user) {
             console.log(`⚠️ User not found during registration: ${userEmail}. Creating now...`);
-            // Create user just in case they were deleted or session is stale
-            const [result] = await conn.execute(
-                `INSERT INTO employees (name, email, department, position, is_active, created_at, updated_at) 
-                 VALUES (?, ?, NULL, NULL, TRUE, NOW(), NOW())`,
-                [userEmail.split('@')[0], userEmail]
-            );
-            userId = result.insertId;
+            userId = await User.create({
+                name: userEmail.split('@')[0],
+                email: userEmail,
+                department: null,
+                position: null
+            }, conn);
         } else {
-            userId = users[0].id;
+            userId = user.id;
         }
 
         // 2. Verify Employee ID again (Security)
@@ -322,27 +319,15 @@ export const registerEmployee = async (req, res) => {
         const employeeData = empRows[0];
 
         // 3. Update User Profile
-        await conn.execute(
-            "UPDATE employees SET name = ?, department = ?, position = ?, updated_at = NOW() WHERE id = ?",
-            [employeeData.full_name, employeeData.department, employeeData.position, userId]
-        );
+        await User.updateProfile(userEmail, {
+            name: employeeData.full_name,
+            department: employeeData.department,
+            position: employeeData.position
+        }, conn);
 
         // 4. Update Permissions (Upgrade to Full Access)
-        // First, clear existing (likely External) permissions
-        await conn.execute("DELETE FROM employee_access_permissions WHERE employee_id = ?", [userId]);
-
-        // Then, grant all permissions
-        const [allCategories] = await conn.execute('SELECT id FROM knowledge_categories');
-        if (allCategories.length > 0) {
-            const values = allCategories.map(cat => [userId, cat.id, null, null, 'read', null]);
-            const placeholders = values.map(() => '(?, ?, ?, ?, ?, ?)').join(', ');
-            const flatValues = values.flat();
-            await conn.execute(
-                `INSERT INTO employee_access_permissions (employee_id, category_id, subcategory_id, source_id, access_level, granted_by)
-                 VALUES ${placeholders}`,
-                flatValues
-            );
-        }
+        await Permission.revokeAll(userId, conn);
+        await Permission.grantAll(userId, conn);
 
         await conn.commit();
         res.json({ success: true, message: "Employee verified and registered successfully" });
@@ -353,5 +338,109 @@ export const registerEmployee = async (req, res) => {
         res.status(500).json({ success: false, message: error.message || "Registration failed" });
     } finally {
         conn.release();
+    }
+};
+
+/**
+ * Login with Google ID Token
+ */
+export const googleLogin = async (req, res) => {
+    const { token } = req.body;
+    
+    if (!token) {
+        return res.status(400).json({ success: false, message: "Google token required" });
+    }
+
+    try {
+        const client = new google.auth.OAuth2(process.env.GOOGLE_CLIENT_ID);
+        const ticket = await client.verifyIdToken({
+            idToken: token,
+            audience: process.env.GOOGLE_CLIENT_ID,
+        });
+        const payload = ticket.getPayload();
+        const email = payload.email;
+        const name = payload.name;
+        
+        if (!email) {
+            return res.status(400).json({ success: false, message: "Invalid Google Token: No email found" });
+        }
+
+        const conn = await pool.getConnection();
+        try {
+            await conn.beginTransaction();
+
+            // Check if user exists
+            const existing = await User.findByEmail(email, conn);
+            
+            let userId = existing ? existing.id : null;
+            let userName = existing ? existing.name : name || email.split('@')[0];
+            let isNewUser = false;
+            
+            const isCompanyEmail = email.toLowerCase().endsWith('@cdo.com.ph');
+            let userType = isCompanyEmail ? 'employee' : 'external';
+
+            if (existing) {
+                if (existing.department && existing.department !== 'External') {
+                    userType = 'employee';
+                }
+            }
+            
+            if (!userId) {
+                isNewUser = true;
+                const defaultDept = isCompanyEmail ? 'General' : null; 
+                const defaultPos = isCompanyEmail ? 'Employee' : null;
+
+                userId = await User.create({
+                    name: userName,
+                    email: email,
+                    department: defaultDept,
+                    position: defaultPos
+                }, conn);
+                
+                if (isCompanyEmail) {
+                    await Permission.grantAll(userId, conn);
+                } else {
+                    await Permission.grantDefaultExternal(userId, conn);
+                }
+            } else if (existing.is_active === 0) {
+                await User.activate(userId, conn);
+            }
+
+            await conn.commit();
+
+            // Generate JWT Token
+            const jwtToken = jwt.sign(
+                { 
+                    id: userId, 
+                    email: email, 
+                    name: userName,
+                    type: userType 
+                }, 
+                JWT_SECRET, 
+                { expiresIn: '30d' }
+            );
+
+            res.json({ 
+                success: true, 
+                message: "Login successful", 
+                token: jwtToken,
+                user: { 
+                    id: userId, 
+                    email: email, 
+                    name: userName,
+                    type: userType 
+                }, 
+                is_new_user: isNewUser
+            });
+        } catch (e) {
+            await conn.rollback();
+            throw e;
+        } finally {
+            conn.release();
+        }
+
+    } catch (error) {
+        console.error("Google Login Error:", error);
+        res.status(401).json({ success: false, message: "Google authentication failed" });
     }
 };

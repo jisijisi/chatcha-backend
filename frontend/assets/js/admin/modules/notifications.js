@@ -1,5 +1,6 @@
 import { apiFetch, adminUser } from '../core/api.js';
 import { showToast } from '../core/ui.js';
+import { formatDateTime } from '../core/utils.js';
 
 let isDropdownOpen = false;
 
@@ -197,7 +198,9 @@ async function viewNotification(notif) {
     
     if (modal && msgEl && timeEl) {
         msgEl.textContent = notif.message;
-        timeEl.textContent = new Date(notif.created_at).toLocaleString();
+        
+        // Use the centralized formatDateTime utility for consistency with other pages
+        timeEl.textContent = formatDateTime(notif.created_at);
         
         // Setup delete button in modal
         const deleteBtn = document.getElementById('notif-detail-delete-btn');
@@ -315,14 +318,24 @@ function escapeHtml(text) {
 }
 
 function formatTime(timestamp) {
-  const date = new Date(timestamp);
+  if (!timestamp) return '';
+  
+  let date;
+  if (typeof timestamp === 'string' && !timestamp.includes('Z') && !timestamp.includes('+')) {
+      // If it's a MySQL datetime string without timezone, treat it as UTC
+      // This fixes the 8-hour offset issue (UTC vs Asia/Manila)
+      date = new Date(timestamp.replace(' ', 'T') + 'Z');
+  } else {
+      date = new Date(timestamp);
+  }
+
   const now = new Date();
   const diff = now - date;
   
   if (diff < 60000) return 'Just now';
   if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
   if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
-  return date.toLocaleDateString();
+  return date.toLocaleDateString('en-PH', { timeZone: 'Asia/Manila' });
 }
 
 // Re-use the existing confirmation modal from admin.html

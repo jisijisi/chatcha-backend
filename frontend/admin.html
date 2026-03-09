@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Admin Panel - ChatCDO</title>
   <link rel="icon" type="image/png" href="assets/images/logo.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -33,9 +33,6 @@
     @keyframes pulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.05); opacity: 0.8; } }
 
     /* ADMIN SPECIFIC STYLES */
-    .th-select { background: transparent; border: none; font-weight: 600; color: #64748b; font-size: 0.813rem; text-transform: uppercase; cursor: pointer; padding-right: 15px; outline: none; font-family: inherit; width: 100%; letter-spacing: 0.025em; }
-    .th-select:hover { color: #D71921; }
-    .th-select option { color: #1e293b; background: white; font-weight: normal; text-transform: none; }
     .file-upload-section { background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); padding: 24px; border-radius: 12px; margin-bottom: 24px; border: 2px dashed #cbd5e1; transition: all 0.3s ease; }
     .file-upload-section:hover { border-color: #D71921; background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%); }
     .file-upload-label { font-weight: 600; display: flex; align-items: center; gap: 10px; margin-bottom: 12px; color: #1e293b; font-size: 0.938rem; }
@@ -64,7 +61,7 @@
     /* Conversion Status Modal Styles - REVISED */
     .conversion-state { padding: 20px 0; }
     
-    /* Magic Conversion Animation */
+    /* Magic Conversion Animation (Aligned with Index) */
     .magic-container {
       display: flex;
       align-items: center;
@@ -84,13 +81,17 @@
       position: relative;
       z-index: 2;
       transition: all 0.3s ease;
-      background: #fff;
+      background: var(--bg-card, #fff);
       box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     }
 
+    .magic-icon .material-symbols-outlined {
+      font-size: 32px;
+    }
+
     .file-icon {
-      color: #64748b;
-      border: 1px solid #e2e8f0;
+      color: var(--text-muted, #64748b);
+      border: 1px solid var(--border-color, #e2e8f0);
     }
 
     .json-icon {
@@ -104,19 +105,15 @@
       transform: scale(1.1);
       opacity: 1;
       border-color: #22c55e;
-      background: #f0fdf4;
+      background: rgba(34, 197, 94, 0.1);
       box-shadow: 0 0 20px rgba(34, 197, 94, 0.3);
-    }
-
-    .magic-icon .material-symbols-outlined {
-      font-size: 32px;
     }
 
     .magic-stream-container {
       flex: 1;
       max-width: 120px;
       height: 4px;
-      background: #f1f5f9;
+      background: var(--bg-secondary, #f1f5f9);
       border-radius: 4px;
       position: relative;
     }
@@ -126,14 +123,13 @@
       top: 0;
       left: 0;
       height: 100%;
-      width: 0%; /* Animate this via JS or Keyframes */
+      width: 0%;
       background: linear-gradient(90deg, #6366f1, #8b5cf6, #d946ef);
       border-radius: 4px;
       box-shadow: 0 0 10px rgba(139, 92, 246, 0.5);
       transition: width 0.5s ease;
     }
     
-    /* Animated beam effect */
     .magic-stream::after {
         content: '';
         position: absolute;
@@ -180,19 +176,19 @@
       text-align: center;
       font-size: 1.25rem;
       font-weight: 700;
-      color: #1e293b;
+      color: var(--text-main, #1e293b);
       margin-bottom: 8px;
     }
 
     .magic-status-text {
       text-align: center;
-      color: #64748b;
+      color: var(--text-muted, #64748b);
       font-size: 0.95rem;
       margin-bottom: 24px;
     }
 
     .conversion-progress { margin-top: 10px; }
-    .conversion-progress-bar { width: 100%; height: 6px; background: #f1f5f9; border-radius: 999px; overflow: hidden; }
+    .conversion-progress-bar { width: 100%; height: 6px; background: var(--bg-secondary, #f1f5f9); border-radius: 999px; overflow: hidden; }
     .conversion-progress-fill { width: 0%; height: 100%; background: linear-gradient(90deg, #6366f1, #8b5cf6); border-radius: 999px; transition: width 0.3s ease; }
     
     /* Magic Success/Error Styles */
@@ -218,7 +214,10 @@
       z-index: 2;
     }
 
+    .magic-success-icon svg,
     .magic-success-icon .material-symbols-outlined {
+      width: 48px;
+      height: 48px;
       font-size: 48px;
     }
 
@@ -248,14 +247,14 @@
 
     .magic-subtitle {
       text-align: center;
-      color: #64748b;
+      color: var(--text-muted, #64748b);
       font-size: 0.95rem;
       margin-bottom: 24px;
     }
 
     .magic-stats-card {
-      background: white;
-      border: 1px solid #e2e8f0;
+      background: var(--bg-card, white);
+      border: 1px solid var(--border-color, #e2e8f0);
       border-radius: 12px;
       overflow: hidden;
       box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
@@ -270,7 +269,7 @@
 
     .magic-divider {
       height: 1px;
-      background: #f1f5f9;
+      background: var(--bg-secondary, #f1f5f9);
       margin: 0 16px;
     }
 
@@ -285,12 +284,12 @@
     }
 
     .magic-stat-icon.file {
-      background: #f1f5f9;
-      color: #64748b;
+      background: var(--bg-secondary, #f1f5f9);
+      color: var(--text-muted, #64748b);
     }
 
     .magic-stat-icon.json {
-      background: #ecfdf5;
+      background: rgba(16, 185, 129, 0.1);
       color: #10b981;
     }
 
@@ -305,13 +304,13 @@
       font-size: 0.75rem;
       text-transform: uppercase;
       letter-spacing: 0.05em;
-      color: #94a3b8;
+      color: var(--text-muted, #94a3b8);
       font-weight: 600;
     }
 
     .magic-stat-info .value {
       font-size: 0.95rem;
-      color: #1e293b;
+      color: var(--text-main, #1e293b);
       font-weight: 600;
       white-space: nowrap;
       overflow: hidden;
@@ -332,7 +331,10 @@
       animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
     }
 
+    .magic-error-icon svg,
     .magic-error-icon .material-symbols-outlined {
+      width: 40px;
+      height: 40px;
       font-size: 40px;
     }
 
@@ -394,6 +396,73 @@
   </style>
   
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    .custom-select-wrapper {
+      position: relative;
+      flex: 1;
+    }
+    .custom-select-trigger {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      background: white;
+    }
+    .custom-options {
+      display: none;
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+      z-index: 1000;
+      max-height: 250px;
+      overflow-y: auto;
+      margin-top: 5px;
+      padding: 5px;
+    }
+    .custom-options.active {
+      display: block;
+    }
+    .custom-option {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 0.9rem;
+      color: #334155;
+    }
+    .custom-option:hover {
+      background: #f1f5f9;
+    }
+    .custom-option.selected {
+      background: #eff6ff;
+      color: #2563eb;
+      font-weight: 500;
+    }
+    .custom-option-remove {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      color: #94a3b8;
+      font-size: 1.2rem;
+      line-height: 1;
+      transition: all 0.2s;
+    }
+    .custom-option-remove:hover {
+      background: #fee2e2;
+      color: #ef4444;
+    }
+  </style>
 </head>
 <body>
   <div id="global-loader">
@@ -402,6 +471,7 @@
     <p class="loader-text">Loading Dashboard...</p>
   </div>
 
+  <div id="sidebarOverlay" class="sidebar-overlay"></div>
   <div class="admin-container" id="adminContainer">
     <aside class="admin-sidebar" id="adminSidebar">
       <div class="sidebar-header">
@@ -436,6 +506,10 @@
         <a class="nav-item" data-view="speech">
           <span class="material-symbols-outlined nav-icon">record_voice_over</span>
           <span>Pronunciation</span>
+        </a>
+        <a class="nav-item" data-view="theme">
+          <span class="material-symbols-outlined nav-icon">palette</span>
+          <span>UI Theme</span>
         </a>
         <a class="nav-item" data-view="settings">
           <span class="material-symbols-outlined nav-icon">settings</span>
@@ -491,11 +565,23 @@
       <div class="content-area">
         
         <section class="view-section active" id="dashboard-view">
-          <div class="timeframe-tabs">
-            <button class="timeframe-tab active" data-timeframe="overall">Overall</button>
-            <button class="timeframe-tab" data-timeframe="yearly">Yearly</button>
-            <button class="timeframe-tab" data-timeframe="monthly">Monthly</button>
-            <button class="timeframe-tab" data-timeframe="daily">Daily</button>
+          <div class="tabs-line">
+            <button class="kb-tab active" data-timeframe="overall">
+                <span class="material-symbols-outlined tab-icon">grid_view</span>
+                <span>Overall</span>
+            </button>
+            <button class="kb-tab" data-timeframe="yearly">
+                <span class="material-symbols-outlined tab-icon">calendar_month</span>
+                <span>Yearly</span>
+            </button>
+            <button class="kb-tab" data-timeframe="monthly">
+                <span class="material-symbols-outlined tab-icon">calendar_today</span>
+                <span>Monthly</span>
+            </button>
+            <button class="kb-tab" data-timeframe="daily">
+                <span class="material-symbols-outlined tab-icon">today</span>
+                <span>Daily</span>
+            </button>
           </div>
 
           <!-- SKELETON LOADER -->
@@ -533,36 +619,36 @@
             
             <div class="chart-grid">
               <div class="chart-card large">
-                  <div class="card-header"><div class="skeleton skeleton-title" style="margin: 0; width: 200px;"></div></div>
+                  <div class="card-header"><div class="skeleton skeleton-title" style="margin: 0;"></div></div>
                   <div class="card-body" style="padding: 20px;"><div class="skeleton" style="width: 100%; height: 100%; border-radius: 8px;"></div></div>
               </div>
               <div class="chart-card">
-                  <div class="card-header"><div class="skeleton skeleton-title" style="margin: 0; width: 150px;"></div></div>
+                  <div class="card-header"><div class="skeleton skeleton-title" style="margin: 0;"></div></div>
                   <div class="card-body" style="padding: 20px;"><div class="skeleton" style="width: 100%; height: 100%; border-radius: 8px;"></div></div>
               </div>
             </div>
 
             <div class="chart-grid">
               <div class="chart-card large">
-                  <div class="card-header"><div class="skeleton skeleton-title" style="margin: 0; width: 200px;"></div></div>
+                  <div class="card-header"><div class="skeleton skeleton-title" style="margin: 0;"></div></div>
                   <div class="card-body" style="padding: 20px;"><div class="skeleton" style="width: 100%; height: 100%; border-radius: 8px;"></div></div>
               </div>
               <div class="chart-card">
-                  <div class="card-header"><div class="skeleton skeleton-title" style="margin: 0; width: 150px;"></div></div>
+                  <div class="card-header"><div class="skeleton skeleton-title" style="margin: 0;"></div></div>
                   <div class="card-body" style="padding: 20px;"><div class="skeleton" style="width: 100%; height: 100%; border-radius: 8px;"></div></div>
               </div>
             </div>
             
             <div class="chart-grid single">
                <div class="chart-card">
-                  <div class="card-header"><div class="skeleton skeleton-title" style="margin: 0; width: 200px;"></div></div>
+                  <div class="card-header"><div class="skeleton skeleton-title" style="margin: 0;"></div></div>
                   <div class="card-body" style="padding: 20px;"><div class="skeleton" style="width: 100%; height: 100%; border-radius: 8px;"></div></div>
                </div>
             </div>
 
              <div class="table-grid">
               <div class="data-table-card">
-                  <div class="card-header"><div class="skeleton skeleton-title" style="margin: 0; width: 150px;"></div></div>
+                  <div class="card-header"><div class="skeleton skeleton-title" style="margin: 0;"></div></div>
                   <div class="table-wrapper">
                      <div class="skeleton-table-row" style="padding: 20px;"><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div></div>
                      <div class="skeleton-table-row" style="padding: 20px;"><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div></div>
@@ -570,7 +656,7 @@
                   </div>
               </div>
               <div class="data-table-card">
-                  <div class="card-header"><div class="skeleton skeleton-title" style="margin: 0; width: 150px;"></div></div>
+                  <div class="card-header"><div class="skeleton skeleton-title" style="margin: 0;"></div></div>
                   <div class="table-wrapper">
                      <div class="skeleton-table-row" style="padding: 20px;"><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div></div>
                      <div class="skeleton-table-row" style="padding: 20px;"><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div><div class="skeleton skeleton-table-cell"></div></div>
@@ -581,7 +667,7 @@
           </div>
 
           <!-- REAL CONTENT -->
-          <div id="dashboard-content">
+          <div id="dashboard-content" class="kb-tab-content active">
           <div class="stats-grid">
             <div class="stat-card">
               <div class="stat-icon-wrapper red">
@@ -631,23 +717,23 @@
           <div id="knowledge-skeleton" style="display: none;">
             <!-- Cache Skeleton -->
             <div class="cache-status-card" style="margin-bottom: 24px; pointer-events: none;">
-               <div class="cache-status-item"><div class="skeleton" style="width: 140px; height: 28px; border-radius: 20px;"></div></div>
-               <div class="cache-status-item"><div class="skeleton" style="width: 40px; height: 32px; margin-bottom: 5px;"></div><div class="skeleton" style="width: 30px; height: 14px;"></div></div>
-               <div class="cache-status-item"><div class="skeleton" style="width: 40px; height: 32px; margin-bottom: 5px;"></div><div class="skeleton" style="width: 40px; height: 14px;"></div></div>
-               <div class="cache-status-item"><div class="skeleton" style="width: 100px; height: 20px; margin-bottom: 5px;"></div><div class="skeleton" style="width: 80px; height: 14px;"></div></div>
-               <div class="cache-status-item"><div class="skeleton" style="width: 160px; height: 40px; border-radius: 8px;"></div></div>
+               <div class="cache-status-item"><div class="skeleton" style="width: 140px; height: 28px; border-radius: 20px; max-width: 100%;"></div></div>
+               <div class="cache-status-item"><div class="skeleton" style="width: 40px; height: 32px; margin-bottom: 5px; max-width: 100%;"></div><div class="skeleton" style="width: 30px; height: 14px; max-width: 100%;"></div></div>
+               <div class="cache-status-item"><div class="skeleton" style="width: 40px; height: 32px; margin-bottom: 5px; max-width: 100%;"></div><div class="skeleton" style="width: 40px; height: 14px; max-width: 100%;"></div></div>
+               <div class="cache-status-item"><div class="skeleton" style="width: 100px; height: 20px; margin-bottom: 5px; max-width: 100%;"></div><div class="skeleton" style="width: 80px; height: 14px; max-width: 100%;"></div></div>
+               <div class="cache-status-item"><div class="skeleton" style="width: 160px; height: 40px; border-radius: 8px; max-width: 100%;"></div></div>
             </div>
-            <div class="kb-tabs">
-              <div class="skeleton" style="width: 120px; height: 40px; border-radius: 8px;"></div>
-              <div class="skeleton" style="width: 120px; height: 40px; border-radius: 8px;"></div>
-              <div class="skeleton" style="width: 150px; height: 40px; border-radius: 8px;"></div>
+            <div class="tabs-line">
+              <div class="skeleton" style="width: 100px; height: 24px; margin: 12px 0;"></div>
+              <div class="skeleton" style="width: 100px; height: 24px; margin: 12px 0;"></div>
+              <div class="skeleton" style="width: 120px; height: 24px; margin: 12px 0;"></div>
             </div>
             <div class="data-table-card">
               <div class="card-header">
-                 <div class="skeleton skeleton-title" style="margin: 0; width: 200px;"></div>
+                 <div class="skeleton skeleton-title" style="margin: 0;"></div>
                  <div class="header-actions">
-                    <div class="skeleton skeleton-button" style="width: 200px;"></div>
-                    <div class="skeleton skeleton-button" style="width: 120px;"></div>
+                    <div class="skeleton skeleton-button" style="width: 150px;"></div>
+                    <div class="skeleton skeleton-button" style="width: 100px;"></div>
                  </div>
               </div>
               <div class="table-wrapper">
@@ -688,7 +774,7 @@
               </div>
             </div>
             <div id="cache-progress-container" class="progress-container"><div class="progress-info"><span id="cache-progress-text">Processing...</span><span id="cache-progress-percent"></span></div><div class="progress-bar"><div id="cache-progress-fill" class="progress-fill"></div></div></div>
-          <div class="kb-tabs">
+          <div class="tabs-line">
             <button class="kb-tab active" data-kb-tab="documents">
                 <span class="material-symbols-outlined tab-icon">description</span>
                 <span>Documents</span>
@@ -758,9 +844,9 @@
            <div id="users-skeleton" style="display: none;">
             <div class="data-table-card">
               <div class="card-header">
-                 <div class="skeleton skeleton-title" style="margin: 0; width: 150px;"></div>
+                 <div class="skeleton skeleton-title" style="margin: 0;"></div>
                  <div class="header-actions">
-                    <div class="skeleton skeleton-button" style="width: 200px;"></div>
+                    <div class="skeleton skeleton-button" style="width: 150px;"></div>
                  </div>
               </div>
               <div class="table-wrapper">
@@ -808,9 +894,9 @@
            <div id="permissions-skeleton" style="display: none;">
             <div class="data-table-card">
               <div class="card-header">
-                 <div class="skeleton skeleton-title" style="margin: 0; width: 180px;"></div>
+                 <div class="skeleton skeleton-title" style="margin: 0;"></div>
                  <div class="header-actions">
-                    <div class="skeleton skeleton-button" style="width: 200px;"></div>
+                    <div class="skeleton skeleton-button" style="width: 150px;"></div>
                  </div>
               </div>
               <div class="table-wrapper">
@@ -853,7 +939,7 @@
         </section>
 
         <section class="view-section" id="chats-view">
-            <div class="kb-tabs">
+            <div class="tabs-line">
                 <button class="kb-tab active" data-chat-tab="history">
                     <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
                     <span>Session History</span>
@@ -1171,63 +1257,87 @@
             </div>
           </div>
 
-          <div class="active-sources-section">
-            <div class="sources-header">
-              <h3>
-                  <span class="material-symbols-outlined" style="margin-right: 8px;">sensors</span>
-                  Active Live Data Sources
-              </h3>
-              <div class="header-actions">
-                  <input type="text" id="source-search" placeholder="Search sources..." class="search-input" autocomplete="off">
-                  <select id="source-type-filter" class="filter-select">
-                      <option value="">All Types</option>
-                      <option value="google_sheet">Google Sheet</option>
-                      <option value="external_api">External API</option>
-                  </select>
+          <!-- Integration Hub Tabs (Line Style) -->
+          <div class="tabs-line">
+            <button class="kb-tab active" data-int-tab="sources">
+                <span class="material-symbols-outlined tab-icon">sensors</span>
+                <span>Live Data Sources</span>
+            </button>
+            <button class="kb-tab" data-int-tab="flags">
+                <span class="material-symbols-outlined tab-icon">monitor_heart</span>
+                <span>System Flags</span>
+            </button>
+          </div>
+
+          <!-- Tab Content: Live Data Sources -->
+          <div class="kb-tab-content active" id="sources-tab">
+            <div class="active-sources-section">
+              <div class="sources-header">
+                <h3>
+                    <span class="material-symbols-outlined" style="margin-right: 8px;">sensors</span>
+                    Active Live Data Sources
+                </h3>
+                <div class="header-actions">
+                    <input type="text" id="source-search" placeholder="Search sources..." class="search-input" autocomplete="off">
+                    <select id="source-type-filter" class="filter-select">
+                        <option value="">All Types</option>
+                        <option value="google_sheet">Google Sheet</option>
+                        <option value="external_api">External API</option>
+                    </select>
+                </div>
               </div>
-            </div>
-            <div class="table-wrapper">
-              <table class="data-table">
-                <thead>
-                  <tr>
-                    <th id="th-source-name" style="cursor:pointer" title="Click to sort">Source Name</th>
-                    <th id="th-type" style="cursor:pointer" title="Click to sort">Type</th>
-                    <th>AI Description (The "Label")</th>
-                    <th>Last Synced</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody id="live-sources-table-body">
-                  <tr><td colspan="5" class="loading-cell">Loading active sources...</td></tr>
-                </tbody>
-              </table>
+              <div class="table-wrapper">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th id="th-source-name" style="cursor:pointer" title="Click to sort">Source Name</th>
+                      <th id="th-type" style="cursor:pointer" title="Click to sort">Type</th>
+                      <th>AI Description (The "Label")</th>
+                      <th>Last Synced</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="live-sources-table-body">
+                    <tr><td colspan="5" class="loading-cell">Loading active sources...</td></tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
 
-          <div class="active-sources-section" id="system-flags-section" style="margin-top:24px;">
-            <div class="sources-header">
-              <h3>
-                  <span class="material-symbols-outlined" style="font-size: 20px; margin-right: 8px;">monitor_heart</span>
-                  System Flags
-              </h3>
-            </div>
-            <div class="table-wrapper">
-              <table class="data-table">
-                <thead>
-                  <tr>
-                    <th>Flag Name</th>
-                    <th>Type</th>
-                    <th>Description</th>
-                    <th>Last Updated</th>
-                  </tr>
-                </thead>
-                <tbody id="internal-flags-table-body">
-                  <tr><td colspan="4" class="loading-cell">Loading system flags...</td></tr>
-                </tbody>
-              </table>
+          <!-- Tab Content: System Flags -->
+          <div class="kb-tab-content" id="flags-tab">
+            <div class="active-sources-section" id="system-flags-section">
+              <div class="sources-header">
+                <h3>
+                    <span class="material-symbols-outlined" style="font-size: 20px; margin-right: 8px;">monitor_heart</span>
+                    System Flags
+                </h3>
+              </div>
+              <div class="table-wrapper">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Flag Name</th>
+                      <th>Type</th>
+                      <th>Description</th>
+                      <th>Last Updated</th>
+                    </tr>
+                  </thead>
+                  <tbody id="internal-flags-table-body">
+                    <tr><td colspan="4" class="loading-cell">Loading system flags...</td></tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
           </div> <!-- Close integrations-content -->
+        </section>
+
+        <section class="view-section" id="theme-view">
+           <div id="theme-content">
+             <!-- Content injected by theme.js -->
+           </div>
         </section>
 
         <section class="view-section" id="settings-view">
@@ -1273,22 +1383,42 @@
                  <input type="text" id="set-system-name" class="form-control" value="ChatCDO" autocomplete="off">
                </div>
                
-               <div class="form-group">
-                 <label class="form-label">AI Model (Chat/Text)</label>
-                 <select id="set-ai-model" class="form-control">
-                   <option value="" disabled selected>Loading available text models...</option>
-                 </select>
-               </div>
+              <div class="form-group">
+                <label class="form-label">AI Model (Chat/Text)</label>
+                <div style="display: flex; gap: 8px;">
+                  <div class="custom-select-wrapper">
+                    <div id="ai-model-trigger" class="form-control custom-select-trigger">
+                      <span id="ai-model-selected-text">Select a model...</span>
+                      <span class="material-symbols-outlined" style="font-size: 18px;">expand_more</span>
+                    </div>
+                    <div id="ai-model-options" class="custom-options"></div>
+                    <input type="hidden" id="set-ai-model" value="">
+                  </div>
+                  <button type="button" class="btn btn-secondary" id="btn-add-ai-model" title="Add new model" style="padding: 0 10px; display: flex; align-items: center; justify-content: center;">
+                    <span class="material-symbols-outlined">add</span>
+                  </button>
+                </div>
+              </div>
 
-               <div class="form-group">
-                 <label class="form-label">Text to Speech / Audio Model</label>
-                 <select id="set-audio-model" class="form-control">
-                   <option value="" disabled selected>Loading available audio models...</option>
-                 </select>
-                 <p style="font-size: 0.8rem; color: #666; margin-top: 5px;">
-                   * Both lists are automatically fetched using GEMINI_API_KEY.
-                 </p>
-               </div>
+              <div class="form-group">
+                <label class="form-label">Text to Speech / Audio Model</label>
+                <div style="display: flex; gap: 8px;">
+                  <div class="custom-select-wrapper">
+                    <div id="audio-model-trigger" class="form-control custom-select-trigger">
+                      <span id="audio-model-selected-text">Select a model...</span>
+                      <span class="material-symbols-outlined" style="font-size: 18px;">expand_more</span>
+                    </div>
+                    <div id="audio-model-options" class="custom-options"></div>
+                    <input type="hidden" id="set-audio-model" value="">
+                  </div>
+                  <button type="button" class="btn btn-secondary" id="btn-add-audio-model" title="Add new model" style="padding: 0 10px; display: flex; align-items: center; justify-content: center;">
+                    <span class="material-symbols-outlined">add</span>
+                  </button>
+                </div>
+                <p style="font-size: 0.8rem; color: #666; margin-top: 5px;">
+                  * Models can be manually added using the (+) button.
+                </p>
+              </div>
 
                <div class="form-group">
                  <label class="form-label">Max Context (Messages)</label>
@@ -1447,6 +1577,8 @@
         <button class="modal-close" id="editor-close-btn" type="button">✕</button>
       </div>
       <div class="modal-body">
+        <div id="doc-editor-skeleton" style="display: none;"></div>
+        <div id="doc-editor-form">
         <div class="file-upload-section">
           <div class="file-upload-label">
             <span style="display: flex; align-items: center; gap: 8px;">
@@ -1493,6 +1625,7 @@
           <label class="form-label">Content (JSON) *</label>
           <textarea id="doc-content-input" class="form-control json-editor" rows="12" placeholder='{"key": "value"}' required></textarea>
           <div class="json-validator" id="json-validator"></div>
+        </div>
         </div>
       </div>
       <div class="modal-footer">
@@ -2003,6 +2136,55 @@
     </div>
   </div>
 
+  <div class="modal" id="add-model-modal">
+    <div class="modal-content" style="max-width: 500px;">
+      <div class="modal-header">
+        <h3 id="add-model-title">Add New Model</h3>
+        <button class="modal-close" id="add-model-close" type="button">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Model Identifier (ID) *</label>
+          <input type="text" id="new-model-id" class="form-control" placeholder="e.g. gemini-2.0-flash-exp" required autocomplete="off">
+          <small style="color: #666; font-size: 0.8rem; margin-top: 4px; display: block;">
+            The exact name of the model from the provider.
+          </small>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Display Name *</label>
+          <input type="text" id="new-model-label" class="form-control" placeholder="e.g. Gemini 2.0 Flash (Experimental)" required autocomplete="off">
+        </div>
+
+        <!-- Model Playground Section -->
+        <div style="margin-top: 20px; padding-top: 15px; border-top: 1px dashed #e2e8f0;">
+          <label class="form-label" style="font-weight: 600; color: #475569; display: flex; align-items: center; gap: 6px;">
+            <span class="material-symbols-outlined" style="font-size: 18px;">science</span>
+            Model Playground
+          </label>
+          <div class="form-group" style="margin-top: 10px;">
+            <textarea id="model-test-prompt" class="form-control" placeholder="Ask a test question to verify the model..." style="min-height: 80px; resize: vertical; font-size: 0.9rem;"></textarea>
+          </div>
+          <div id="model-test-status" style="display: none; margin-top: 10px; padding: 12px; border-radius: 8px; font-size: 0.85rem; max-height: 200px; overflow-y: auto; line-height: 1.5;"></div>
+        </div>
+        
+        <input type="hidden" id="add-model-type" value="text">
+      </div>
+      <div class="modal-footer" style="justify-content: space-between;">
+        <div>
+          <button class="btn btn-outline-secondary" id="add-model-test-btn" type="button" style="border: 1px solid #cbd5e1; color: #334155; background: #f8fafc;">
+            <span>Run Test</span>
+          </button>
+        </div>
+        <div style="display: flex; gap: 10px;">
+          <button class="btn btn-secondary" id="add-model-cancel" type="button">Cancel</button>
+          <button class="btn btn-primary" id="add-model-save-btn" type="button">
+            <span>Add Model</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="modal" id="logout-modal">
     <div class="modal-content" style="max-width: 400px;">
       <div class="modal-header">
@@ -2054,7 +2236,7 @@
           </p>
           
           <div class="conversion-progress magic-progress" style="margin-top: 0;">
-            <p id="cache-progress-text-modal" style="text-align: center; color: #64748b; font-size: 0.9rem; font-weight: 500; margin-top: 0;">
+            <p id="cache-progress-text-modal" style="text-align: center; color: var(--text-muted); font-size: 0.9rem; font-weight: 500; margin-top: 0;">
               0% Complete
             </p>
           </div>
@@ -2214,7 +2396,7 @@
           <p class="magic-status-text">Gemini is analyzing your document structure...</p>
           
           <div class="conversion-progress magic-progress" style="margin-top: 0;">
-            <p id="conversion-progress-text" style="text-align: center; color: #64748b; font-size: 0.9rem; font-weight: 500; margin-top: 0;">
+            <p id="conversion-progress-text" style="text-align: center; color: var(--text-muted); font-size: 0.9rem; font-weight: 500; margin-top: 0;">
               Initializing...
             </p>
           </div>

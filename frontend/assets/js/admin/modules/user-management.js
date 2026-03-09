@@ -112,8 +112,10 @@ async function loadDepartments() {
 }
 
 // Load users
-async function loadUsers(page = 1) {
-  setUsersLoading(true);
+async function loadUsers(page = 1, showSkeleton = true) {
+  if (showSkeleton) {
+    setUsersLoading(true);
+  }
   try {
     const searchInput = document.getElementById('user-search');
     const deptFilter = document.getElementById('user-dept-filter');
@@ -197,12 +199,12 @@ function renderUsersTable() {
         </span>
       </td>
       <td data-label="Activity">
-        <div style="display: flex; flex-direction: column; gap: 4px; align-items: flex-start;">
-          <div style="font-size: 0.9rem; display: flex; align-items: center; gap: 4px;">
+        <div class="user-activity-wrapper">
+          <div class="msg-count">
             <span class="material-symbols-outlined">chat_bubble_outline</span> 
             <strong>${u.total_messages || 0}</strong> msgs
           </div>
-          <div style="font-size: 0.8rem; color: #999;">
+          <div class="last-active">
             Last: ${u.last_active ? formatDateTime(u.last_active) : 'Never'}
           </div>
         </div>

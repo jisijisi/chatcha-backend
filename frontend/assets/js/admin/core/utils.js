@@ -3,7 +3,16 @@
 // Timezone function for Asia/Manila
 function formatDateTime(dateString) {
   if (!dateString) return 'N/A';
-  let date = new Date(dateString);
+  
+  let date;
+  if (typeof dateString === 'string' && !dateString.includes('Z') && !dateString.includes('+')) {
+      // If it's a MySQL datetime string without timezone, treat it as UTC
+      // This fixes the 8-hour offset issue (UTC vs Asia/Manila)
+      date = new Date(dateString.replace(' ', 'T') + 'Z');
+  } else {
+      date = new Date(dateString);
+  }
+
   if (isNaN(date.getTime())) return 'Invalid Date';
   
   return date.toLocaleString('en-PH', { 

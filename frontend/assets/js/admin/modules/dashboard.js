@@ -3,12 +3,12 @@ import { apiFetch, API_BASE, adminUser } from '../core/api.js';
 import { formatDateTime, truncate, generateColors, debounce } from '../core/utils.js';
 import { showToast } from '../core/ui.js';
 
-let currentTimeframe = 'overall';
+let currentTimeframe = localStorage.getItem('adminDashboardTimeframe') || 'overall';
 window.adminCharts = {};
 let selectedYear = new Date().getFullYear();
 let selectedMonth = new Date().getMonth() + 1; // 1-12
 let dashboardEventSource = null;
-const refreshDashboard = debounce(() => loadDashboard(), 1000);
+const refreshDashboard = debounce(() => loadDashboard(false), 1000);
 
 // Initialize dashboard
 function setupDashboard() {
@@ -18,12 +18,24 @@ function setupDashboard() {
 
 // Setup timeframe tabs
 function setupTimeframeTabs() {
-  document.querySelectorAll('.timeframe-tab').forEach(tab => {
+  const tabs = document.querySelectorAll('.kb-tab[data-timeframe]');
+  
+  // Set initial active tab from persisted state
+  tabs.forEach(tab => {
+    if (tab.dataset.timeframe === currentTimeframe) {
+      tab.classList.add('active');
+    } else {
+      tab.classList.remove('active');
+    }
+  });
+
+  tabs.forEach(tab => {
     tab.addEventListener('click', (e) => {
-      document.querySelectorAll('.timeframe-tab').forEach(t => t.classList.remove('active'));
+      tabs.forEach(t => t.classList.remove('active'));
       tab.classList.add('active');
       currentTimeframe = tab.dataset.timeframe;
-      loadDashboard();
+      localStorage.setItem('adminDashboardTimeframe', currentTimeframe);
+      loadDashboard(true);
     });
   });
 }
@@ -52,10 +64,12 @@ function connectDashboardStream() {
 }
 
 // Main dashboard loader
-async function loadDashboard() {
+async function loadDashboard(showSkeleton = true) {
   try {
     ensureTimeframeControls();
-    setDashboardLoading(true);
+    if (showSkeleton) {
+      setDashboardLoading(true);
+    }
 
     const params = new URLSearchParams({ timeframe: currentTimeframe });
     if (currentTimeframe === 'yearly' || currentTimeframe === 'monthly') {
@@ -125,10 +139,10 @@ function setDashboardLoading(isLoading) {
   }
 
   if (isLoading) {
-    dashboardContent.style.display = 'none';
+    dashboardContent.classList.remove('active');
     dashboardSkeleton.style.display = 'block';
   } else {
-    dashboardContent.style.display = 'block';
+    dashboardContent.classList.add('active');
     dashboardSkeleton.style.display = 'none';
   }
 }
@@ -291,7 +305,7 @@ function ensureTimeframeControls() {
     yearSelect.value = String(selectedYear);
     yearSelect.onchange = () => {
       selectedYear = parseInt(yearSelect.value, 10);
-      loadDashboard();
+      loadDashboard(true);
     };
   } else {
     yearSelect.value = String(selectedYear);
@@ -303,7 +317,7 @@ function ensureTimeframeControls() {
     monthSelect.value = String(selectedMonth);
     monthSelect.onchange = () => {
       selectedMonth = parseInt(monthSelect.value, 10);
-      loadDashboard();
+      loadDashboard(true);
     };
   } else {
     monthSelect.value = String(selectedMonth);
@@ -395,9 +409,10 @@ function renderCategoryUsageChart(data) {
 
   if (tableContainer) {
     const table = document.createElement('table');
+    table.className = 'legend-table';
     table.innerHTML = `
       <thead>
-        <tr><th>Category</th><th>Access Count</th></tr>
+        <tr><th>CATEGORY</th><th>ACCESS</th></tr>
       </thead>
       <tbody>
         ${filteredData.map((item, index) => `

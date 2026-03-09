@@ -125,7 +125,7 @@ function setAnalyticsLoading(isLoading) {
 
 // Tab management
 function switchChatTab(tabName) {
-  console.log('Switching chat tab to:', tabName);
+  console.log('SwitchChatTab called for:', tabName);
   
   // Update tabs
   document.querySelectorAll('.kb-tab[data-chat-tab]').forEach(t => t.classList.remove('active'));
@@ -140,14 +140,14 @@ function switchChatTab(tabName) {
   currentChatTab = tabName;
   
   // Load data for the tab
-  if (tabName === 'history') loadChats();
-  else if (tabName === 'analytics') loadChatAnalytics();
+  if (tabName === 'history') loadChats(true);
+  else if (tabName === 'analytics') loadChatAnalytics(true);
 }
 
 // Load chat data
-async function loadChatData() {
-  if (currentChatTab === 'history') await loadChats();
-  else await loadChatAnalytics();
+async function loadChatData(showSkeleton = true) {
+  if (currentChatTab === 'history') await loadChats(showSkeleton);
+  else await loadChatAnalytics(showSkeleton);
 }
 
 // Helper to generate skeleton rows
@@ -164,11 +164,13 @@ function getSkeletonRows(cols = 5, rows = 5) {
 }
 
 // Chat history management
-async function loadChats() {
+async function loadChats(showSkeleton = true) {
   const tbody = document.getElementById('chat-history-table-body');
-  if (tbody) tbody.innerHTML = getSkeletonRows(5);
+  if (tbody && showSkeleton) tbody.innerHTML = getSkeletonRows(5);
 
-  setChatsLoading(true);
+  if (showSkeleton) {
+    setChatsLoading(true);
+  }
   try {
     const search = document.getElementById('chat-search')?.value || '';
     const dept = document.getElementById('chat-dept-filter')?.value || '';
@@ -295,12 +297,34 @@ function renderPagination() {
       if (p !== currentPage) {
         btn.onclick = () => {
           currentPage = p;
-          loadChats();
+          loadChats(true);
         };
       }
       pageContainer.appendChild(btn);
     }
   });
+}
+
+function renderChatSessionSkeleton() {
+  const container = document.getElementById('chat-viewer-container');
+  if (!container) return;
+  
+  container.innerHTML = `
+    <div style="padding: 20px;">
+      <div style="display: flex; justify-content: flex-end; margin-bottom: 20px;">
+        <div class="skeleton" style="width: 60%; height: 60px; border-radius: 12px 12px 0 12px;"></div>
+      </div>
+      <div style="display: flex; justify-content: flex-start; margin-bottom: 20px;">
+        <div class="skeleton" style="width: 70%; height: 100px; border-radius: 12px 12px 12px 0;"></div>
+      </div>
+      <div style="display: flex; justify-content: flex-end; margin-bottom: 20px;">
+        <div class="skeleton" style="width: 40%; height: 40px; border-radius: 12px 12px 0 12px;"></div>
+      </div>
+      <div style="display: flex; justify-content: flex-start; margin-bottom: 20px;">
+        <div class="skeleton" style="width: 65%; height: 80px; border-radius: 12px 12px 12px 0;"></div>
+      </div>
+    </div>
+  `;
 }
 
 // Chat viewer modal
@@ -312,7 +336,8 @@ async function viewChatSession(sessionId) {
   
   viewingSessionId = sessionId;
   openModal('chat-view-modal');
-  container.innerHTML = '<div class="loading-cell">Loading conversation...</div>';
+  
+  renderChatSessionSkeleton();
 
   try {
     const data = await apiFetch(`/admin/chats/${sessionId}`);
@@ -360,7 +385,7 @@ async function deleteChatSession(sessionId) {
       try {
         await apiFetch(`/admin/chats/${sessionId}`, { method: 'DELETE' });
         showToast('Chat session deleted');
-        loadChats();
+        loadChats(true);
       } catch (e) {
         showToast('Failed to delete chat', 'error');
       }
@@ -369,8 +394,10 @@ async function deleteChatSession(sessionId) {
 }
 
 // Chat analytics
-async function loadChatAnalytics() {
-  setAnalyticsLoading(true);
+async function loadChatAnalytics(showSkeleton = true) {
+  if (showSkeleton) {
+    setAnalyticsLoading(true);
+  }
   try {
     const data = await apiFetch('/admin/chats/analytics');
     

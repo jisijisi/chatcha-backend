@@ -6,6 +6,7 @@ import * as cacheController from '../controllers/cacheController.js';
 import * as knowledgeController from '../controllers/knowledgeController.js';
 import * as adminController from '../controllers/adminController.js';
 import { pool } from '../config/database.js';
+import { jwtAuth } from '../middleware/jwtAuth.js';
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -13,7 +14,7 @@ const upload = multer({ storage: multer.memoryStorage() });
 // Middleware: Require KB Settings access for write operations
 async function requireKbSettingsAccess(req, res, next) {
   try {
-    const userEmail = req.header('X-User-Email');
+    const userEmail = req.user ? req.user.email : req.header('X-User-Email');
     if (!userEmail) {
       return res.status(403).json({ error: 'Forbidden: No user email' });
     }
@@ -51,47 +52,48 @@ async function requireKbSettingsAccess(req, res, next) {
 
 // --- RAG & Search ---
 router.get("/rag/status", ragController.getRagStatus);
-router.post("/rag/search", ragController.searchRag);
+router.post("/rag/search", jwtAuth, ragController.searchRag);
 router.get("/database/stats", ragController.getDatabaseStats);
 router.get("/database/documents", ragController.getDatabaseDocuments);
 
 // --- Feature Access Checks ---
 router.get("/features/kb-settings/access", adminController.checkKbSettingsAccess);
+router.get("/features/speech-settings/access", adminController.checkSpeechSettingsAccess);
 router.get("/permissions/stream", adminController.permissionsStream);
 
 // --- Knowledge Base Management (User Accessible) ---
 
 // 1. Documents (MOVED HERE from Admin only)
-router.get("/knowledge/documents", knowledgeController.getDocuments);
-router.get("/knowledge/documents/:id", knowledgeController.getDocument);
-router.post("/knowledge/documents", requireKbSettingsAccess, knowledgeController.createDocument);
-router.put("/knowledge/documents/:id", requireKbSettingsAccess, knowledgeController.updateDocument);
-router.delete("/knowledge/documents/:id", requireKbSettingsAccess, knowledgeController.deleteDocument);
+router.get("/knowledge/documents", jwtAuth, knowledgeController.getDocuments);
+router.get("/knowledge/documents/:id", jwtAuth, knowledgeController.getDocument);
+router.post("/knowledge/documents", jwtAuth, requireKbSettingsAccess, knowledgeController.createDocument);
+router.put("/knowledge/documents/:id", jwtAuth, requireKbSettingsAccess, knowledgeController.updateDocument);
+router.delete("/knowledge/documents/:id", jwtAuth, requireKbSettingsAccess, knowledgeController.deleteDocument);
 
 // 2. Categories
-router.get("/knowledge/categories", knowledgeController.getCategories);
+router.get("/knowledge/categories", jwtAuth, knowledgeController.getCategories);
 
 // 3. Subcategories
-router.get("/knowledge/subcategories", knowledgeController.getAllSubcategories);
-router.get("/knowledge/subcategories/:categoryId", knowledgeController.getSubcategories); // Added specific fetch
-router.post("/knowledge/subcategories", requireKbSettingsAccess, knowledgeController.createSubcategory);
-router.put("/knowledge/subcategories/:id", requireKbSettingsAccess, knowledgeController.updateSubcategory);
-router.delete("/knowledge/subcategories/:id", requireKbSettingsAccess, knowledgeController.deleteSubcategory);
+router.get("/knowledge/subcategories", jwtAuth, knowledgeController.getAllSubcategories);
+router.get("/knowledge/subcategories/:categoryId", jwtAuth, knowledgeController.getSubcategories); // Added specific fetch
+router.post("/knowledge/subcategories", jwtAuth, requireKbSettingsAccess, knowledgeController.createSubcategory);
+router.put("/knowledge/subcategories/:id", jwtAuth, requireKbSettingsAccess, knowledgeController.updateSubcategory);
+router.delete("/knowledge/subcategories/:id", jwtAuth, requireKbSettingsAccess, knowledgeController.deleteSubcategory);
 
 // 4. Tools & Conversion
-router.post("/knowledge/convert-file", requireKbSettingsAccess, upload.single("file"), knowledgeController.convertFileToJson);
+router.post("/knowledge/convert-file", jwtAuth, requireKbSettingsAccess, upload.single("file"), knowledgeController.convertFileToJson);
 
 // --- Cache Management ---
-router.get("/cache/status", cacheController.getCacheStatus);
-router.post("/cache/clear", cacheController.clearCache);
-router.post("/cache/regenerate", requireKbSettingsAccess, cacheController.regenerateCache);
-router.get("/cache/progress-stream", cacheController.cacheProgressStream);
+router.get("/cache/status", jwtAuth, cacheController.getCacheStatus);
+router.post("/cache/clear", jwtAuth, cacheController.clearCache);
+router.post("/cache/regenerate", jwtAuth, requireKbSettingsAccess, cacheController.regenerateCache);
+router.get("/cache/progress-stream", jwtAuth, cacheController.cacheProgressStream);
 
 // --- Debug ---
-router.get("/rag/debug/folders", ragController.debugFolders);
-router.get("/rag/debug/files", ragController.debugFiles);
-router.get("/rag/debug/chunks", ragController.debugChunks);
-router.post("/rag/debug/prompt", ragController.debugPrompt);
-router.get("/rag/debug/search-chunks", ragController.debugSearchChunks);
+router.get("/rag/debug/folders", jwtAuth, ragController.debugFolders);
+router.get("/rag/debug/files", jwtAuth, ragController.debugFiles);
+router.get("/rag/debug/chunks", jwtAuth, ragController.debugChunks);
+router.post("/rag/debug/prompt", jwtAuth, ragController.debugPrompt);
+router.get("/rag/debug/search-chunks", jwtAuth, ragController.debugSearchChunks);
 
 export default router;

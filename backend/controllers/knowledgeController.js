@@ -118,7 +118,7 @@ export const convertFileToJson = async (req, res) => {
 
     try {
       // --- 1. FETCH DYNAMIC AI MODEL FROM DB ---
-      let activeModel = "gemini-2.0-flash-exp"; // Default fallback
+      let activeModel = "gemini-flash-latest"; // Default fallback
       try {
           const [settings] = await pool.execute("SELECT ai_model FROM system_settings WHERE id = 1");
           if (settings.length > 0 && settings[0].ai_model) {

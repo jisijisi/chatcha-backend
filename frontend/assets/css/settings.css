@@ -275,9 +275,24 @@
   border-radius: 8px;
   font-size: 0.95rem;
   color: var(--text-main);
-  background: var(--input-bg);
-  transition: all 0.2s;
+  background-color: var(--input-bg);
+  transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s, transform 0.1s;
   font-family: inherit;
+}
+
+select.form-input {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat !important;
+  background-position: right 14px center !important;
+  background-size: 14px !important;
+  padding-right: 40px !important;
+  cursor: pointer;
+}
+
+select.form-input:hover {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23D71921' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat !important;
 }
 
 .form-input:focus {
@@ -287,7 +302,7 @@
 }
 
 .form-input:disabled {
-  background: var(--bg-secondary);
+  background-color: var(--bg-secondary);
   color: var(--text-muted);
   cursor: not-allowed;
 }
@@ -1287,10 +1302,27 @@
   border-radius: 8px;
   font-size: 0.95rem;
   color: var(--text-main);
-  background: var(--input-bg);
-  transition: all 0.2s;
+  background-color: var(--input-bg);
+  transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s, transform 0.1s;
   font-family: inherit;
   box-sizing: border-box;
+}
+
+#kb-subcat-modal select.form-input,
+#kb-doc-modal select.form-input {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat !important;
+  background-position: right 14px center !important;
+  background-size: 14px !important;
+  padding-right: 40px !important;
+  cursor: pointer;
+}
+
+#kb-subcat-modal select.form-input:hover,
+#kb-doc-modal select.form-input:hover {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23D71921' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat !important;
 }
 
 #kb-subcat-modal .form-input:focus,

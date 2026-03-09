@@ -77,6 +77,7 @@ router.delete("/admin/chats/:sessionId", adminController.deleteChat);
 // Settings & Cache
 router.get("/admin/settings", adminController.getSettings);
 router.put("/admin/settings", adminController.updateSettings);
+router.post("/admin/test-model", adminController.testAIModel);
 router.get("/admin/system/health", adminController.getSystemHealth);
 router.get("/admin/system/gemini-models", adminController.getAvailableGeminiModels); // <--- NEW ROUTE
 router.post("/admin/cache/clear", adminController.clearCache);
@@ -87,5 +88,10 @@ router.get("/admin/dashboard/stream", adminController.dashboardStream);
 router.get("/admin/smart-assistant/sessions", adminController.getSmartAssistantSessions);
 router.get("/admin/smart-assistant/analytics", adminController.getSmartAssistantAnalytics);
 router.post("/admin/smart-assistant/sessions/clear", adminController.clearAllSmartAssistantSessions);
+
+// AI Prompts
+router.get("/admin/prompts", adminController.getPrompts);
+router.put("/admin/prompts/:type", adminController.updatePrompt);
+router.post("/admin/prompts/:type/reset", adminController.resetPrompt);
 
 export default router;

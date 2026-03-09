@@ -1081,7 +1081,7 @@
   height: 40px;
   cursor: pointer;
   box-shadow: 0 4px 12px rgba(215, 25, 33, 0.3);
-  transition: all 0.3s ease, bottom 0.2s ease;
+  transition: all 0.3s ease;
   opacity: 0;
   visibility: hidden;
   z-index: 500;
@@ -1421,4 +1421,23 @@
   }
 }
 
+/* History Loader */
+.history-loader {
+  display: flex;
+  justify-content: center;
+  padding: 10px;
+  width: 100%;
+}
 
+.loader-spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid var(--border-color);
+  border-top-color: var(--primary-color);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

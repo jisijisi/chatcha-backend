@@ -1,11 +1,23 @@
 import fs from 'fs';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import dotenv from 'dotenv';
+import { pool } from '../config/database.js';
 
 dotenv.config();
 
 // Initialize Gemini
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+
+// Helper to get active AI model from system settings
+async function getActiveModel() {
+    try {
+        const [rows] = await pool.execute("SELECT ai_model FROM system_settings WHERE id = 1");
+        return rows.length > 0 && rows[0].ai_model ? rows[0].ai_model : "gemini-flash-latest";
+    } catch (error) {
+        console.error('⚠️ Failed to fetch active model from settings:', error.message);
+        return "gemini-flash-latest"; // Fallback
+    }
+}
 
 // Helper to convert file to GenerativePart
 function fileToGenerativePart(path, mimeType) {
@@ -25,8 +37,10 @@ export async function transcribe(req, res) {
 
     // console.log("🎙️ STT Controller received file:", req.file);
 
-    // Use Gemini 1.5 Flash which is fast and supports audio
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const activeModel = await getActiveModel();
+
+    // Use Gemini Flash or the selected model
+    const model = genAI.getGenerativeModel({ model: activeModel });
 
     // Determine mime type (default to audio/mp3 or whatever multer detected)
     // Common from MediaRecorder: audio/webm, audio/ogg, audio/mp4

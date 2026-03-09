@@ -10,6 +10,7 @@ import { SmartPersonalAssistant } from '../services/smartPersonalAssistant.js'; 
 import { SmartDataAnalyst } from '../services/smartDataAnalyst.js'; // NEW IMPORT
 import { notifyAdmins } from './notificationController.js';
 import { PROMPT_TEMPLATES } from '../utils/prompts.js';
+import { PromptService } from '../services/promptService.js';
 import { AI_BEHAVIOR } from '../utils/aiBehavior.js';
 import { responseCache } from '../services/responseCacheService.js';
 import { cacheService } from '../services/cacheService.js';
@@ -17,11 +18,23 @@ import { cacheService } from '../services/cacheService.js';
 // Initialize for dynamic conversational phrasing
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
+// Helper to get active AI model from system settings
+async function getActiveModel() {
+    try {
+        const [rows] = await pool.execute("SELECT ai_model FROM system_settings WHERE id = 1");
+        return rows.length > 0 && rows[0].ai_model ? rows[0].ai_model : "gemini-flash-latest";
+    } catch (error) {
+        console.error('⚠️ Failed to fetch active model from settings:', error.message);
+        return "gemini-flash-latest"; // Fallback
+    }
+}
+
 async function getLLMThinkingPhrases(prompt, intent) {
     if (!process.env.GEMINI_API_KEY) return AI_BEHAVIOR.conversationalAssets?.transitions || [];
     try {
+        const activeModel = await getActiveModel();
         const apiResponse = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${process.env.GEMINI_API_KEY}`,
+            `https://generativelanguage.googleapis.com/v1beta/models/${activeModel}:generateContent?key=${process.env.GEMINI_API_KEY}`,
             {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -34,7 +47,7 @@ Tailor to the intent: ${intent || 'GENERAL'} and the question: "${prompt}".
 Example: ["Analyzing trends", "Checking HR policies", "Crunching numbers"]
 `}]}
                     ],
-                    generationConfig: { temperature: 0.2, topP: 0.9, topK: 40, maxOutputTokens: 128 }
+                    generationConfig: { temperature: 0.2, topP: 0.9, topK: 40, maxOutputTokens: 1024 }
                 })
             }
         );
@@ -69,12 +82,12 @@ export const getRagStatus = (req, res) => {
     const stats = ragSystem.getFolderStats();
     res.json({ 
         status: ragSystem.isInitialized ? "ready" : "initializing",
-        service: "NEW Database-Driven Company Knowledge RAG",
+        service: "LanceDB Vector Search RAG",
         database_schema: "new_relational_v1",
         embedding_model: "gemini-embedding-001",
         chunks: ragSystem.chunks.length,
         aggregate_chunks: ragSystem.chunks.filter(c => c.isAggregate).length,
-        embeddings: ragSystem.embeddings.length,
+        embeddings: ragSystem.chunks.length, // 1:1 mapping in Vector DB
         knowledge_files: Object.keys(ragSystem.knowledgeBase).length,
         folder_stats: stats,
         timestamp: new Date().toISOString()
@@ -84,7 +97,7 @@ export const getRagStatus = (req, res) => {
 export const searchRag = async (req, res) => {
     try {
         const { question, top_k = 15 } = req.body;
-        const userEmail = req.header('X-User-Email');
+        const userEmail = req.user ? req.user.email : req.header('X-User-Email');
         
         if (!question) {
             return res.status(400).json({ error: "Question required" });
@@ -122,7 +135,7 @@ export const askQuestion = async (req, res) => {
     const { prompt, use_rag = true, behavior_context, session_id, sessionId } = req.body; // Extract session_id
     const activeSessionId = session_id || sessionId; // Normalization
     
-    const userEmail = req.header('X-User-Email'); 
+    const userEmail = req.user ? req.user.email : req.header('X-User-Email'); 
     
     if (!prompt) return res.status(400).json({ error: "Missing prompt" });
     if (!process.env.GEMINI_API_KEY) return res.status(500).json({ error: "API key not set" });
@@ -158,6 +171,8 @@ export const askQuestion = async (req, res) => {
     // }
 
     let finalAnswer = "";
+    let missingKnowledge = false;
+    let noAccessKnowledge = false;
 
     try {
         const history = behavior_context?.conversation_history || [];
@@ -214,7 +229,8 @@ export const askQuestion = async (req, res) => {
                 const smartResult = await SmartPersonalAssistant.processRequest(
                     userEmail, 
                     prompt, 
-                    history
+                    history,
+                    searchTerms // Pass translated query
                 );
                 
                 // Map smart assistant status to response format
@@ -292,7 +308,7 @@ export const askQuestion = async (req, res) => {
                 const lastHistoryItem = history.length > 0 ? history[history.length - 1] : null;
                 const lastBotResponse = lastHistoryItem ? (lastHistoryItem.answer || lastHistoryItem.content) : null;
 
-                const analystResult = await dataAnalyst.processQuery(prompt, history, lastBotResponse, activeSessionId, userEmail);
+                const analystResult = await dataAnalyst.processQuery(prompt, history, lastBotResponse, activeSessionId, userEmail, searchTerms);
 
                 return res.json({
                     answer: analystResult.text,
@@ -341,25 +357,29 @@ export const askQuestion = async (req, res) => {
         switch (intent) {
             case 'PERSONAL_ACTION':
                 // Should not reach here, handled above
-                systemPromptTemplate = PROMPT_TEMPLATES.PERSONAL_ACTION;
+                systemPromptTemplate = await PromptService.getPrompt('PERSONAL_ACTION');
                 activeTools = await ToolService.getAvailableTools(userEmail, 'PERSONAL_ACTION');
                 ragContext = "No knowledge base needed for personal tasks.";
                 break;
 
             case 'LIVE_DATA':
                 // Handled above by SmartDataAnalyst
-                systemPromptTemplate = PROMPT_TEMPLATES.GENERAL; 
+                systemPromptTemplate = await PromptService.getPrompt('GENERAL'); 
                 activeTools = [];
                 ragContext = "";
                 break;
 
             case 'KNOWLEDGE_BASE':
-                systemPromptTemplate = PROMPT_TEMPLATES.KNOWLEDGE_BASE;
+                systemPromptTemplate = await PromptService.getPrompt('KNOWLEDGE_BASE');
                 activeTools = []; 
                 if (use_rag && ragSystem.isInitialized) {
                     // ⚡ OPTIMIZED: Reduced top_k from 15 to 8 for speed
                     const ragResult = await getEnhancedContext(searchTerms, ragSystem, 8, userEmail);
                     
+                    // Handle specific knowledge gap flags from RAG system
+                    if (ragResult.isMissingKnowledge) missingKnowledge = true;
+                    if (ragResult.isAccessDenied) noAccessKnowledge = true;
+
                     // 🚫 BLOCK ACCESS IF PERMISSIONS FAIL
                     if (ragResult.accessDenied) {
                         return res.json({
@@ -390,7 +410,7 @@ export const askQuestion = async (req, res) => {
 
             case 'GENERAL':
             default:
-                systemPromptTemplate = PROMPT_TEMPLATES.GENERAL;
+                systemPromptTemplate = await PromptService.getPrompt('GENERAL');
                 activeTools = [];
                 ragContext = "";
                 break;
@@ -430,7 +450,15 @@ export const askQuestion = async (req, res) => {
             .replace(/{context}/g, ragContext)
             .replace(/{history}/g, historyText)
             .replace(/{question}/g, prompt)
+            .replace(/{translated_question}/g, searchTerms)
             .replace(/{user_name}/g, userName) + promptDateContext;
+
+        // --- NEW: KNOWLEDGE GAP SYSTEM ALERTS ---
+        if (noAccessKnowledge) {
+            finalSystemPrompt += "\n\n[SYSTEM ALERT: NO_ACCESS_KNOWLEDGE] Information related to the query was found in the database, but the user does not have permission to access it. You MUST inform the user about the restriction clearly and include <NO_ACCESS_KNOWLEDGE> at the very end of your response.";
+        } else if (missingKnowledge) {
+            finalSystemPrompt += "\n\n[SYSTEM ALERT: MISSING_KNOWLEDGE] No relevant information was found in the internal knowledge base. You MUST inform the user and include <MISSING_KNOWLEDGE> at the very end of your response.";
+        }
 
         if (intentData.is_followup) {
             finalSystemPrompt += `\n\n═══════════════════════════════════════════════════════════════════════════
@@ -470,9 +498,11 @@ Based on conversation history, this interprets to: "${searchTerms}"
         let toolQuery = ""; 
         let toolResultCount = 0;
 
+        const activeModel = await getActiveModel();
+
         for (let turn = 0; turn < 3; turn++) {
             const apiResponse = await fetch(
-                `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${process.env.GEMINI_API_KEY}`,
+                `https://generativelanguage.googleapis.com/v1beta/models/${activeModel}:generateContent?key=${process.env.GEMINI_API_KEY}`,
                 {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
@@ -483,7 +513,7 @@ Based on conversation history, this interprets to: "${searchTerms}"
                             temperature: 0.4, // Slightly increased for more natural phrasing
                             topP: 0.95,
                             topK: 40,
-                            maxOutputTokens: 2048
+                            maxOutputTokens: 8192
                         }
                     })
                 }
@@ -513,6 +543,16 @@ Based on conversation history, this interprets to: "${searchTerms}"
                 toolQuery = fnArgs.query || "Action"; 
 
                 const toolResult = await ToolService.executeTool(fnName, fnArgs, userEmail);
+
+                // Check for explicit missing knowledge tool call
+                if (toolResult && toolResult.missing_knowledge_flag) {
+                    missingKnowledge = true;
+                }
+                
+                // NEW: Check for explicit no access knowledge tool call
+                if (toolResult && toolResult.no_access_flag) {
+                    noAccessKnowledge = true;
+                }
 
                 // Tracking Logic...
                 if (toolResult.tool_output) {
@@ -550,36 +590,78 @@ Based on conversation history, this interprets to: "${searchTerms}"
             }
         }
 
-        // 6. PROCESS SOURCES
+        // 6. PROCESS SOURCES & DETECT KNOWLEDGE GAPS
         let cleanAnswer = finalAnswer;
         let citedSourceNames = [];
-        let missingKnowledge = false;
 
-        // --- NEW: MISSING KNOWLEDGE CHECK ---
-        if (cleanAnswer.includes('<MISSING_KNOWLEDGE>')) {
-            console.log("🚩 Missing knowledge detected in response.");
+        // ---Consolidated Knowledge Gap Detection ---
+        // Robust regex to handle variations with/without underscores and tool name hallucinations
+        const missingKnowledgeRegex = /<MISSING_?KNOWLEDGE>|signal_?missing_?knowledge|<MISS[ING_KNOWLEDGE]*$/gi;
+        const noAccessKnowledgeRegex = /<NO_ACCESS_?KNOWLEDGE>|signal_?no_access_?knowledge|<NO_ACC[ESS_KNOWLEDGE]*$/gi;
+
+        // 1. Tag-based Detection (highest confidence)
+        if (missingKnowledgeRegex.test(cleanAnswer)) {
+            console.log("🚩 Missing knowledge detected in response (tag/tool string).");
             missingKnowledge = true;
-            cleanAnswer = cleanAnswer.replace('<MISSING_KNOWLEDGE>', '').trim();
+            cleanAnswer = cleanAnswer.replace(missingKnowledgeRegex, '').replace(/^:\s*/, '').trim();
+        }
+        
+        if (noAccessKnowledgeRegex.test(cleanAnswer)) {
+            console.log("🚩 No access to knowledge detected in response (tag/tool string).");
+            noAccessKnowledge = true;
+            cleanAnswer = cleanAnswer.replace(noAccessKnowledgeRegex, '').replace(/^:\s*/, '').trim();
+        }
+
+        // 2. Implicit Detection (Fallback if not already flagged)
+        if (!missingKnowledge && !noAccessKnowledge) {
+            const lowerAnswer = cleanAnswer.toLowerCase();
             
-            // Only notify if user is logged in (not guest)
-            if (userEmail) {
-                const notifyMessage = `Missing Knowledge: User "${userName}" asked: "${prompt}". AI could not find specific answer.`;
-                // Fire and forget - don't await to avoid slowing down response
-                notifyAdmins(notifyMessage).catch(err => console.error('Failed to notify admins:', err));
+            // Implicit Missing Knowledge
+            if (
+                lowerAnswer.includes("not included in the information") ||
+                lowerAnswer.includes("not available in the provided context") ||
+                lowerAnswer.includes("don't have knowledge about this") ||
+                lowerAnswer.includes("reach out directly to our human resources") ||
+                lowerAnswer.includes("recommend checking with hr") ||
+                lowerAnswer.includes("wala akong nakitang") || // Tagalog: "I haven't seen"
+                lowerAnswer.includes("hindi ko mahanap")     // Tagalog: "I can't find"
+            ) {
+                console.log("🚩 Implicit missing knowledge detected.");
+                missingKnowledge = true;
+            }
+            // Implicit No Access
+            else if (
+                lowerAnswer.includes("don't have permission to access") ||
+                lowerAnswer.includes("restricted from viewing") ||
+                lowerAnswer.includes("wala kang permiso") || // Tagalog: "You don't have permission"
+                lowerAnswer.includes("limitado ang iyong access") // Tagalog: "Your access is limited"
+            ) {
+                console.log("🚩 Implicit no access knowledge detected.");
+                noAccessKnowledge = true;
             }
         }
-        // Fallback: Check if the answer explicitly mentions checking with HR or lack of info, even without the tag
-        else if (
-            cleanAnswer.toLowerCase().includes("i'm not seeing the specific process") || 
-            cleanAnswer.toLowerCase().includes("don't have knowledge about this") ||
-            cleanAnswer.toLowerCase().includes("i recommend checking with hr")
-        ) {
-             console.log("🚩 Implicit missing knowledge detected.");
-             missingKnowledge = true;
-             if (userEmail) {
-                const notifyMessage = `Missing Knowledge (Implicit): User "${userName}" asked: "${prompt}". AI response indicated lack of specific info.`;
-                notifyAdmins(notifyMessage).catch(err => console.error('Failed to notify admins:', err));
+
+        // 3. ADMIN NOTIFICATION (Fire once, prioritize No Access)
+        if (userEmail) {
+            let notifyMessage = null;
+            
+            if (noAccessKnowledge) {
+                notifyMessage = `No Access to Knowledge: User "${userName}" asked: "${prompt}". Relevant info exists but user lacks permissions.`;
+            } else if (missingKnowledge) {
+                notifyMessage = `Missing Knowledge: User "${userName}" asked: "${prompt}". AI could not find specific answer.`;
             }
+
+            if (notifyMessage) {
+                console.log(`🔔 Attempting to send admin notification for user ${userEmail}: ${notifyMessage}`);
+                notifyAdmins(notifyMessage)
+                    .then(success => {
+                        if (success) console.log("✅ Admin notification sent successfully");
+                        else console.warn("⚠️ Admin notification failed (no admins found or DB error)");
+                    })
+                    .catch(err => console.error('❌ Failed to notify admins:', err));
+            }
+        } else if (missingKnowledge || noAccessKnowledge) {
+            console.log("🔔 Knowledge gap detected but user is GUEST (no email), skipping admin notification.");
         }
 
         if (finalAnswer.includes("SOURCES_USED:")) {
@@ -592,8 +674,8 @@ Based on conversation history, this interprets to: "${searchTerms}"
         let toolSources = [];
         const availableSourceNames = Object.keys(sourceMap);
 
-        // ONLY process sources if knowledge is NOT missing
-        if (!missingKnowledge) {
+        // ONLY process sources if knowledge is NOT missing AND NOT restricted
+        if (!missingKnowledge && !noAccessKnowledge) {
             if (citedSourceNames.length > 0) {
                 for (const citedName of citedSourceNames) {
                     const match = availableSourceNames.find(
@@ -636,13 +718,14 @@ Based on conversation history, this interprets to: "${searchTerms}"
                 }
             }
         } else {
-            console.log("🚫 Skipping source population due to missing knowledge.");
+            console.log("🚫 Skipping source population due to missing knowledge or total access denial.");
         }
 
         const responsePayload = { 
             answer: cleanAnswer,
             intent: intent,
             missing_knowledge: missingKnowledge,
+            no_access_knowledge: noAccessKnowledge,
             analysis: {
                 emotion: intentData.user_emotion,
                 complexity: intentData.complexity,
@@ -680,9 +763,228 @@ Based on conversation history, this interprets to: "${searchTerms}"
 };
 
 // Add new endpoints for smart assistant
+export const askQuestionStream = async (req, res) => {
+    const { prompt, use_rag = true, behavior_context, session_id, sessionId } = req.body;
+    const activeSessionId = session_id || sessionId;
+    const userEmail = req.user ? req.user.email : req.header('X-User-Email');
+
+    if (!prompt) return res.status(400).json({ error: "Missing prompt" });
+    if (!process.env.GEMINI_API_KEY) return res.status(500).json({ error: "API key not set" });
+
+    // Set up SSE headers
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+
+    const sendEvent = (type, data) => {
+        res.write(`data: ${JSON.stringify({ type, ...data })}\n\n`);
+    };
+
+    try {
+        const history = behavior_context?.conversation_history || [];
+
+        // 1. Parallel Execution: User Name & Intent
+        const userPromise = (async () => {
+            let userName = "User";
+            if (userEmail) {
+                try {
+                    const [rows] = await pool.execute("SELECT name FROM employees WHERE email = ?", [userEmail]);
+                    if (rows.length > 0 && rows[0].name) userName = rows[0].name;
+                } catch (e) { console.error("⚠️ Failed to fetch user name:", e.message); }
+            }
+            return userName;
+        })();
+
+        const intentPromise = IntentService.classifyIntent(prompt, history);
+        const [userName, intentData] = await Promise.all([userPromise, intentPromise]);
+        
+        const intent = intentData.intent || "GENERAL";
+        const thinkingPhrasesPromise = getLLMThinkingPhrases(prompt, intent);
+        
+        const rewritePromise = (async () => {
+            if (intent === 'KNOWLEDGE_BASE' && history.length > 0) {
+                return await IntentService.rewriteQueryForSearch(prompt, history);
+            }
+            return intentData.rewritten_query || prompt; 
+        })();
+
+        const [thinkingPhrases, searchTerms] = await Promise.all([thinkingPhrasesPromise, rewritePromise]);
+
+        // Send initial metadata
+        sendEvent('meta', {
+            intent,
+            thinking_phrases: thinkingPhrases,
+            analysis: {
+                emotion: intentData.user_emotion,
+                complexity: intentData.complexity,
+                is_followup: intentData.is_followup,
+                rewritten: searchTerms
+            }
+        });
+
+        // 2. Handle Specific Intents (Personal/Live Data) - Non-streaming for tools (simulated)
+        if (intent === 'PERSONAL_ACTION' || intent === 'LIVE_DATA') {
+            // Re-use logic from askQuestion for these complex flows
+            // For Phase 1, we won't fully stream these as they require tool execution
+            // We'll just execute and send the result as a single chunk
+            
+            let resultPayload = {};
+            
+            if (intent === 'PERSONAL_ACTION') {
+                const smartResult = await SmartPersonalAssistant.processRequest(userEmail, prompt, history, searchTerms);
+                resultPayload = {
+                    answer: smartResult.response,
+                    accessed_tools: smartResult.toolUsed ? [{ id: 'personal', name: smartResult.toolUsed }] : []
+                };
+            } else {
+                const dataAnalyst = new SmartDataAnalyst();
+                const lastHistoryItem = history.length > 0 ? history[history.length - 1] : null;
+                const lastBotResponse = lastHistoryItem ? (lastHistoryItem.answer || lastHistoryItem.content) : null;
+                const analystResult = await dataAnalyst.processQuery(prompt, history, lastBotResponse, activeSessionId, userEmail, searchTerms);
+                resultPayload = {
+                    answer: analystResult.text,
+                    accessed_tools: [{ id: 'data-analyst', name: analystResult.source }]
+                };
+            }
+
+            // Stream the answer chunk by chunk (simulated) to keep frontend happy
+            const words = resultPayload.answer.split(' ');
+            for (let i = 0; i < words.length; i += 5) {
+                const chunk = words.slice(i, i + 5).join(' ') + ' ';
+                sendEvent('content', { text: chunk });
+                await new Promise(r => setTimeout(r, 20)); // Tiny delay for effect
+            }
+            
+            sendEvent('done', {
+                accessed_tools: resultPayload.accessed_tools,
+                accessed_documents: []
+            });
+            return res.end();
+        }
+
+        // 3. Handle RAG/General Intents - Real Streaming
+        let systemPromptTemplate = await PromptService.getPrompt(intent === 'KNOWLEDGE_BASE' ? 'KNOWLEDGE_BASE' : 'GENERAL');
+        let ragContext = "";
+        let sourceMap = {};
+        let sourceCategories = {};
+        let missingKnowledge = false;
+        let noAccessKnowledge = false;
+
+        if (intent === 'KNOWLEDGE_BASE' && use_rag && ragSystem.isInitialized) {
+            // Get user permissions
+            let userPermissions = null;
+            if (userEmail) {
+                try { userPermissions = await getUserPermissions(userEmail); } catch (e) {}
+            }
+
+            const ragResult = await getEnhancedContext(searchTerms, ragSystem, 8, userEmail);
+            
+            if (ragResult.isMissingKnowledge) missingKnowledge = true;
+            if (ragResult.isAccessDenied) noAccessKnowledge = true;
+
+            if (ragResult.accessDenied) {
+                sendEvent('content', { text: ragResult.finalContext });
+                sendEvent('done', { accessed_documents: [] });
+                return res.end();
+            }
+            
+            ragContext = ragResult.finalContext;
+            sourceMap = ragResult.sourceMap || {};
+            sourceCategories = ragResult.categoryMap || {};
+        }
+
+        // Construct System Prompt
+        const now = new Date();
+        const currentDate = now.toLocaleDateString('en-US', { timeZone: 'Asia/Manila', weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        const identity = behavior_context?.identity || AI_BEHAVIOR.identity;
+
+        // Build history text
+        const maxContextMessages = AI_BEHAVIOR.conversationMemory?.maxContextMessages || 5;
+        const recentHistory = history.slice(-maxContextMessages);
+        let historyText = recentHistory.length > 0 ? 
+            recentHistory.map((msg, idx) => `[Turn ${idx+1}]\nUser: ${msg.question}\nCHA: ${msg.answer.substring(0, 400)}`).join('\n---\n') : 
+            "Start of conversation.";
+
+        let finalSystemPrompt = systemPromptTemplate
+            .replace(/{name}/g, identity.name || 'CHA')
+            .replace(/{role}/g, identity.role || 'Company AI Assistant')
+            .replace(/{company}/g, identity.company || 'CDO Foodsphere')
+            .replace(/{context}/g, ragContext)
+            .replace(/{history}/g, historyText)
+            .replace(/{question}/g, prompt)
+            .replace(/{translated_question}/g, searchTerms)
+            .replace(/{user_name}/g, userName) + `\n\nCURRENT DATE: ${currentDate}`;
+
+        if (noAccessKnowledge) finalSystemPrompt += "\n\n[SYSTEM ALERT: NO_ACCESS_KNOWLEDGE]...";
+        else if (missingKnowledge) finalSystemPrompt += "\n\n[SYSTEM ALERT: MISSING_KNOWLEDGE]...";
+
+        if (intent === 'KNOWLEDGE_BASE') finalSystemPrompt += `\n\nIMPORTANT: List the exact titles of sources used at the end, prefixed with "SOURCES_USED:".`;
+
+        // Start Streaming Generation
+        const activeModel = await getActiveModel();
+        const model = genAI.getGenerativeModel({ model: activeModel });
+        
+        const result = await model.generateContentStream({
+            contents: [{ role: "user", parts: [{ text: finalSystemPrompt }] }],
+            generationConfig: { temperature: 0.4, topP: 0.95, topK: 40, maxOutputTokens: 8192 }
+        });
+
+        let fullText = "";
+        
+        for await (const chunk of result.stream) {
+            const chunkText = chunk.text();
+            if (chunkText) {
+                fullText += chunkText;
+                sendEvent('content', { text: chunkText });
+            }
+        }
+
+        // Post-processing (Sources)
+        let documentSources = [];
+        if (!missingKnowledge && !noAccessKnowledge && intent === 'KNOWLEDGE_BASE') {
+            let citedSourceNames = [];
+            if (fullText.includes("SOURCES_USED:")) {
+                const splitArr = fullText.split("SOURCES_USED:");
+                citedSourceNames = splitArr[1].split(/,|\n/).map(s => s.trim()).filter(s => s.length > 0);
+            }
+
+            const availableSourceNames = Object.keys(sourceMap);
+            // Match citations to sources
+            if (citedSourceNames.length > 0) {
+                for (const citedName of citedSourceNames) {
+                    const match = availableSourceNames.find(name => name.toLowerCase().includes(citedName.toLowerCase()));
+                    if (match) {
+                        const docId = sourceMap[match];
+                        documentSources.push({ id: docId, name: match, category: sourceCategories[match] || 'General' });
+                    }
+                }
+            }
+            // Fallback
+            if (documentSources.length === 0 && availableSourceNames.length > 0) {
+                 const topName = availableSourceNames[0];
+                 const topId = sourceMap[topName];
+                 documentSources.push({ id: topId, name: topName, category: sourceCategories[topName] || 'General' });
+            }
+        }
+
+        sendEvent('done', {
+            accessed_documents: documentSources,
+            source_categories: sourceCategories,
+            rag_used: intent === 'KNOWLEDGE_BASE'
+        });
+        
+        res.end();
+
+    } catch (error) {
+        console.error("❌ Streaming Error:", error);
+        sendEvent('error', { message: "Failed to stream response" });
+        res.end();
+    }
+};
+
 export const clearPersonalSession = async (req, res) => {
     try {
-        const userEmail = req.header('X-User-Email');
+        const userEmail = req.user ? req.user.email : req.header('X-User-Email');
         if (!userEmail) {
             return res.status(400).json({ error: "User email required" });
         }
@@ -793,7 +1095,7 @@ export const debugChunks = (req, res) => {
 export const debugPrompt = async (req, res) => {
     try {
         const { question } = req.body;
-        const userEmail = req.header('X-User-Email');
+        const userEmail = req.user ? req.user.email : req.header('X-User-Email');
         
         if (!question) {
             return res.status(400).json({ error: "Question required" });
@@ -890,12 +1192,13 @@ export const getFollowUpQuestions = async (req, res) => {
         6. Return ONLY a raw JSON array of strings. Example: ["What are their best-selling products?", "How do I apply?"]
         `;
 
-        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
+        const activeModel = await getActiveModel();
+        const model = genAI.getGenerativeModel({ model: activeModel });
         const result = await model.generateContent({
             contents: [{ role: "user", parts: [{ text: prompt }] }],
             generationConfig: {
                 temperature: 0.3,
-                maxOutputTokens: 256,
+                maxOutputTokens: 1024,
                 responseMimeType: "application/json"
             }
         });

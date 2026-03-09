@@ -5,11 +5,24 @@ import { showToast, setButtonLoading, showConfirmationModal, openModal, closeMod
 // SSE Store
 let progressEventSource = null;
 
+// State for custom model dropdowns
+let availableTextModels = [
+  { id: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash' },
+  { id: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash' },
+  { id: 'gemini-1.5-flash', label: 'Gemini 1.5 Flash' },
+  { id: 'gemini-1.5-pro', label: 'Gemini 1.5 Pro' }
+];
+let availableAudioModels = [
+  { id: 'gemini-2.5-flash-tts', label: 'Gemini 2.5 Flash TTS' }
+];
+
 // Initialize settings management
 function setupSettingsManagement() {
   const saveBtn = document.getElementById('settings-save-btn');
   const regenBtn = document.getElementById('set-cache-regen');
   const clearBtn = document.getElementById('set-cache-clear');
+  const addAiModelBtn = document.getElementById('btn-add-ai-model');
+  const addAudioModelBtn = document.getElementById('btn-add-audio-model');
 
   if (saveBtn) {
     saveBtn.addEventListener('click', (e) => {
@@ -35,8 +48,56 @@ function setupSettingsManagement() {
     });
   }
 
-  // Setup cache progress modal handlers
+  if (addAiModelBtn) {
+    addAiModelBtn.onclick = (e) => {
+      e.preventDefault();
+      openAddModelModal('text');
+    };
+  }
+
+  if (addAudioModelBtn) {
+    addAudioModelBtn.onclick = (e) => {
+      e.preventDefault();
+      openAddModelModal('audio');
+    };
+  }
+
+  // Setup dropdown triggers
+  const aiTrigger = document.getElementById('ai-model-trigger');
+  const audioTrigger = document.getElementById('audio-model-trigger');
+
+  if (aiTrigger) {
+    aiTrigger.onclick = (e) => {
+      e.stopPropagation();
+      document.getElementById('ai-model-options').classList.toggle('active');
+      const audioOpts = document.getElementById('audio-model-options');
+      if (audioOpts) audioOpts.classList.remove('active');
+    };
+  }
+
+  if (audioTrigger) {
+    audioTrigger.onclick = (e) => {
+      e.stopPropagation();
+      document.getElementById('audio-model-options').classList.toggle('active');
+      const aiOpts = document.getElementById('ai-model-options');
+      if (aiOpts) aiOpts.classList.remove('active');
+    };
+  }
+
+  // Close dropdowns on outside click
+  window.addEventListener('click', () => {
+    const aiOpts = document.getElementById('ai-model-options');
+    const audioOpts = document.getElementById('audio-model-options');
+    if (aiOpts) aiOpts.classList.remove('active');
+    if (audioOpts) audioOpts.classList.remove('active');
+  });
+
+  // Setup modals
   setupCacheProgressModal();
+  setupAddModelModal();
+
+  // Load available models from backend
+  loadAvailableGeminiModels();
 
   // Poll health every 30 seconds if settings view is active
   setInterval(() => {
@@ -45,6 +106,205 @@ function setupSettingsManagement() {
       loadSystemHealth();
     }
   }, 30000);
+}
+
+// Render Custom Dropdown
+function renderCustomDropdown(type) {
+  const optionsId = type === 'text' ? 'ai-model-options' : 'audio-model-options';
+  const selectedTextId = type === 'text' ? 'ai-model-selected-text' : 'audio-model-selected-text';
+  const inputId = type === 'text' ? 'set-ai-model' : 'set-audio-model';
+  const models = type === 'text' ? availableTextModels : availableAudioModels;
+  
+  const optionsContainer = document.getElementById(optionsId);
+  const selectedText = document.getElementById(selectedTextId);
+  const hiddenInput = document.getElementById(inputId);
+  
+  if (!optionsContainer) return;
+  
+  optionsContainer.innerHTML = '';
+  
+  if (models.length === 0) {
+    optionsContainer.innerHTML = '<div style="padding: 10px; text-align: center; color: #94a3b8; font-size: 0.85rem;">No models added.</div>';
+    return;
+  }
+
+  models.forEach(model => {
+    const option = document.createElement('div');
+    option.className = `custom-option ${hiddenInput.value === model.id ? 'selected' : ''}`;
+    
+    const label = document.createElement('span');
+    label.textContent = model.label;
+    label.style.flex = '1';
+    
+    const removeBtn = document.createElement('span');
+    removeBtn.className = 'custom-option-remove';
+    removeBtn.innerHTML = '&times;';
+    removeBtn.title = 'Remove model';
+    
+    removeBtn.onclick = (e) => {
+      e.stopPropagation();
+      if (hiddenInput.value === model.id) {
+        showToast('Cannot remove the currently selected model', 'warning');
+        return;
+      }
+      
+      if (type === 'text') {
+        availableTextModels = availableTextModels.filter(m => m.id !== model.id);
+      } else {
+        availableAudioModels = availableAudioModels.filter(m => m.id !== model.id);
+      }
+      renderCustomDropdown(type);
+      showToast('Model removed from list');
+    };
+    
+    option.onclick = () => {
+      hiddenInput.value = model.id;
+      selectedText.textContent = model.label;
+      optionsContainer.classList.remove('active');
+      renderCustomDropdown(type); // Re-render to update selected class
+    };
+    
+    option.appendChild(label);
+    option.appendChild(removeBtn);
+    optionsContainer.appendChild(option);
+    
+    // Update trigger text if this is selected
+    if (hiddenInput.value === model.id) {
+      selectedText.textContent = model.label;
+    }
+  });
+}
+
+// Setup Add Model Modal
+function setupAddModelModal() {
+  const closeBtn = document.getElementById('add-model-close');
+  const cancelBtn = document.getElementById('add-model-cancel');
+  const saveBtn = document.getElementById('add-model-save-btn');
+  const testBtn = document.getElementById('add-model-test-btn');
+  const statusDiv = document.getElementById('model-test-status');
+
+  if (closeBtn) closeBtn.onclick = () => closeModal('add-model-modal');
+  if (cancelBtn) cancelBtn.onclick = () => closeModal('add-model-modal');
+
+  if (testBtn) {
+    testBtn.onclick = async () => {
+      const id = document.getElementById('new-model-id').value.trim();
+      const type = document.getElementById('add-model-type').value;
+      const prompt = document.getElementById('model-test-prompt').value.trim();
+
+      if (!id) {
+        showToast('Please enter a Model Identifier (ID)', 'error');
+        return;
+      }
+
+      // Show testing status
+      testBtn.disabled = true;
+      testBtn.innerHTML = '<span>Processing...</span>';
+      statusDiv.style.display = 'block';
+      statusDiv.style.backgroundColor = '#f8fafc';
+      statusDiv.style.color = '#64748b';
+      statusDiv.style.border = '1px solid #e2e8f0';
+      statusDiv.textContent = `Sending request to ${id}...`;
+
+      try {
+        const data = await apiFetch('/admin/test-model', {
+          method: 'POST',
+          body: JSON.stringify({ 
+            modelId: id, 
+            type,
+            prompt: prompt || "Hello, reply with 'Connection successful!'" 
+          })
+        });
+
+        if (data.success) {
+          statusDiv.style.backgroundColor = '#f0fdf4';
+          statusDiv.style.color = '#15803d';
+          statusDiv.style.border = '1px solid #bcf0da';
+          statusDiv.innerHTML = `<strong>✅ AI Response:</strong><br><div style="margin-top: 5px; white-space: pre-wrap;">${data.response}</div>`;
+          showToast('Model connection successful', 'success');
+        } else {
+          statusDiv.style.backgroundColor = '#fef2f2';
+          statusDiv.style.color = '#b91c1c';
+          statusDiv.style.border = '1px solid #fecaca';
+          statusDiv.innerHTML = `<strong>❌ Error</strong><br>${data.error || 'Unknown error'}`;
+          showToast('Model test failed', 'error');
+        }
+      } catch (error) {
+        console.error('Test error:', error);
+        statusDiv.style.backgroundColor = '#fef2f2';
+        statusDiv.style.color = '#b91c1c';
+        statusDiv.style.border = '1px solid #fecaca';
+        
+        // Use the error message from the thrown Error if available
+        const errorMsg = error.message || 'Error connecting to test server.';
+        statusDiv.innerHTML = `<strong>❌ Connection Error</strong><br>${errorMsg}`;
+        showToast('Server error during test', 'error');
+      } finally {
+        testBtn.disabled = false;
+        testBtn.innerHTML = '<span>Run Test</span>';
+      }
+    };
+  }
+
+  if (saveBtn) {
+    saveBtn.onclick = () => {
+      const id = document.getElementById('new-model-id').value.trim();
+      const label = document.getElementById('new-model-label').value.trim();
+      const type = document.getElementById('add-model-type').value;
+
+      if (!id || !label) {
+        showToast('Please fill in all fields', 'error');
+        return;
+      }
+
+      if (type === 'text') {
+        const exists = availableTextModels.some(m => m.id === id);
+        if (!exists) availableTextModels.push({ id, label });
+        document.getElementById('set-ai-model').value = id;
+      } else {
+        const exists = availableAudioModels.some(m => m.id === id);
+        if (!exists) availableAudioModels.push({ id, label });
+        document.getElementById('set-audio-model').value = id;
+      }
+
+      renderCustomDropdown(type);
+      closeModal('add-model-modal');
+      showToast(`${type === 'text' ? 'AI' : 'Audio'} model added and selected`);
+    };
+  }
+}
+
+// Render Model Management List (Deprecated)
+function renderModelList(type) {
+  renderCustomDropdown(type);
+}
+
+// Open Add Model Modal
+function openAddModelModal(type) {
+  const title = document.getElementById('add-model-title');
+  const typeInput = document.getElementById('add-model-type');
+  const statusDiv = document.getElementById('model-test-status');
+  
+  // Clear inputs
+  document.getElementById('new-model-id').value = '';
+  document.getElementById('new-model-label').value = '';
+  const promptInput = document.getElementById('model-test-prompt');
+  if (promptInput) promptInput.value = '';
+  
+  if (statusDiv) {
+    statusDiv.style.display = 'none';
+    statusDiv.textContent = '';
+  }
+  
+  if (type === 'text') {
+    if (title) title.textContent = 'Add AI Model (Chat/Text)';
+    if (typeInput) typeInput.value = 'text';
+  } else {
+    if (title) title.textContent = 'Add Text to Speech Model';
+    if (typeInput) typeInput.value = 'audio';
+  }
+  
+  openModal('add-model-modal');
 }
 
 // Setup cache progress modal handlers
@@ -401,12 +661,12 @@ function showCacheRegenerationError(errorMessage) {
 }
 
 // Load settings data
-async function loadSettingsData() {
+async function loadSettingsData(showSkeleton = true) {
   const skeleton = document.getElementById('settings-skeleton');
   const content = document.getElementById('settings-content');
 
   // Show Skeleton
-  if (skeleton && content) {
+  if (showSkeleton && skeleton && content) {
     content.style.display = 'none';
     skeleton.style.display = 'block';
   }
@@ -420,101 +680,51 @@ async function loadSettingsData() {
       console.error('Failed to load settings data', error);
   } finally {
       // Hide Skeleton
-      if (skeleton && content) {
+      if (showSkeleton && skeleton && content) {
           content.style.display = 'block';
           skeleton.style.display = 'none';
       }
   }
 }
 
-// === UPDATED: LOAD SETTINGS WITH TWO DROPDOWNS & SAFETY ===
+// === UPDATED: LOAD SETTINGS WITH CUSTOM DROPDOWNS ===
 async function loadGeneralSettings() {
   try {
-    // 1. Fetch available models from backend
-    let textModels = [];
-    let audioModels = [];
-    try {
-      const modelsResponse = await apiFetch('/admin/system/gemini-models');
-      if (modelsResponse) {
-        textModels = modelsResponse.textModels || [];
-        audioModels = modelsResponse.audioModels || [];
-      }
-    } catch (err) {
-      console.warn('Could not fetch dynamic models, using fallback');
-    }
+    const aiInput = document.getElementById('set-ai-model');
+    const audioInput = document.getElementById('set-audio-model');
 
-    // 2. Populate Text Model Dropdown
-    const aiModelSelect = document.getElementById('set-ai-model');
-    if (aiModelSelect) {
-      aiModelSelect.innerHTML = ''; 
-      if (textModels.length > 0) {
-        textModels.forEach(model => {
-          const option = document.createElement('option');
-          option.value = model.id;
-          option.textContent = model.label;
-          aiModelSelect.appendChild(option);
-        });
-      } else {
-        // Fallback options if API fails completely
-        aiModelSelect.innerHTML = `
-          <option value="gemini-2.0-flash">Gemini 2.0 Flash (Offline)</option>
-          <option value="gemini-1.5-flash">Gemini 1.5 Flash (Offline)</option>
-        `;
-      }
-    }
-
-    // 3. Populate Audio Model Dropdown (New)
-    const audioModelSelect = document.getElementById('set-audio-model');
-    if (audioModelSelect) {
-      audioModelSelect.innerHTML = '';
-      if (audioModels.length > 0) {
-        audioModels.forEach(model => {
-          const option = document.createElement('option');
-          option.value = model.id;
-          option.textContent = model.label;
-          audioModelSelect.appendChild(option);
-        });
-      } else {
-        // Fallback options if API fails completely
-        audioModelSelect.innerHTML = `
-          <option value="gemini-2.5-flash-tts">Gemini 2.5 Flash TTS (Offline)</option>
-        `;
-      }
-    }
-
-    // 4. Load Saved Settings
+    // 1. Load Saved Settings
     const settings = await apiFetch('/admin/settings');
     
     const sysName = document.getElementById('set-system-name');
     if (sysName) sysName.value = settings.systemName || '';
     
     // Set Text Model
-    if (aiModelSelect) {
+    if (aiInput) {
       const savedModel = settings.aiModel || 'gemini-2.0-flash';
-      // Ensure saved option exists in dropdown
-      const exists = Array.from(aiModelSelect.options).some(opt => opt.value === savedModel);
+      aiInput.value = savedModel;
+      
+      // Ensure saved model exists in available list
+      const exists = availableTextModels.some(m => m.id === savedModel);
       if (!exists) {
-        const option = document.createElement('option');
-        option.value = savedModel;
-        option.textContent = `${savedModel} (Saved)`;
-        aiModelSelect.appendChild(option);
+        availableTextModels.push({ id: savedModel, label: `${savedModel} (Saved)` });
       }
-      aiModelSelect.value = savedModel;
     }
 
     // Set Audio Model
-    if (audioModelSelect) {
+    if (audioInput) {
       const savedAudio = settings.audioModel || 'gemini-2.5-flash-tts';
-      // Ensure saved option exists in dropdown
-      const exists = Array.from(audioModelSelect.options).some(opt => opt.value === savedAudio);
+      audioInput.value = savedAudio;
+      
+      // Ensure saved model exists in available list
+      const exists = availableAudioModels.some(m => m.id === savedAudio);
       if (!exists) {
-        const option = document.createElement('option');
-        option.value = savedAudio;
-        option.textContent = `${savedAudio} (Saved)`;
-        audioModelSelect.appendChild(option);
+        availableAudioModels.push({ id: savedAudio, label: `${savedAudio} (Saved)` });
       }
-      audioModelSelect.value = savedAudio;
     }
+
+    renderCustomDropdown('text');
+    renderCustomDropdown('audio');
     
     const maxContext = document.getElementById('set-max-context');
     if (maxContext) maxContext.value = settings.maxContext || 20;
@@ -524,7 +734,7 @@ async function loadGeneralSettings() {
     
     const maint = document.getElementById('set-maintenance');
     if (maint) maint.checked = settings.maintenanceMode;
-    
+
   } catch (error) {
     console.error('Settings Load Error:', error);
     showToast('Failed to load settings', 'error');
@@ -652,6 +862,42 @@ function handleClearCache() {
         }
     }
   });
+}
+
+async function loadAvailableGeminiModels() {
+  try {
+    const data = await apiFetch('/admin/system/gemini-models');
+    if (data && data.textModels && data.textModels.length > 0) {
+      console.log('✅ Loaded available Gemini models from API');
+      
+      // Update our lists while keeping existing ones as fallbacks
+      const newTextModels = data.textModels.map(m => ({ id: m.id, label: m.label }));
+      const newAudioModels = data.audioModels ? data.audioModels.map(m => ({ id: m.id, label: m.label })) : [];
+      
+      // Merge: Add new models that aren't already in the list
+      newTextModels.forEach(m => {
+        if (!availableTextModels.some(existing => existing.id === m.id)) {
+          availableTextModels.push(m);
+        }
+      });
+      
+      newAudioModels.forEach(m => {
+        if (!availableAudioModels.some(existing => existing.id === m.id)) {
+          availableAudioModels.push(m);
+        }
+      });
+
+      // Sort lists
+      availableTextModels.sort((a, b) => b.id.localeCompare(a.id, undefined, { numeric: true, sensitivity: 'base' }));
+      
+      // Re-render dropdowns if they are active
+      renderCustomDropdown('text');
+      renderCustomDropdown('audio');
+    }
+  } catch (error) {
+    console.warn('⚠️ Could not load dynamic Gemini models:', error);
+    // We already have hardcoded fallbacks in availableTextModels
+  }
 }
 
 // Public API

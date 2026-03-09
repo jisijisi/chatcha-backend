@@ -67,6 +67,7 @@ function closeLogoutModal() {
 
 function confirmLogout() {
   localStorage.removeItem('chatcdo_admin_session');
+  sessionStorage.removeItem('adminSessionActive');
   window.location.href = 'admin-login.html';
 }
 
@@ -96,7 +97,10 @@ async function apiFetch(endpoint, options = {}, timeout = 60000) {
     
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+      const errorMessage = (errorData.error && typeof errorData.error === 'object') 
+        ? (errorData.error.message || JSON.stringify(errorData.error)) 
+        : (errorData.error || `HTTP error! status: ${response.status}`);
+      throw new Error(errorMessage);
     }
     
     return response.json();
