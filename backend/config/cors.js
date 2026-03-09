@@ -6,6 +6,8 @@ export const ALLOWED_ORIGINS = [
     'https://127.0.0.1:5500',
     'http://localhost:5500',
     'https://chatcha-cdo.netlify.app',
+    'https://chatcdo.netlify.app',
+    'https://chatcha-backend.onrender.com',
     // Fix: Added port 5501 matching your Error 400 origin
     'http://127.0.0.1:5501',
     'http://localhost:5501',

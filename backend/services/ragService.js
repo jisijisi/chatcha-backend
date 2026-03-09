@@ -306,6 +306,12 @@ export class MultiFolderSemanticRAG {
               // We will set this.chunks to a proxy or just empty if not needed by search.
               // BUT, the current controller uses `ragSystem.chunks` for stats.
               // We'll populate it from the DB to maintain compatibility for now.
+              // OPTIMIZATION: Do NOT load chunks into memory to prevent OOM on small instances (Render Free Tier)
+              // This reduces memory usage significantly. Stats will show 0 chunks until regeneration, but search works.
+              console.log("skipping chunk load to save memory");
+              this.chunks = [];
+              
+              /* 
               console.log("📚 Loading chunks from LanceDB for cache...");
               // Use filter with a condition that is always true to scan table (quoting column name to preserve case)
               const allRows = await this.table.filter('"documentId" >= 0').limit(100000).execute();
@@ -322,8 +328,10 @@ export class MultiFolderSemanticRAG {
                   subcategoryId: r.subcategoryId,
                   sourceId: r.sourceId
               }));
-              
               console.log(`✅ RAG system initialized with ${this.chunks.length} vectors from LanceDB`);
+              */
+              
+              console.log(`✅ RAG system initialized (Chunks remain on disk)`);
               this.isInitialized = true;
           } else {
               console.log("🔄 Cache invalid or table missing. Regenerating embeddings...");
